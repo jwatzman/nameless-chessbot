@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 // for all of these conversions, 0 <= row,col < 8
 static inline uint8_t bb_index_of(uint8_t row, uint8_t col)
 {
