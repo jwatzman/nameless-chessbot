@@ -1,0 +1,18 @@
+174  *                rot45:                                rot315:
+175  *                 ,--,                                8 ,--,
+176  *               ,' 63 ',                            7 ,' 63 ',
+177  *             ,' 61  62 ',                        6 ,' 61  62 ',
+178  *           ,' 58  59  60 ',                    5 ,' 58  59  60 ',
+179  *         ,' xx  xx  56  57 ',                4 ,' xx  xx  56  57 ',
+180  *       ,' xx  xx  xx  xx  xx ',            3 ,' xx  xx  xx  xx  xx ',
+181  *     ,' xx  xx  xx  xx  xx  xx ',        2 ,' xx  xx  xx  xx  xx  xx ',
+182  *   ,' xx  xx  xx  xx  xx  xx  xx ',    1 ,' xx  xx  xx  xx  xx  xx  xx ',
+183  *  ( xx  xx  xx  xx  xx  xx  xx  xx )    ( xx  xx  xx  xx  xx  xx  xx  xx )
+184  * 8 ', xx  xx  xx  xx  xx  xx  xx ,' h  a ', xx  xx  xx  xx  xx  xx  xx ,'
+185  *   7 ', xx  xx  xx  xx  xx  xx ,' g      b ', xx  xx  xx  xx  xx  xx ,'
+186  *     6 ', xx  xx  xx  xx  xx ,' f          c ', xx  xx  xx  xx  xx ,'
+187  *       5 ', 06  07  xx  xx ,' e              d ', 06  07  xx  xx ,'
+188  *         4 ', 03  04  05 ,' d                  e ', 03  04  05 ,'
+189  *           3 ', 01  02 ,' c                      f ', 01  02 ,'
+190  *             2 ', 00 ,' b                          g ', 00 ,'
+191  *               1 '--' a                              h '--'
