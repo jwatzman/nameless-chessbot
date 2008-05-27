@@ -99,7 +99,7 @@ void board_print(Bitboard board)
 {
 	char* separator = "-----------------\n";
 	char* template = "| | | | | | | | |\n";
-	char* this_line = malloc(sizeof(char) * strlen(template));
+	char* this_line = malloc(sizeof(char) * (strlen(template) + 1));
 
 	printf(separator);
 
