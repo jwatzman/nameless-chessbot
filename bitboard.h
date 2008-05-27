@@ -30,17 +30,17 @@ void board_print(Bitboard board);
 // for all of these conversions, 0 <= row,col < 8
 static inline uint8_t board_index_of(uint8_t row, uint8_t col)
 {
-	return row | (col << 3);
+	return col | (row << 3);
 }
 
 static inline uint8_t board_row_of(uint8_t index)
 {
-	return index % 8;
+	return (uint8_t)(index / 8);
 }
 
 static inline uint8_t board_col_of(uint8_t index)
 {
-	return (uint8_t)(index / 8);
+	return index % 8;
 }
 
 #endif
