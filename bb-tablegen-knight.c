@@ -49,5 +49,5 @@ int main(int argc, char** argv)
 		if (position < 63) printf(", ");
 	}
 
-	printf("\n}\n");
+	printf("\n};\n");
 }
