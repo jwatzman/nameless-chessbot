@@ -9,7 +9,6 @@ Bitboard board_init()
 {
 	Bitboard result;
 
-	// TODO: init all the other fields
 	result.boards[WHITE][PAWN] = 0x000000000000FF00;
 	result.boards[WHITE][BISHOP] = 0x0000000000000024;
 	result.boards[WHITE][KNIGHT] = 0x0000000000000042;
@@ -26,6 +25,19 @@ Bitboard board_init()
 
 	result.composite_boards[WHITE] = 0x000000000000FFFF;
 	result.composite_boards[BLACK] = 0xFFFF000000000000;
+
+	for (int color = WHITE; color <= BLACK; color++)
+	{
+		for (int piece = PAWN; piece <= KING; piece++)
+		{
+			uint64_t to_be_rotated = boards[color][piece];
+			result.boards90[color][piece] = board_rotate_90(to_be_rotated);
+			result.boards45[color][piece] = board_rotate_45(to_be_rotated);
+			result.boards315[color][piece] = board_rotate_3115(to_be_rotated);
+		}
+	}
+
+	result.castle_status = 0xFF00; // we can castle, but have not yet
 
 	return result;
 }

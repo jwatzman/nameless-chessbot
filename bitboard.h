@@ -15,7 +15,10 @@ typedef struct
 
 	uint64_t composite_boards[2];
 
-	uint8_t has_castled; // bit 0 set iff white castled, bit 1 iff black
+	// from LSB to MSB:
+	// white castled KS, black castled KS, white castled QS, black castled QS,
+	// white can castle KS, [...]
+	uint8_t castle_status;
 	// other data will probably have to go here
 }
 Bitboard;
