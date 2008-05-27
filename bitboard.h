@@ -21,23 +21,23 @@ typedef struct
 }
 Bitboard;
 
-Bitboard bb_init_starting_position();
-uint64_t bb_rotate_90(uint64_t board);
-uint64_t bb_rotate_45(uint64_t board);
-uint64_t bb_rotate_315(uint64_t board);
+Bitboard board_init();
+uint64_t board_rotate_90(uint64_t board);
+uint64_t board_rotate_45(uint64_t board);
+uint64_t board_rotate_315(uint64_t board);
 
 // for all of these conversions, 0 <= row,col < 8
-static inline uint8_t bb_index_of(uint8_t row, uint8_t col)
+static inline uint8_t board_index_of(uint8_t row, uint8_t col)
 {
 	return row | (col << 3);
 }
 
-static inline uint8_t bb_row_of(uint8_t index)
+static inline uint8_t board_row_of(uint8_t index)
 {
 	return index % 8;
 }
 
-static inline uint8_t bb_col_of(uint8_t index)
+static inline uint8_t board_col_of(uint8_t index)
 {
 	return (uint8_t)(index / 8);
 }
