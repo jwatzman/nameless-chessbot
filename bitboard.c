@@ -5,6 +5,14 @@
 #include <stdint.h>
 #include "bitboard.h"
 
+// to get the rotated index of the unrotated index 0 <= n < 64, you would say
+// board_index_90[n] for example
+static const uint8_t board_rotation_index_90[] = {};
+static const uint8_t board_rotation_index_45[] = {};
+static const uint8_t board_rotation_index_315[] = {};
+
+uint64_t board_rotate_internal(uint64_t board, uint8_t rotation_index[64]);
+
 Bitboard board_init()
 {
 	Bitboard result;
@@ -44,13 +52,20 @@ Bitboard board_init()
 
 uint64_t board_rotate_90(uint64_t board)
 {
+	return board_rotate_internal(board, board_rotation_index_90);
 }
 
 uint64_t board_rotate_45(uint64_t board)
 {
+	return board_rotate_internal(board, board_rotation_index_45);
 }
 
 uint64_t board_rotate_315(uint64_t board)
+{
+	return board_rotate_internal(board, board_rotation_index_315);
+}
+
+uint64_t board_rotate_internal(uint64_t board, uint8_t rotation_index[64])
 {
 }
 
