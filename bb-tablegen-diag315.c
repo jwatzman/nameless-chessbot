@@ -8,7 +8,7 @@ uint64_t up_right_attack(int position_mask, int pos)
 
 	for (int cur_pos = pos + 1; cur_pos < 8; cur_pos++)
 	{
-		result |= (1ULL << bb_index_of(cur_pos, cur_pos));
+		result |= (1ULL << board_index_of(cur_pos, cur_pos));
 
 		if (position_mask & (1 << cur_pos))
 			break;
@@ -23,7 +23,7 @@ uint64_t down_left_attack(int position_mask, int pos)
 
 	for (int cur_pos = pos - 1; cur_pos >= 0; cur_pos--)
 	{
-		result |= (1ULL << bb_index_of(cur_pos, cur_pos));
+		result |= (1ULL << board_index_of(cur_pos, cur_pos));
 
 		if (position_mask & (1 << cur_pos))
 			break;
