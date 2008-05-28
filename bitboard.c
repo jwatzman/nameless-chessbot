@@ -19,7 +19,16 @@ static const uint8_t board_rotation_index_90[64] = {
 0, 8, 16, 24, 32, 40, 48, 56
 };
 
-static const uint8_t board_rotation_index_45[64] = {};
+static const uint8_t board_rotation_index_45[64] = {
+0, 2, 5, 9, 14, 20, 27, 35, 
+1, 4, 8, 13, 19, 26, 34, 42,
+3, 7, 12, 18, 25, 33, 41, 48,
+6, 11, 17, 24, 32, 40, 47, 53,
+10, 16, 23, 31, 39, 46, 52, 57,
+15, 22, 30, 38, 45, 51, 56, 60,
+21, 29, 37, 44, 50, 55, 59, 62,
+28, 36, 43, 49, 54, 58, 61, 63
+};
 
 static const uint8_t board_rotation_index_315[64] = {};
 
@@ -95,7 +104,7 @@ uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64])
 	return result;
 }
 
-void board_print(Bitboard board)
+void board_print(uint64_t boards[2][6])
 {
 	char* separator = "-----------------\n";
 	char* template = "| | | | | | | | |\n";
@@ -126,7 +135,7 @@ void board_print(Bitboard board)
 				if (color == BLACK)
 					sigil = tolower(sigil);
 
-				uint8_t bits = (uint8_t)((board.boards[color][type] >> (row << 3)) & 0xFF);
+				uint8_t bits = (uint8_t)((boards[color][type] >> (row << 3)) & 0xFF);
 				int column = 0;
 				while (bits)
 				{

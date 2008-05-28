@@ -28,7 +28,7 @@ uint64_t board_rotate_90(uint64_t board);
 uint64_t board_rotate_45(uint64_t board);
 uint64_t board_rotate_315(uint64_t board);
 
-void board_print(Bitboard board);
+void board_print(uint64_t boards[2][6]);
 
 // for all of these conversions, 0 <= row,col < 8
 static inline uint8_t board_index_of(uint8_t row, uint8_t col)
