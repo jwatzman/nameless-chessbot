@@ -30,7 +30,16 @@ static const uint8_t board_rotation_index_45[64] = {
 28, 36, 43, 49, 54, 58, 61, 63
 };
 
-static const uint8_t board_rotation_index_315[64] = {};
+static const uint8_t board_rotation_index_315[64] = {
+28, 21, 15, 10, 6, 3, 1, 0,
+36, 29, 22, 16, 11, 7, 4, 2,
+43, 37, 30, 23, 17, 12, 8, 5,
+49, 44, 38, 31, 24, 18, 13, 9,
+54, 50, 45, 39, 32, 25, 19, 14,
+58, 55, 51, 46, 40, 33, 26, 20,
+61, 59, 56, 52, 47, 41, 34, 27,
+63, 62, 60, 57, 53, 48, 42, 35
+};
 
 uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64]);
 
