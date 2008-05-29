@@ -2,9 +2,8 @@
 #define _BITBOARD_H
 
 #include <stdint.h>
-
-enum Color { WHITE=0, BLACK };
-enum Piecetype { PAWN=0, BISHOP, KNIGHT, ROOK, QUEEN, KING };
+#include "global.h"
+#include "move.h"
 
 typedef struct
 {

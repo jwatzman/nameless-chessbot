@@ -119,23 +119,23 @@ void board_do_move(Bitboard *board, Move *move)
 
 	// extract basic data
 	uint8_t src = move_source_index(*move);
-	uint8_t dest = move_dest_index(*move);
+	uint8_t dest = move_destination_index(*move);
 	Piecetype piece = move_piecetype(*move);
 	Color color = move_color(*move);
 
 	// remove piece at source
 	board->boards[color][piece] ^= 1ULL << src;
 	board->composite_boards[color] ^= 1ULL << src;
-	board->boards45[color][piece] ^= 1ULL << board_rotation_index45[src];
-	board->boards90[color][piece] ^= 1ULL << board_rotation_index90[src];
-	board->boards315[color][piece] ^= 1ULL << board_rotation_index315[src];
+	board->boards45[color][piece] ^= 1ULL << board_rotation_index_45[src];
+	board->boards90[color][piece] ^= 1ULL << board_rotation_index_90[src];
+	board->boards315[color][piece] ^= 1ULL << board_rotation_index_315[src];
 
 	// add piece at destination
 	board->boards[color][piece] ^= 1ULL << dest;
 	board->composite_boards[color] ^= 1ULL << dest;
-	board->boards45[color][piece] ^= 1ULL << board_rotation_index45[dest];
-	board->boards90[color][piece] ^= 1ULL << board_rotation_index90[dest];
-	board->boards315[color][piece] ^= 1ULL << board_rotation_index315[dest];
+	board->boards45[color][piece] ^= 1ULL << board_rotation_index_45[dest];
+	board->boards90[color][piece] ^= 1ULL << board_rotation_index_90[dest];
+	board->boards315[color][piece] ^= 1ULL << board_rotation_index_315[dest];
 
 	// remove captured piece, if applicable
 	if (move_is_capture(*move))
@@ -143,9 +143,9 @@ void board_do_move(Bitboard *board, Move *move)
 		Piecetype captured_piece = move_captured_piecetype(*move);
 		board->boards[!color][captured_piece] ^= 1ULL << dest;
 		board->composite_boards[!color] ^= 1ULL << dest;
-		board->boards45[!color][captured_piece] ^= 1ULL << board_rotation_index45[dest];
-		board->boards90[!color][captured_piece] ^= 1ULL << board_rotation_index90[dest];
-		board->boards315[!color][captured_piece] ^= 1ULL << board_rotation_index315[dest];
+		board->boards45[!color][captured_piece] ^= 1ULL << board_rotation_index_45[dest];
+		board->boards90[!color][captured_piece] ^= 1ULL << board_rotation_index_90[dest];
+		board->boards315[!color][captured_piece] ^= 1ULL << board_rotation_index_315[dest];
 	}
 
 	// TODO: castling, en passant, promotions

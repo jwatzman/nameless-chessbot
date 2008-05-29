@@ -2,7 +2,7 @@
 #define _MOVE_H
 
 #include <stdint.h>
-#include "bitboard.h"
+#include "global.h"
 
 // moves are stored in 30 bits
 // from LSB to MSB:
