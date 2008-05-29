@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <stdint.h>
 #include "bitboard.h"
+#include "move.h"
 
 // to get the rotated index of the unrotated index 0 <= n < 64, you would say
 // board_index_90[n] for example
@@ -108,6 +109,51 @@ uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64])
 	}
 
 	return result;
+}
+
+void board_do_move(Bitboard *board, Move *move)
+{
+	// write our castling rights back to the move for undo later
+	uint8_t castling_rights = (board->castle_status >> 4) & 0x0F;
+	*move |= castling_rights << 26;
+
+	// extract basic data
+	uint8_t src = move_source_index(*move);
+	uint8_t dest = move_dest_index(*move);
+	Piecetype piece = move_piecetype(*move);
+	Color color = move_color(*move);
+
+	// remove piece at source
+	board->boards[color][piece] ^= 1ULL << src;
+	board->composite_boards[color] ^= 1ULL << src;
+	board->boards45[color][piece] ^= 1ULL << board_rotation_index45[src];
+	board->boards90[color][piece] ^= 1ULL << board_rotation_index90[src];
+	board->boards315[color][piece] ^= 1ULL << board_rotation_index315[src];
+
+	// add piece at destination
+	board->boards[color][piece] ^= 1ULL << dest;
+	board->composite_boards[color] ^= 1ULL << dest;
+	board->boards45[color][piece] ^= 1ULL << board_rotation_index45[dest];
+	board->boards90[color][piece] ^= 1ULL << board_rotation_index90[dest];
+	board->boards315[color][piece] ^= 1ULL << board_rotation_index315[dest];
+
+	// remove captured piece, if applicable
+	if (move_is_capture(*move))
+	{
+		Piecetype captured_piece = move_captured_piecetype(*move);
+		board->boards[!color][captured_piece] ^= 1ULL << dest;
+		board->composite_boards[!color] ^= 1ULL << dest;
+		board->boards45[!color][captured_piece] ^= 1ULL << board_rotation_index45[dest];
+		board->boards90[!color][captured_piece] ^= 1ULL << board_rotation_index90[dest];
+		board->boards315[!color][captured_piece] ^= 1ULL << board_rotation_index315[dest];
+	}
+
+	// TODO: castling, en passant, promotions
+	// TODO: don't automatically add piece at dest for promotion
+}
+
+void board_undo_move(Bitboard *board, Move *move)
+{
 }
 
 void board_print(uint64_t boards[2][6])

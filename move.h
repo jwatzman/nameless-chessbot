@@ -25,7 +25,7 @@ static inline uint8_t move_source_index(Move move)
 	return move & 0x3F;
 }
 
-static inline uint8_t move_dest_index(Move move)
+static inline uint8_t move_destination_index(Move move)
 {
 	return (move >> 6) & 0x3F;
 }

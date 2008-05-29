@@ -36,6 +36,12 @@ uint64_t board_rotate_90(uint64_t board);
 uint64_t board_rotate_45(uint64_t board);
 uint64_t board_rotate_315(uint64_t board);
 
+// this modifies move so that undo works properly!
+void board_do_move(Bitboard *board, Move *move);
+
+// requires the original move passed to board_do_move
+void board_undo_move(Bitboard *board, Move *move);
+
 void board_print(uint64_t boards[2][6]);
 
 // for all of these conversions, 0 <= row,col < 8
