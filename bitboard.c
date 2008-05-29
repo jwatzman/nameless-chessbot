@@ -74,6 +74,7 @@ void board_init(Bitboard *board)
 	}
 
 	board->castle_status = 0xF0; // we can castle, but have not yet
+	board->enpassant_index = 0;
 }
 
 uint64_t board_rotate_90(uint64_t board)
