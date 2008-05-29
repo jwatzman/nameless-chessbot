@@ -23,7 +23,7 @@ typedef struct
 }
 Bitboard;
 
-Bitboard board_init();
+void board_init(Bitboard *board);
 uint64_t board_rotate_90(uint64_t board);
 uint64_t board_rotate_45(uint64_t board);
 uint64_t board_rotate_315(uint64_t board);

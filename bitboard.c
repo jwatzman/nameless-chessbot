@@ -43,41 +43,37 @@ static const uint8_t board_rotation_index_315[64] = {
 
 uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64]);
 
-Bitboard board_init()
+void board_init(Bitboard *board)
 {
-	Bitboard result;
+	board->boards[WHITE][PAWN] = 0x000000000000FF00;
+	board->boards[WHITE][BISHOP] = 0x0000000000000024;
+	board->boards[WHITE][KNIGHT] = 0x0000000000000042;
+	board->boards[WHITE][ROOK] = 0x0000000000000081;
+	board->boards[WHITE][QUEEN] = 0x0000000000000008;
+	board->boards[WHITE][KING] = 0x0000000000000010;
 
-	result.boards[WHITE][PAWN] = 0x000000000000FF00;
-	result.boards[WHITE][BISHOP] = 0x0000000000000024;
-	result.boards[WHITE][KNIGHT] = 0x0000000000000042;
-	result.boards[WHITE][ROOK] = 0x0000000000000081;
-	result.boards[WHITE][QUEEN] = 0x0000000000000008;
-	result.boards[WHITE][KING] = 0x0000000000000010;
+	board->boards[BLACK][PAWN] = 0x00FF000000000000;
+	board->boards[BLACK][BISHOP] = 0x2400000000000000;
+	board->boards[BLACK][KNIGHT] = 0x4200000000000000;
+	board->boards[BLACK][ROOK] = 0x8100000000000000;
+	board->boards[BLACK][QUEEN] = 0x0800000000000000;
+	board->boards[BLACK][KING] = 0x1000000000000000;
 
-	result.boards[BLACK][PAWN] = 0x00FF000000000000;
-	result.boards[BLACK][BISHOP] = 0x2400000000000000;
-	result.boards[BLACK][KNIGHT] = 0x4200000000000000;
-	result.boards[BLACK][ROOK] = 0x8100000000000000;
-	result.boards[BLACK][QUEEN] = 0x0800000000000000;
-	result.boards[BLACK][KING] = 0x1000000000000000;
-
-	result.composite_boards[WHITE] = 0x000000000000FFFF;
-	result.composite_boards[BLACK] = 0xFFFF000000000000;
+	board->composite_boards[WHITE] = 0x000000000000FFFF;
+	board->composite_boards[BLACK] = 0xFFFF000000000000;
 
 	for (int color = WHITE; color <= BLACK; color++)
 	{
 		for (int piece = PAWN; piece <= KING; piece++)
 		{
-			uint64_t to_be_rotated = result.boards[color][piece];
-			result.boards90[color][piece] = board_rotate_90(to_be_rotated);
-			result.boards45[color][piece] = board_rotate_45(to_be_rotated);
-			result.boards315[color][piece] = board_rotate_315(to_be_rotated);
+			uint64_t to_be_rotated = board->boards[color][piece];
+			board->boards90[color][piece] = board_rotate_90(to_be_rotated);
+			board->boards45[color][piece] = board_rotate_45(to_be_rotated);
+			board->boards315[color][piece] = board_rotate_315(to_be_rotated);
 		}
 	}
 
-	result.castle_status = 0xF0; // we can castle, but have not yet
-
-	return result;
+	board->castle_status = 0xF0; // we can castle, but have not yet
 }
 
 uint64_t board_rotate_90(uint64_t board)
