@@ -63,9 +63,9 @@ void board_init(Bitboard *board)
 	board->composite_boards[WHITE] = 0x000000000000FFFF;
 	board->composite_boards[BLACK] = 0xFFFF000000000000;
 
-	for (int color = WHITE; color <= BLACK; color++)
+	for (int color = 0; color <= 1; color++)
 	{
-		for (int piece = PAWN; piece <= KING; piece++)
+		for (int piece = 0; piece <= 5; piece++)
 		{
 			uint64_t to_be_rotated = board->boards[color][piece];
 			board->boards90[color][piece] = board_rotate_90(to_be_rotated);
@@ -168,9 +168,9 @@ void board_print(uint64_t boards[2][6])
 	{
 		strcpy(this_line, template);
 
-		for (int color = WHITE; color <= BLACK; color++)
+		for (int color = 0; color <= 1; color++)
 		{
-			for (int type = PAWN; type <= KING; type++)
+			for (int type = 0; type <= 5; type++)
 			{
 				char sigil = 0;
 
