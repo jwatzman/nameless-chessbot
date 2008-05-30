@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include "types.h"
 
+void move_generate_movelist(Bitboard *board, Color to_move, Movelist *movelist);
+
 static inline uint8_t move_source_index(Move move)
 {
 	return move & 0x3F;
