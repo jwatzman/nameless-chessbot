@@ -2,23 +2,7 @@
 #define _MOVE_H
 
 #include <stdint.h>
-#include "global.h"
-
-// moves are stored in 30 bits
-// from LSB to MSB:
-// source square (6)
-// destination square (6)
-// type (3)
-// color (1)
-// is castle (1)
-// is en passant (1)
-// is capture (1)
-// is promotion (1)
-// captured type (3)
-// promoted type (3)
-// undo data for board [castling rights] (4)
-// which leaves the two MSB unused
-typedef uint32_t Move;
+#include "types.h"
 
 static inline uint8_t move_source_index(Move move)
 {
@@ -68,6 +52,18 @@ static inline int move_captured_piecetype(Move move)
 static inline int move_promoted_piecetype(Move move)
 {
 	return (move >> 23) & 0x07;
+}
+
+static inline void move_srcdest_form(Move move, char srcdest_form[5])
+{
+	uint8_t src = move_source_index(move);
+	uint8_t dest = move_destination_index(move);
+
+	srcdest_form[0] = board_col_of(src) + 'a';
+	srcdest_form[1] = board_row_of(src) + '1';
+	srcdest_form[2] = board_col_of(dest) + 'a';
+	srcdest_form[3] = board_row_of(dest) + '1';
+	srcdest_form[4] = 0;
 }
 
 #endif

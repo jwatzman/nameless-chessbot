@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "bitboard.h"
 #include "move.h"
 
@@ -12,6 +13,11 @@ int main(int argc, char** argv)
 	test_move |= board_index_of(3, 4) << 6;
 	test_move |= PAWN << 12;
 	test_move |= WHITE << 15;
+
+	char* srcdest_form = malloc(5 * sizeof(char));
+	move_srcdest_form(test_move, srcdest_form);
+	printf("%s\n", srcdest_form);
+	free(srcdest_form);
 
 	board_do_move(test, &test_move);
 

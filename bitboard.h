@@ -2,33 +2,7 @@
 #define _BITBOARD_H
 
 #include <stdint.h>
-#include "global.h"
-#include "move.h"
-
-typedef struct
-{
-	uint64_t boards[2][6];
-	uint64_t boards45[2][6];
-	uint64_t boards90[2][6];
-	uint64_t boards315[2][6];
-
-	uint64_t composite_boards[2];
-
-	// from LSB to MSB:
-	// white castled KS, black castled KS, white castled QS, black castled QS,
-	// white can castle KS, [...]
-	uint8_t castle_status;
-
-	// board index, corresponding to a sqaure in 2nd or 5th rows
-	// which is the square a pawn who just moved up two can be
-	// en passant pseudo-captured in
-	// zero if no en passant ability
-	// invalid if not zero or in 2nd or 5th row
-	uint8_t enpassant_index;
-
-	// other data will probably have to go here
-}
-Bitboard;
+#include "types.h"
 
 void board_init(Bitboard *board);
 uint64_t board_rotate_90(uint64_t board);
