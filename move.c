@@ -15,6 +15,8 @@ void move_generate_movelist_enpassant(Bitboard *board, Color to_move, Movelist *
 
 void move_generate_movelist(Bitboard *board, Color to_move, Movelist *movelist)
 {
+	movelist->num = 0;
+
 	move_generate_movelist_pawn(board, to_move, movelist);
 	move_generate_movelist_knight(board, to_move, movelist);
 	move_generate_movelist_king(board, to_move, movelist);
