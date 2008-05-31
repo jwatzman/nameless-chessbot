@@ -5,7 +5,11 @@
 #include "types.h"
 #include "bitboard.h"
 
+// generates *psdueomoves* -- call move_verify to check if it's actually valid
 void move_generate_movelist(Bitboard *board, Color to_move, Movelist *movelist);
+
+// verifies a pseudomove, returns 1 if it's valid, 0 otherwise
+int move_verify(Bitboard *board, Move move);
 
 static inline uint8_t move_source_index(Move move)
 {
