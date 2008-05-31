@@ -19,7 +19,7 @@ int main(int argc, char** argv)
 	printf("%s\n", srcdest_form);
 	free(srcdest_form);
 
-	board_do_move(test, &test_move);
+	board_do_move(test, test_move);
 
 	board_print(test->boards);
 	board_print(test->boards90);

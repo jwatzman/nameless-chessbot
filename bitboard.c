@@ -74,8 +74,9 @@ void board_init(Bitboard *board)
 		}
 	}
 
-	board->castle_status = 0xF0; // we can castle, but have not yet
+	board->castle_status = 0xF0; // both sides can castle, but have not yet
 	board->enpassant_index = 0;
+	board->undo_index = 0;
 }
 
 uint64_t board_rotate_90(uint64_t board)
@@ -111,17 +112,13 @@ uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64])
 	return result;
 }
 
-void board_do_move(Bitboard *board, Move *move)
+void board_do_move(Bitboard *board, Move move)
 {
-	// write our castling rights back to the move for undo later
-	uint8_t castling_rights = (board->castle_status >> 4) & 0x0F;
-	*move |= castling_rights << 26;
-
 	// extract basic data
-	uint8_t src = move_source_index(*move);
-	uint8_t dest = move_destination_index(*move);
-	Piecetype piece = move_piecetype(*move);
-	Color color = move_color(*move);
+	uint8_t src = move_source_index(move);
+	uint8_t dest = move_destination_index(move);
+	Piecetype piece = move_piecetype(move);
+	Color color = move_color(move);
 
 	// remove piece at source
 	board->boards[color][piece] ^= 1ULL << src;
@@ -138,9 +135,9 @@ void board_do_move(Bitboard *board, Move *move)
 	board->boards315[color][piece] ^= 1ULL << board_rotation_index_315[dest];
 
 	// remove captured piece, if applicable
-	if (move_is_capture(*move))
+	if (move_is_capture(move))
 	{
-		Piecetype captured_piece = move_captured_piecetype(*move);
+		Piecetype captured_piece = move_captured_piecetype(move);
 		board->boards[!color][captured_piece] ^= 1ULL << dest;
 		board->composite_boards[!color] ^= 1ULL << dest;
 		board->boards45[!color][captured_piece] ^= 1ULL << board_rotation_index_45[dest];
@@ -148,11 +145,12 @@ void board_do_move(Bitboard *board, Move *move)
 		board->boards315[!color][captured_piece] ^= 1ULL << board_rotation_index_315[dest];
 	}
 
+	// TODO: update undo ring buffer
 	// TODO: castling, en passant, promotions
 	// TODO: don't automatically add piece at dest for promotion
 }
 
-void board_undo_move(Bitboard *board, Move *move)
+void board_undo_move(Bitboard *board, Move move)
 {
 }
 

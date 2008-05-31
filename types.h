@@ -25,11 +25,18 @@ typedef struct
 	// invalid if not zero or in 2nd or 5th row
 	uint8_t enpassant_index;
 
-	// other data will probably have to go here
+	// undo information is stored in a ring buffer
+	// we let the index wrap around 255 <-> 0 since it's an unsigned int
+	// from LSB to MSB:
+	// old enpassant_index (6 bits)
+	// old castling rights [upper 4 bits of castle_status] (4 bits)
+	// unused (6 bits)
+	uint8_t undo_index;
+	uint16_t undo_ring_buffer[256];
 }
 Bitboard;
 
-// moves are stored in 30 bits
+// moves are stored in 24 bits
 // from LSB to MSB:
 // source square (6)
 // destination square (6)
@@ -41,8 +48,7 @@ Bitboard;
 // is promotion (1)
 // captured type (3)
 // promoted type (3)
-// undo data for board [castling rights] (4)
-// which leaves the two MSB unused
+// which leaves the six MSB unused
 typedef uint32_t Move;
 
 typedef struct

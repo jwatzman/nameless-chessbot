@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "types.h"
+#include "bitboard.h"
 
 void move_generate_movelist(Bitboard *board, Color to_move, Movelist *movelist);
 
