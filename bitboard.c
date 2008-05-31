@@ -114,6 +114,12 @@ uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64])
 
 void board_do_move(Bitboard *board, Move move)
 {
+	// save data to undo ring buffer
+	uint16_t undo_data = 0;
+	undo_data |= board->enpassant_index & 0x7F;
+	undo_data |= ((board->castle_status >> 4) & 0x0F) << 6;
+	board->undo_ring_buffer[board->undo_index++] = undo_data;
+
 	// extract basic data
 	uint8_t src = move_source_index(move);
 	uint8_t dest = move_destination_index(move);
@@ -128,11 +134,23 @@ void board_do_move(Bitboard *board, Move move)
 	board->boards315[color][piece] ^= 1ULL << board_rotation_index_315[src];
 
 	// add piece at destination
-	board->boards[color][piece] ^= 1ULL << dest;
-	board->composite_boards[color] ^= 1ULL << dest;
-	board->boards45[color][piece] ^= 1ULL << board_rotation_index_45[dest];
-	board->boards90[color][piece] ^= 1ULL << board_rotation_index_90[dest];
-	board->boards315[color][piece] ^= 1ULL << board_rotation_index_315[dest];
+	if (!move_is_promotion(move))
+	{
+		board->boards[color][piece] ^= 1ULL << dest;
+		board->composite_boards[color] ^= 1ULL << dest;
+		board->boards45[color][piece] ^= 1ULL << board_rotation_index_45[dest];
+		board->boards90[color][piece] ^= 1ULL << board_rotation_index_90[dest];
+		board->boards315[color][piece] ^= 1ULL << board_rotation_index_315[dest];
+	}
+	else
+	{
+		Piecetype promoted_piece = move_promoted_piecetype(move);
+		board->boards[color][promoted_piece] ^= 1ULL << dest;
+		board->composite_boards[color] ^= 1ULL << dest;
+		board->boards45[color][promoted_piece] ^= 1ULL << board_rotation_index_45[dest];
+		board->boards90[color][promoted_piece] ^= 1ULL << board_rotation_index_90[dest];
+		board->boards315[color][promoted_piece] ^= 1ULL << board_rotation_index_315[dest];
+	}
 
 	// remove captured piece, if applicable
 	if (move_is_capture(move))
@@ -145,9 +163,7 @@ void board_do_move(Bitboard *board, Move move)
 		board->boards315[!color][captured_piece] ^= 1ULL << board_rotation_index_315[dest];
 	}
 
-	// TODO: update undo ring buffer
-	// TODO: castling, en passant, promotions
-	// TODO: don't automatically add piece at dest for promotion
+	// TODO: castling, en passant
 }
 
 void board_undo_move(Bitboard *board, Move move)
