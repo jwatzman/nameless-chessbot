@@ -6,7 +6,7 @@
 #include "bitboard.h"
 
 // generates *psdueomoves* -- call move_verify to check if it's actually valid
-void move_generate_movelist(Bitboard *board, Color to_move, Movelist *movelist);
+void move_generate_movelist(Bitboard *board, Movelist *movelist);
 
 // verifies a pseudomove, returns 1 if it's valid, 0 otherwise
 int move_verify(Bitboard *board, Move move);

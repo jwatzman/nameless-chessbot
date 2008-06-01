@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 	board_print(test->boards);
 
 	Movelist moves;
-	move_generate_movelist(test, WHITE, &moves);
+	move_generate_movelist(test, &moves);
 	char* srcdest_form = malloc(5 * sizeof(char));
 
 	for (int i = 0; i < moves.num; i++)
