@@ -43,6 +43,7 @@ static const uint8_t board_rotation_index_315[64] = {
 };
 
 uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64]);
+void board_doundo_move_common(Bitboard *board, Move move);
 
 void board_init(Bitboard *board)
 {
@@ -76,8 +77,9 @@ void board_init(Bitboard *board)
 
 	board->castle_status = 0xF0; // both sides can castle, but have not yet
 	board->enpassant_index = 0;
-	board->undo_index = 0;
 	board->halfmove_count = 0;
+	board->to_move = WHITE;
+	board->undo_index = 0;
 }
 
 uint64_t board_rotate_90(uint64_t board)
@@ -117,20 +119,32 @@ void board_do_move(Bitboard *board, Move move)
 {
 	// save data to undo ring buffer
 	uint16_t undo_data = 0;
-	undo_data |= board->enpassant_index & 0x7F;
+	undo_data |= board->enpassant_index & 0x3F;
 	undo_data |= ((board->castle_status >> 4) & 0x0F) << 6;
+	undo_data |= (board->halfmove_count & 0x3F) << 10;
 	board->undo_ring_buffer[board->undo_index++] = undo_data;
 
+	if (move_piecetype(move) == PAWN || move_is_capture(move))
+		board->halfmove_clock = 0;
+	else
+		board->halfmove_clock++;
+
+	// TODO: update castling rights and enpassant index
+
+	board_doundo_move_common(board, move);
+}
+
+void board_undo_move(Bitboard *board, Move move)
+{
+}
+
+void board_doundo_move_common(Bitboard *board, Move move)
+{
 	// extract basic data
 	uint8_t src = move_source_index(move);
 	uint8_t dest = move_destination_index(move);
 	Piecetype piece = move_piecetype(move);
 	Color color = move_color(move);
-
-	if (color != board_to_move(board))
-		printf("Board half-move count may be out of sync!\n");
-
-	board->halfmove_count++;
 
 	// remove piece at source
 	board->boards[color][piece] ^= 1ULL << src;
@@ -169,11 +183,9 @@ void board_do_move(Bitboard *board, Move move)
 		board->boards315[!color][captured_piece] ^= 1ULL << board_rotation_index_315[dest];
 	}
 
-	// TODO: castling, en passant
-}
+	board->to_move = (1 - board->to_move);
 
-void board_undo_move(Bitboard *board, Move move)
-{
+	// TODO: castling, en passant
 }
 
 void board_print(uint64_t boards[2][6])

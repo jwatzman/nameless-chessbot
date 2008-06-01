@@ -25,16 +25,17 @@ typedef struct
 	// invalid if not zero or in 2nd or 5th row
 	uint8_t enpassant_index;
 
+	uint8_t halfmove_count;
+	Color to_move;
+
 	// undo information is stored in a ring buffer
 	// we let the index wrap around 255 <-> 0 since it's an unsigned int
 	// from LSB to MSB:
 	// old enpassant_index (6 bits)
 	// old castling rights [upper 4 bits of castle_status] (4 bits)
-	// unused (6 bits)
+	// old halfmove_count [max value 50] (6 bits)
 	uint8_t undo_index;
 	uint16_t undo_ring_buffer[256];
-
-	unsigned int halfmove_count;
 }
 Bitboard;
 
