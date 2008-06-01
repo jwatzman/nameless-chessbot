@@ -31,8 +31,12 @@ int main(int argc, char** argv)
 
 	for (int i = 0; i < moves.num; i++)
 	{
-		move_srcdest_form(moves.moves[i], srcdest_form);
-		printf("%s ", srcdest_form);
+		Move move = moves.moves[i];
+		if (move_verify(test, move))
+		{
+			move_srcdest_form(moves.moves[i], srcdest_form);
+			printf("%s ", srcdest_form);
+		}
 	}
 	printf("\n");
 

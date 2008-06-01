@@ -2,6 +2,7 @@
 #include "types.h"
 #include "move.h"
 #include "move-generated.h"
+#include "bitboard.h"
 
 void move_generate_movelist_pawn(Bitboard *board, Color to_move, Movelist *movelist);
 void move_generate_movelist_knight(Bitboard *board, Color to_move, Movelist *movelist);
@@ -37,6 +38,7 @@ void move_generate_movelist(Bitboard *board, Color to_move, Movelist *movelist)
 
 int move_verify(Bitboard *board, Move move)
 {
+	return 1;
 }
 
 void move_generate_movelist_pawn(Bitboard *board, Color to_move, Movelist *movelist)
@@ -66,18 +68,10 @@ void move_generate_movelist_knight(Bitboard *board, Color to_move, Movelist *mov
 					move |= KNIGHT << move_piecetype_offset;
 					move |= to_move << move_color_offset;
 
-					uint64_t bit_at_dest = 1ULL << dest;
-					if (board->composite_boards[1-to_move] & bit_at_dest)
+					if (board->composite_boards[1-to_move] & (1ULL << dest))
 					{
 						move |= 1ULL << move_is_capture_offset;
-						for (Piecetype captured = 0; captured <= 5; captured++)
-						{
-							if (board->boards[1-to_move][captured] & bit_at_dest)
-							{
-								move |= captured << move_captured_piecetype_offset;
-								break;
-							}
-						}
+						move |= board_piecetype_at_index(board, dest) << move_captured_piecetype_offset;
 					}
 
 					movelist->moves[movelist->num++] = move;

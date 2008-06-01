@@ -33,4 +33,24 @@ static inline uint8_t board_col_of(uint8_t index)
 	return index % 8;
 }
 
+// undefined return value if there is no piece at index
+static inline Piecetype board_piecetype_at_index(Bitboard *board, uint8_t index)
+{
+	uint64_t bit_at_index = 1ULL << index;
+	Color color;
+
+	if (board->composite_boards[WHITE] & bit_at_index)
+		color = WHITE;
+	else
+		color = BLACK;
+
+	for (Piecetype result = 0; result <= 5; result++)
+	{
+		if (board->boards[color][result] & bit_at_index)
+			return result;
+	}
+
+	return -1; // should not get here...
+}
+
 #endif
