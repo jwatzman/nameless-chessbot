@@ -125,9 +125,9 @@ void board_do_move(Bitboard *board, Move move)
 	board->undo_ring_buffer[board->undo_index++] = undo_data;
 
 	if (move_piecetype(move) == PAWN || move_is_capture(move))
-		board->halfmove_clock = 0;
+		board->halfmove_count = 0;
 	else
-		board->halfmove_clock++;
+		board->halfmove_count++;
 
 	// TODO: update castling rights and enpassant index
 

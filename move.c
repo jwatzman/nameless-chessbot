@@ -47,7 +47,7 @@ void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)
 
 void move_generate_movelist_knight(Bitboard *board, Movelist *movelist)
 {
-	Color to_move = board_to_move(board);
+	Color to_move = board->to_move;
 	uint64_t knights = board->boards[to_move][KNIGHT];
 	uint8_t src = 0;
 
