@@ -77,6 +77,7 @@ void board_init(Bitboard *board)
 	board->castle_status = 0xF0; // both sides can castle, but have not yet
 	board->enpassant_index = 0;
 	board->undo_index = 0;
+	board->halfmove_count = 0;
 }
 
 uint64_t board_rotate_90(uint64_t board)
@@ -125,6 +126,11 @@ void board_do_move(Bitboard *board, Move move)
 	uint8_t dest = move_destination_index(move);
 	Piecetype piece = move_piecetype(move);
 	Color color = move_color(move);
+
+	if (color != board_to_move(board))
+		printf("Board half-move count may be out of sync!\n");
+
+	board->halfmove_count++;
 
 	// remove piece at source
 	board->boards[color][piece] ^= 1ULL << src;

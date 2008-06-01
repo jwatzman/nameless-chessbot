@@ -33,6 +33,8 @@ typedef struct
 	// unused (6 bits)
 	uint8_t undo_index;
 	uint16_t undo_ring_buffer[256];
+
+	unsigned int halfmove_count;
 }
 Bitboard;
 

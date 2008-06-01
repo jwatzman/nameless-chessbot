@@ -33,6 +33,14 @@ static inline uint8_t board_col_of(uint8_t index)
 	return index % 8;
 }
 
+static inline Color board_to_move(Bitboard *board)
+{
+	if (board->halfmove_count % 2)
+		return BLACK;
+	else
+		return WHITE;
+}
+
 // undefined return value if there is no piece at index
 static inline Piecetype board_piecetype_at_index(Bitboard *board, uint8_t index)
 {
