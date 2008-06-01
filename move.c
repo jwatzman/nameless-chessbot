@@ -4,36 +4,36 @@
 #include "move-generated.h"
 #include "bitboard.h"
 
-void move_generate_movelist_pawn(Bitboard *board, Color to_move, Movelist *movelist);
-void move_generate_movelist_knight(Bitboard *board, Color to_move, Movelist *movelist);
-void move_generate_movelist_king(Bitboard *board, Color to_move, Movelist *movelist);
-void move_generate_movelist_sliding_row(Bitboard *board, Color to_move, Piecetype piece, Movelist *movelist);
-void move_generate_movelist_sliding_col(Bitboard *board, Color to_move, Piecetype piece, Movelist *movelist);
-void move_generate_movelist_sliding_diag_45(Bitboard *board, Color to_move, Piecetype piece, Movelist *movelist);
-void move_generate_movelist_sliding_diag_315(Bitboard *board, Color to_move, Piecetype piece, Movelist *movelist);
-void move_generate_movelist_castle(Bitboard *board, Color to_move, Movelist *movelist);
-void move_generate_movelist_enpassant(Bitboard *board, Color to_move, Movelist *movelist);
+void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist);
+void move_generate_movelist_knight(Bitboard *board, Movelist *movelist);
+void move_generate_movelist_king(Bitboard *board, Movelist *movelist);
+void move_generate_movelist_sliding_row(Bitboard *board, Piecetype piece, Movelist *movelist);
+void move_generate_movelist_sliding_col(Bitboard *board, Piecetype piece, Movelist *movelist);
+void move_generate_movelist_sliding_diag_45(Bitboard *board, Piecetype piece, Movelist *movelist);
+void move_generate_movelist_sliding_diag_315(Bitboard *board, Piecetype piece, Movelist *movelist);
+void move_generate_movelist_castle(Bitboard *board, Movelist *movelist);
+void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist);
 
-void move_generate_movelist(Bitboard *board, Color to_move, Movelist *movelist)
+void move_generate_movelist(Bitboard *board, Movelist *movelist)
 {
 	movelist->num = 0;
 
-	move_generate_movelist_pawn(board, to_move, movelist);
-	move_generate_movelist_knight(board, to_move, movelist);
-	move_generate_movelist_king(board, to_move, movelist);
+	move_generate_movelist_pawn(board, movelist);
+	move_generate_movelist_knight(board, movelist);
+	move_generate_movelist_king(board, movelist);
 
-	move_generate_movelist_sliding_row(board, to_move, ROOK, movelist);
-	move_generate_movelist_sliding_row(board, to_move, QUEEN, movelist);
-	move_generate_movelist_sliding_col(board, to_move, ROOK, movelist);
-	move_generate_movelist_sliding_col(board, to_move, QUEEN, movelist);
+	move_generate_movelist_sliding_row(board, ROOK, movelist);
+	move_generate_movelist_sliding_row(board, QUEEN, movelist);
+	move_generate_movelist_sliding_col(board, ROOK, movelist);
+	move_generate_movelist_sliding_col(board, QUEEN, movelist);
 
-	move_generate_movelist_sliding_diag_45(board, to_move, BISHOP, movelist);
-	move_generate_movelist_sliding_diag_45(board, to_move, QUEEN, movelist);
-	move_generate_movelist_sliding_diag_315(board, to_move, BISHOP, movelist);
-	move_generate_movelist_sliding_diag_315(board, to_move, QUEEN, movelist);
+	move_generate_movelist_sliding_diag_45(board, BISHOP, movelist);
+	move_generate_movelist_sliding_diag_45(board, QUEEN, movelist);
+	move_generate_movelist_sliding_diag_315(board, BISHOP, movelist);
+	move_generate_movelist_sliding_diag_315(board, QUEEN, movelist);
 
-	move_generate_movelist_castle(board, to_move, movelist);
-	move_generate_movelist_enpassant(board, to_move, movelist);
+	move_generate_movelist_castle(board, movelist);
+	move_generate_movelist_enpassant(board, movelist);
 }
 
 int move_verify(Bitboard *board, Move move)
@@ -41,12 +41,13 @@ int move_verify(Bitboard *board, Move move)
 	return 1;
 }
 
-void move_generate_movelist_pawn(Bitboard *board, Color to_move, Movelist *movelist)
+void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)
 {
 }
 
-void move_generate_movelist_knight(Bitboard *board, Color to_move, Movelist *movelist)
+void move_generate_movelist_knight(Bitboard *board, Movelist *movelist)
 {
+	Color to_move = board_to_move(board);
 	uint64_t knights = board->boards[to_move][KNIGHT];
 	uint8_t src = 0;
 
@@ -87,31 +88,31 @@ void move_generate_movelist_knight(Bitboard *board, Color to_move, Movelist *mov
 	}
 }
 
-void move_generate_movelist_king(Bitboard *board, Color to_move, Movelist *movelist)
+void move_generate_movelist_king(Bitboard *board, Movelist *movelist)
 {
 }
 
-void move_generate_movelist_sliding_row(Bitboard *board, Color to_move, Piecetype piece, Movelist *movelist)
+void move_generate_movelist_sliding_row(Bitboard *board, Piecetype piece, Movelist *movelist)
 {
 }
 
-void move_generate_movelist_sliding_col(Bitboard *board, Color to_move, Piecetype piece, Movelist *movelist)
+void move_generate_movelist_sliding_col(Bitboard *board, Piecetype piece, Movelist *movelist)
 {
 }
 
-void move_generate_movelist_sliding_diag_45(Bitboard *board, Color to_move, Piecetype piece, Movelist *movelist)
+void move_generate_movelist_sliding_diag_45(Bitboard *board, Piecetype piece, Movelist *movelist)
 {
 }
 
-void move_generate_movelist_sliding_diag_315(Bitboard *board, Color to_move, Piecetype piece, Movelist *movelist)
+void move_generate_movelist_sliding_diag_315(Bitboard *board, Piecetype piece, Movelist *movelist)
 {
 }
 
-void move_generate_movelist_castle(Bitboard *board, Color to_move, Movelist *movelist)
+void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 {
 }
 
-void move_generate_movelist_enpassant(Bitboard *board, Color to_move, Movelist *movelist)
+void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist)
 {
 }
 
