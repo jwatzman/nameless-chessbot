@@ -188,6 +188,11 @@ void board_doundo_move_common(Bitboard *board, Move move)
 	// TODO: castling, en passant
 }
 
+int board_in_check(Bitboard *board, Color color)
+{
+	return 0;
+}
+
 void board_print(uint64_t boards[2][6])
 {
 	char* separator = "-----------------\n";

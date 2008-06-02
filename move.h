@@ -5,11 +5,10 @@
 #include "types.h"
 #include "bitboard.h"
 
-// generates *psdueomoves* -- call move_verify to check if it's actually valid
+// generates *psdueomoves* -- taking one of these moves could leave the king in check
 void move_generate_movelist(Bitboard *board, Movelist *movelist);
 
-// verifies a pseudomove, returns 1 if it's valid, 0 otherwise
-int move_verify(Bitboard *board, Move move);
+int move_square_is_attacked(Bitboard *board, Color attacker, uint8_t square);
 
 static const uint8_t move_source_index_offset = 0;
 static inline uint8_t move_source_index(Move move)

@@ -36,9 +36,9 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 	move_generate_movelist_enpassant(board, movelist);
 }
 
-int move_verify(Bitboard *board, Move move)
+int move_square_is_attacked(Bitboard *board, Color attacker, uint8_t square)
 {
-	return 1;
+	return 0;
 }
 
 void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)

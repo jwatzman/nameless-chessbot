@@ -36,11 +36,8 @@ int main(int argc, char** argv)
 		for (int i = 0; i < moves.num; i++)
 		{
 			Move move = moves.moves[i];
-			if (move_verify(test, move))
-			{
-				move_srcdest_form(move, srcdest_form);
-				printf("%s ", srcdest_form);
-			}
+			move_srcdest_form(move, srcdest_form);
+			printf("%s ", srcdest_form);
 		}
 		printf("\n");
 
@@ -49,14 +46,11 @@ int main(int argc, char** argv)
 		for (int i = 0; i < moves.num; i++)
 		{
 			Move move = moves.moves[i];
-			if (move_verify(test, move))
+			move_srcdest_form(move, srcdest_form);
+			if (!strcmp(input_move, srcdest_form))
 			{
-				move_srcdest_form(move, srcdest_form);
-				if (!strcmp(input_move, srcdest_form))
-				{
-					board_do_move(test, move);
-					break;
-				}
+				board_do_move(test, move);
+				break;
 			}
 		}
 	}
