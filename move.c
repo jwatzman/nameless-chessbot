@@ -43,6 +43,61 @@ int move_square_is_attacked(Bitboard *board, Color attacker, uint8_t square)
 
 void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)
 {
+	Color to_move = board->to_move;
+	uint64_t pawns = board->boards[to_move][PAWN];
+	uint8_t src = 0;
+
+	while (pawns)
+	{
+		if (pawns & 1ULL)
+		{
+			uint8_t row = board_row_of(src);
+			uint8_t col = board_col_of(src);
+
+			// try to move one space forward
+			if ((to_move == WHITE && row < 6) || (to_move == BLACK && row > 1))
+			{
+				uint8_t dest;
+				if (to_move == WHITE) dest = board_index_of(row + 1, col);
+				else dest = board_index_of(row - 1, col);
+
+				if (!((board->composite_boards[0] | board->composite_boards[1]) & (1ULL << dest)))
+				{
+					Move move = 0;
+					move |= src << move_source_index_offset;
+					move |= dest << move_destination_index_offset;
+					move |= PAWN << move_piecetype_offset;
+					move |= to_move << move_color_offset;
+
+					movelist->moves[movelist->num++] = move;
+				}
+			}
+
+			// try to move two spaces forward
+			if ((to_move == WHITE && row == 1) || (to_move == BLACK && row == 6))
+			{
+				uint8_t dest;
+				if (to_move == WHITE) dest = board_index_of(row + 2, col);
+				else dest = board_index_of(row - 2, col);
+
+				if (!((board->composite_boards[0] | board->composite_boards[1]) & (1ULL << dest)))
+				{
+					Move move = 0;
+					move |= src << move_source_index_offset;
+					move |= dest << move_destination_index_offset;
+					move |= PAWN << move_piecetype_offset;
+					move |= to_move << move_color_offset;
+
+					movelist->moves[movelist->num++] = move;
+				}
+			}
+
+			// TODO: promotions and captures
+		}
+
+		pawns >>= 1;
+		src++;
+	}
 }
 
 void move_generate_movelist_knight(Bitboard *board, Movelist *movelist)
@@ -63,7 +118,7 @@ void move_generate_movelist_knight(Bitboard *board, Movelist *movelist)
 			{
 				if (dests & 1ULL)
 				{
-					uint32_t move = 0;
+					Move move = 0;
 					move |= src << move_source_index_offset;
 					move |= dest << move_destination_index_offset;
 					move |= KNIGHT << move_piecetype_offset;
