@@ -54,7 +54,7 @@ void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)
 			uint8_t col = board_col_of(src);
 
 			// try to move one space forward
-			if ((to_move == WHITE && row < 6) || (to_move == BLACK && row > 1))
+			if ((to_move == WHITE && row < 7) || (to_move == BLACK && row > 0))
 			{
 				uint8_t dest;
 				if (to_move == WHITE) dest = board_index_of(row + 1, col);
@@ -68,7 +68,18 @@ void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)
 					move |= PAWN << move_piecetype_offset;
 					move |= to_move << move_color_offset;
 
-					movelist->moves[movelist->num++] = move;
+					// promote if needed
+					if ((to_move == WHITE && row == 6) || (to_move == BLACK && row == 1))
+					{
+						move |= 1ULL << move_is_promotion_offset;
+
+						movelist->moves[movelist->num++] = (move | (QUEEN << move_promoted_piecetype_offset));
+						movelist->moves[movelist->num++] = (move | (ROOK << move_promoted_piecetype_offset));
+						movelist->moves[movelist->num++] = (move | (BISHOP << move_promoted_piecetype_offset));
+						movelist->moves[movelist->num++] = (move | (KNIGHT << move_promoted_piecetype_offset));
+					}
+					else
+						movelist->moves[movelist->num++] = move;
 				}
 			}
 
@@ -91,7 +102,69 @@ void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)
 				}
 			}
 
-			// TODO: promotions and captures
+			// try to capture left
+			if (((to_move == WHITE && row < 7) || (to_move == BLACK && row > 0)) && col > 0)
+			{
+				uint8_t dest;
+				if (to_move == WHITE) dest = board_index_of(row + 1, col - 1);
+				else dest = board_index_of(row - 1, col - 1);
+
+				if (board->composite_boards[1-to_move] & (1ULL << dest))
+				{
+					Move move = 0;
+					move |= src << move_source_index_offset;
+					move |= dest << move_destination_index_offset;
+					move |= PAWN << move_piecetype_offset;
+					move |= to_move << move_color_offset;
+					move |= 1ULL << move_is_capture_offset;
+					move |= board_piecetype_at_index(board, dest) << move_captured_piecetype_offset;
+
+					// promote if needed
+					if ((to_move == WHITE && row == 6) || (to_move == BLACK && row == 1))
+					{
+						move |= 1ULL << move_is_promotion_offset;
+
+						movelist->moves[movelist->num++] = (move | (QUEEN << move_promoted_piecetype_offset));
+						movelist->moves[movelist->num++] = (move | (ROOK << move_promoted_piecetype_offset));
+						movelist->moves[movelist->num++] = (move | (BISHOP << move_promoted_piecetype_offset));
+						movelist->moves[movelist->num++] = (move | (KNIGHT << move_promoted_piecetype_offset));
+					}
+					else
+						movelist->moves[movelist->num++] = move;
+				}
+			}
+
+			// try to capture right
+			if (((to_move == WHITE && row < 7) || (to_move == BLACK && row > 0)) && col < 7)
+			{
+				uint8_t dest;
+				if (to_move == WHITE) dest = board_index_of(row + 1, col + 1);
+				else dest = board_index_of(row - 1, col + 1);
+
+				if (board->composite_boards[1-to_move] & (1ULL << dest))
+				{
+					Move move = 0;
+					move |= src << move_source_index_offset;
+					move |= dest << move_destination_index_offset;
+					move |= PAWN << move_piecetype_offset;
+					move |= to_move << move_color_offset;
+					move |= 1ULL << move_is_capture_offset;
+					move |= board_piecetype_at_index(board, dest) << move_captured_piecetype_offset;
+
+					// promote if needed
+					if ((to_move == WHITE && row == 6) || (to_move == BLACK && row == 1))
+					{
+						move |= 1ULL << move_is_promotion_offset;
+
+						movelist->moves[movelist->num++] = (move | (QUEEN << move_promoted_piecetype_offset));
+						movelist->moves[movelist->num++] = (move | (ROOK << move_promoted_piecetype_offset));
+						movelist->moves[movelist->num++] = (move | (BISHOP << move_promoted_piecetype_offset));
+						movelist->moves[movelist->num++] = (move | (KNIGHT << move_promoted_piecetype_offset));
+					}
+					else
+						movelist->moves[movelist->num++] = move;
+				}
+			}
 		}
 
 		pawns >>= 1;
@@ -154,7 +227,7 @@ void move_generate_movelist_bishop(Bitboard *board, Movelist *movelist)
 {
 }
 
-void move_generate_movelist_queen(Bitbord *board, Movelist *movelist)
+void move_generate_movelist_queen(Bitboard *board, Movelist *movelist)
 {
 }
 
