@@ -25,8 +25,8 @@ int main(int argc, char** argv)
 	*/
 
 	Movelist moves;
-	char* srcdest_form = malloc(5 * sizeof(char));
-	char* input_move = malloc(5 * sizeof(char));
+	char* srcdest_form = malloc(6 * sizeof(char));
+	char* input_move = malloc(6 * sizeof(char));
 
 	while (1)
 	{
@@ -43,7 +43,7 @@ int main(int argc, char** argv)
 		}
 		printf("\n");
 
-		scanf("%4s", input_move);
+		scanf("%5s", input_move);
 
 		for (int i = 0; i < moves.num; i++)
 		{

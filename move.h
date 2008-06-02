@@ -70,7 +70,7 @@ static inline int move_promoted_piecetype(Move move)
 	return (move >> move_promoted_piecetype_offset) & 0x07;
 }
 
-static inline void move_srcdest_form(Move move, char srcdest_form[5])
+static inline void move_srcdest_form(Move move, char srcdest_form[6])
 {
 	uint8_t src = move_source_index(move);
 	uint8_t dest = move_destination_index(move);
@@ -79,7 +79,21 @@ static inline void move_srcdest_form(Move move, char srcdest_form[5])
 	srcdest_form[1] = board_row_of(src) + '1';
 	srcdest_form[2] = board_col_of(dest) + 'a';
 	srcdest_form[3] = board_row_of(dest) + '1';
-	srcdest_form[4] = 0;
+
+	if (move_is_promotion(move))
+	{
+		switch (move_promoted_piecetype(move))
+		{
+		case QUEEN: srcdest_form[4] = 'q'; break;
+		case ROOK: srcdest_form[4] = 'r'; break;
+		case BISHOP: srcdest_form[4] = 'b'; break;
+		case KNIGHT: srcdest_form[4] = 'n'; break;
+		}
+
+		srcdest_form[5] = 0;
+	}
+	else
+		srcdest_form[4] = 0;
 }
 
 #endif
