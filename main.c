@@ -33,6 +33,8 @@ int main(int argc, char** argv)
 		board_print(test->boards);
 		move_generate_movelist(test, &moves);
 
+		printf("To move: %i\tAvailable moves: %i\n", test->to_move, moves.num);
+
 		for (int i = 0; i < moves.num; i++)
 		{
 			Move move = moves.moves[i];
