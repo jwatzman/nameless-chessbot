@@ -270,7 +270,7 @@ static void move_generate_movelist_rook(Bitboard *board, Movelist *movelist)
 		if (rooks & 1ULL)
 		{
 			uint64_t dests = move_generate_attacks_row(board->full_composite, src);
-			dests |= move_generate_attacks_col(board->full_composite, src);
+			dests |= move_generate_attacks_col(board->full_composite_90, src);
 
 			dests &= ~(board->composite_boards[to_move]);
 			uint8_t dest = 0;
@@ -331,7 +331,10 @@ static uint64_t move_generate_attacks_row(uint64_t composite_board, uint8_t inde
 
 static uint64_t move_generate_attacks_col(uint64_t composite_board, uint8_t index)
 {
-	return 0;
+	uint8_t occupied_col = (composite_board >> (board_col_of(index) << 3)) & 0xFF;
+	uint64_t attacks = col_attacks[occupied_col][board_row_of(index)];
+
+	return attacks << board_col_of(index);
 }
 
 static uint64_t move_generate_attacks_diag45(uint64_t composite_board, uint8_t index)
