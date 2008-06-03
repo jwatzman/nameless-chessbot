@@ -124,12 +124,30 @@ void board_do_move(Bitboard *board, Move move)
 	undo_data |= (board->halfmove_count & 0x3F) << 10;
 	board->undo_ring_buffer[board->undo_index++] = undo_data;
 
+	// halfmove_count is reset on pawn moves or captures
 	if (move_piecetype(move) == PAWN || move_is_capture(move))
 		board->halfmove_count = 0;
 	else
 		board->halfmove_count++;
 
-	// TODO: update castling rights and enpassant index
+	// moving to or from a rook square means you can no longer castle on that side
+	uint8_t src = move_source_index(move);
+	uint8_t dest = move_destination_index(move);
+
+	if (src == 0 || dest == 0)
+		board->castle_status &= ~(1 << 6); // white can no longer castle QS
+	else if (src == 7 || dest == 7)
+		board->castle_status &= ~(1 << 4); // white can no longer castle KS
+	else if (src == 56 || dest == 56)
+		board->castle_status &= ~(1 << 7); // black can no longer castle QS
+	else if (src == 63 || dest == 63)
+		board->castle_status &= ~(1 << 5); // black can no longer castle KS
+
+	// moving your king at all means you can no longer castle on either side
+	if (move_piecetype(move) == KING)
+		board->castle_status &= ~((5 << 4) << move_color(move));
+
+	// TODO: update enpassant index
 
 	board_doundo_move_common(board, move);
 }
