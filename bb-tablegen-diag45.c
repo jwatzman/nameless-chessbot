@@ -51,7 +51,7 @@ int main(int argc, char** argv)
 
 		printf("}");
 		if (position_mask < 255) printf(",");
-		printf("\n");
+		printf(" // 0x%.2x\n", position_mask);
 	}
 
 	printf("};\n");
