@@ -44,6 +44,7 @@ static const uint8_t board_rotation_index_315[64] = {
 
 uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64]);
 void board_doundo_move_common(Bitboard *board, Move move);
+void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, uint8_t loc);
 
 void board_init(Bitboard *board)
 {
@@ -165,45 +166,30 @@ void board_doundo_move_common(Bitboard *board, Move move)
 	Color color = move_color(move);
 
 	// remove piece at source
-	board->boards[color][piece] ^= 1ULL << src;
-	board->composite_boards[color] ^= 1ULL << src;
-	board->boards45[color][piece] ^= 1ULL << board_rotation_index_45[src];
-	board->boards90[color][piece] ^= 1ULL << board_rotation_index_90[src];
-	board->boards315[color][piece] ^= 1ULL << board_rotation_index_315[src];
+	board_toggle_piece(board, piece, color, src);
 
 	// add piece at destination
 	if (!move_is_promotion(move))
-	{
-		board->boards[color][piece] ^= 1ULL << dest;
-		board->composite_boards[color] ^= 1ULL << dest;
-		board->boards45[color][piece] ^= 1ULL << board_rotation_index_45[dest];
-		board->boards90[color][piece] ^= 1ULL << board_rotation_index_90[dest];
-		board->boards315[color][piece] ^= 1ULL << board_rotation_index_315[dest];
-	}
+		board_toggle_piece(board,  piece, color, dest);
 	else
-	{
-		Piecetype promoted_piece = move_promoted_piecetype(move);
-		board->boards[color][promoted_piece] ^= 1ULL << dest;
-		board->composite_boards[color] ^= 1ULL << dest;
-		board->boards45[color][promoted_piece] ^= 1ULL << board_rotation_index_45[dest];
-		board->boards90[color][promoted_piece] ^= 1ULL << board_rotation_index_90[dest];
-		board->boards315[color][promoted_piece] ^= 1ULL << board_rotation_index_315[dest];
-	}
+		board_toggle_piece(board, move_promoted_piecetype(move), color, dest);
 
 	// remove captured piece, if applicable
 	if (move_is_capture(move))
-	{
-		Piecetype captured_piece = move_captured_piecetype(move);
-		board->boards[!color][captured_piece] ^= 1ULL << dest;
-		board->composite_boards[!color] ^= 1ULL << dest;
-		board->boards45[!color][captured_piece] ^= 1ULL << board_rotation_index_45[dest];
-		board->boards90[!color][captured_piece] ^= 1ULL << board_rotation_index_90[dest];
-		board->boards315[!color][captured_piece] ^= 1ULL << board_rotation_index_315[dest];
-	}
+		board_toggle_piece(board, move_captured_piecetype(move), 1 - color, dest);
 
 	board->to_move = (1 - board->to_move);
 
 	// TODO: castling, en passant
+}
+
+void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, uint8_t loc)
+{
+	board->boards[color][piece] ^= 1ULL << loc;
+	board->composite_boards[color] ^= 1ULL << loc;
+	board->boards45[color][piece] ^= 1ULL << board_rotation_index_45[loc];
+	board->boards90[color][piece] ^= 1ULL << board_rotation_index_90[loc];
+	board->boards315[color][piece] ^= 1ULL << board_rotation_index_315[loc];
 }
 
 int board_in_check(Bitboard *board, Color color)
