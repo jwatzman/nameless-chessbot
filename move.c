@@ -13,6 +13,7 @@ static void move_generate_movelist_queen(Bitboard *board, Movelist *movelist);
 static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist);
 static void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist);
 
+// these expect the composite_board to be of the properly rotated variant
 static uint64_t move_generate_attacks_row(uint64_t composite_board, uint8_t index);
 static uint64_t move_generate_attacks_col(uint64_t composite_board, uint8_t index);
 static uint64_t move_generate_attacks_diag45(uint64_t composite_board, uint8_t index);
@@ -260,6 +261,48 @@ static void move_generate_movelist_king(Bitboard *board, Movelist *movelist)
 
 static void move_generate_movelist_rook(Bitboard *board, Movelist *movelist)
 {
+	Color to_move = board->to_move;
+	uint64_t rooks = board->boards[to_move][ROOK];
+	uint64_t full_composite = board->composite_boards[WHITE] | board->composite_boards[BLACK];
+	uint8_t src = 0;
+
+	while (rooks)
+	{
+		if (rooks & 1ULL)
+		{
+			uint64_t dests = move_generate_attacks_row(full_composite, src);
+			dests |= move_generate_attacks_col(full_composite, src);
+
+			dests &= ~(board->composite_boards[to_move]);
+			uint8_t dest = 0;
+
+			while (dests)
+			{
+				if (dests & 1ULL)
+				{
+					Move move = 0;
+					move |= src << move_source_index_offset;
+					move |= dest << move_destination_index_offset;
+					move |= ROOK << move_piecetype_offset;
+					move |= to_move << move_color_offset;
+
+					if (board->composite_boards[1-to_move] & (1ULL << dest))
+					{
+						move |= 1ULL << move_is_capture_offset;
+						move |= board_piecetype_at_index(board, dest) << move_captured_piecetype_offset;
+					}
+
+					movelist->moves[movelist->num++] = move;
+				}
+
+				dest++;
+				dests >>= 1;
+			}
+		}
+
+		rooks >>= 1;
+		src++;
+	}
 }
 
 static void move_generate_movelist_bishop(Bitboard *board, Movelist *movelist)
@@ -270,12 +313,35 @@ static void move_generate_movelist_queen(Bitboard *board, Movelist *movelist)
 {
 }
 
-
 static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 {
 }
 
 static void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist)
 {
+}
+
+static uint64_t move_generate_attacks_row(uint64_t composite_board, uint8_t index)
+{
+	uint8_t shift = board_row_of(index) << 3;
+	uint8_t occupied_row = (composite_board >> shift) & 0xFF;
+	uint64_t attacks = row_attacks[occupied_row][board_col_of(index)];
+
+	return attacks << shift;
+}
+
+static uint64_t move_generate_attacks_col(uint64_t composite_board, uint8_t index)
+{
+	return 0;
+}
+
+static uint64_t move_generate_attacks_diag45(uint64_t composite_board, uint8_t index)
+{
+	return 0;
+}
+
+static uint64_t move_generate_attacks_diag315(uint64_t composite_board, uint8_t index)
+{
+	return 0;
 }
 
