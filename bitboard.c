@@ -42,9 +42,9 @@ static const uint8_t board_rotation_index_315[64] = {
 63, 62, 60, 57, 53, 48, 42, 35
 };
 
-uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64]);
-void board_doundo_move_common(Bitboard *board, Move move);
-void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, uint8_t loc);
+static uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64]);
+static void board_doundo_move_common(Bitboard *board, Move move);
+static void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, uint8_t loc);
 
 void board_init(Bitboard *board)
 {
@@ -98,7 +98,7 @@ uint64_t board_rotate_315(uint64_t board)
 	return board_rotate_internal(board, board_rotation_index_315);
 }
 
-uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64])
+static uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64])
 {
 	uint64_t result = 0;
 	static const uint64_t bit = 1;
@@ -157,7 +157,7 @@ void board_undo_move(Bitboard *board, Move move)
 {
 }
 
-void board_doundo_move_common(Bitboard *board, Move move)
+static void board_doundo_move_common(Bitboard *board, Move move)
 {
 	// extract basic data
 	uint8_t src = move_source_index(move);
@@ -183,7 +183,7 @@ void board_doundo_move_common(Bitboard *board, Move move)
 	// TODO: castling, en passant
 }
 
-void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, uint8_t loc)
+static void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, uint8_t loc)
 {
 	board->boards[color][piece] ^= 1ULL << loc;
 	board->composite_boards[color] ^= 1ULL << loc;

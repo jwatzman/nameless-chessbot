@@ -4,19 +4,19 @@
 #include "move-generated.h"
 #include "bitboard.h"
 
-void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist);
-void move_generate_movelist_knight(Bitboard *board, Movelist *movelist);
-void move_generate_movelist_king(Bitboard *board, Movelist *movelist);
-void move_generate_movelist_rook(Bitboard *board, Movelist *movelist);
-void move_generate_movelist_bishop(Bitboard *board, Movelist *movelist);
-void move_generate_movelist_queen(Bitboard *board, Movelist *movelist);
-void move_generate_movelist_castle(Bitboard *board, Movelist *movelist);
-void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist);
+static void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist);
+static void move_generate_movelist_knight(Bitboard *board, Movelist *movelist);
+static void move_generate_movelist_king(Bitboard *board, Movelist *movelist);
+static void move_generate_movelist_rook(Bitboard *board, Movelist *movelist);
+static void move_generate_movelist_bishop(Bitboard *board, Movelist *movelist);
+static void move_generate_movelist_queen(Bitboard *board, Movelist *movelist);
+static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist);
+static void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist);
 
-uint64_t move_generate_attacks_row(uint64_t composite_board, uint8_t index);
-uint64_t move_generate_attacks_col(uint64_t composite_board, uint8_t index);
-uint64_t move_generate_attacks_diag45(uint64_t composite_board, uint8_t index);
-uint64_t move_generate_attacks_diag315(uint64_t composite_board, uint8_t index);
+static uint64_t move_generate_attacks_row(uint64_t composite_board, uint8_t index);
+static uint64_t move_generate_attacks_col(uint64_t composite_board, uint8_t index);
+static uint64_t move_generate_attacks_diag45(uint64_t composite_board, uint8_t index);
+static uint64_t move_generate_attacks_diag315(uint64_t composite_board, uint8_t index);
 
 
 void move_generate_movelist(Bitboard *board, Movelist *movelist)
@@ -40,7 +40,7 @@ int move_square_is_attacked(Bitboard *board, Color attacker, uint8_t square)
 	return 0;
 }
 
-void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)
+static void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)
 {
 	Color to_move = board->to_move;
 	uint64_t pawns = board->boards[to_move][PAWN];
@@ -172,7 +172,7 @@ void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)
 	}
 }
 
-void move_generate_movelist_knight(Bitboard *board, Movelist *movelist)
+static void move_generate_movelist_knight(Bitboard *board, Movelist *movelist)
 {
 	Color to_move = board->to_move;
 	uint64_t knights = board->boards[to_move][KNIGHT];
@@ -215,7 +215,7 @@ void move_generate_movelist_knight(Bitboard *board, Movelist *movelist)
 	}
 }
 
-void move_generate_movelist_king(Bitboard *board, Movelist *movelist)
+static void move_generate_movelist_king(Bitboard *board, Movelist *movelist)
 {
 	Color to_move = board->to_move;
 	uint64_t kings = board->boards[to_move][KING];
@@ -258,24 +258,24 @@ void move_generate_movelist_king(Bitboard *board, Movelist *movelist)
 	}
 }
 
-void move_generate_movelist_rook(Bitboard *board, Movelist *movelist)
+static void move_generate_movelist_rook(Bitboard *board, Movelist *movelist)
 {
 }
 
-void move_generate_movelist_bishop(Bitboard *board, Movelist *movelist)
+static void move_generate_movelist_bishop(Bitboard *board, Movelist *movelist)
 {
 }
 
-void move_generate_movelist_queen(Bitboard *board, Movelist *movelist)
+static void move_generate_movelist_queen(Bitboard *board, Movelist *movelist)
 {
 }
 
 
-void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
+static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 {
 }
 
-void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist)
+static void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist)
 {
 }
 
