@@ -217,6 +217,45 @@ void move_generate_movelist_knight(Bitboard *board, Movelist *movelist)
 
 void move_generate_movelist_king(Bitboard *board, Movelist *movelist)
 {
+	Color to_move = board->to_move;
+	uint64_t kings = board->boards[to_move][KING];
+	uint8_t src = 0;
+
+	while (kings)
+	{
+		if (kings & 1ULL)
+		{
+			uint64_t dests = king_attacks[src];
+			dests &= ~(board->composite_boards[to_move]);
+			uint8_t dest = 0;
+
+			while (dests)
+			{
+				if (dests & 1ULL)
+				{
+					Move move = 0;
+					move |= src << move_source_index_offset;
+					move |= dest << move_destination_index_offset;
+					move |= KING << move_piecetype_offset;
+					move |= to_move << move_color_offset;
+
+					if (board->composite_boards[1-to_move] & (1ULL << dest))
+					{
+						move |= 1ULL << move_is_capture_offset;
+						move |= board_piecetype_at_index(board, dest) << move_captured_piecetype_offset;
+					}
+
+					movelist->moves[movelist->num++] = move;
+				}
+
+				dest++;
+				dests >>= 1;
+			}
+		}
+
+		kings >>= 1;
+		src++;
+	}
 }
 
 void move_generate_movelist_rook(Bitboard *board, Movelist *movelist)
