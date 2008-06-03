@@ -65,16 +65,10 @@ void board_init(Bitboard *board)
 	board->composite_boards[WHITE] = 0x000000000000FFFF;
 	board->composite_boards[BLACK] = 0xFFFF000000000000;
 
-	for (int color = 0; color <= 1; color++)
-	{
-		for (int piece = 0; piece <= 5; piece++)
-		{
-			uint64_t to_be_rotated = board->boards[color][piece];
-			board->boards90[color][piece] = board_rotate_90(to_be_rotated);
-			board->boards45[color][piece] = board_rotate_45(to_be_rotated);
-			board->boards315[color][piece] = board_rotate_315(to_be_rotated);
-		}
-	}
+	board->full_composite = board->composite_boards[WHITE] | board->composite_boards[BLACK];
+	board->full_composite_45 = board_rotate_45(board->full_composite);
+	board->full_composite_90 = board_rotate_90(board->full_composite);
+	board->full_composite_315 = board_rotate_315(board->full_composite);
 
 	board->castle_status = 0xF0; // both sides can castle, but have not yet
 	board->enpassant_index = 0;
@@ -187,9 +181,10 @@ static void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, ui
 {
 	board->boards[color][piece] ^= 1ULL << loc;
 	board->composite_boards[color] ^= 1ULL << loc;
-	board->boards45[color][piece] ^= 1ULL << board_rotation_index_45[loc];
-	board->boards90[color][piece] ^= 1ULL << board_rotation_index_90[loc];
-	board->boards315[color][piece] ^= 1ULL << board_rotation_index_315[loc];
+	board->full_composite ^= 1ULL << loc;
+	board->full_composite_45 ^= 1ULL << board_rotation_index_45[loc];
+	board->full_composite_90 ^= 1ULL << board_rotation_index_90[loc];
+	board->full_composite_315 ^= 1ULL << board_rotation_index_315[loc];
 }
 
 int board_in_check(Bitboard *board, Color color)

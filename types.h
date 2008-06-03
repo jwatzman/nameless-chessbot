@@ -7,11 +7,12 @@ typedef enum { PAWN=0, BISHOP, KNIGHT, ROOK, QUEEN, KING } Piecetype;
 typedef struct
 {
 	uint64_t boards[2][6];
-	uint64_t boards45[2][6];
-	uint64_t boards90[2][6];
-	uint64_t boards315[2][6];
 
 	uint64_t composite_boards[2];
+	uint64_t full_composite;
+	uint64_t full_composite_45;
+	uint64_t full_composite_90;
+	uint64_t full_composite_315;
 
 	// from LSB to MSB:
 	// white castled KS, black castled KS, white castled QS, black castled QS,

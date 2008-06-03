@@ -263,15 +263,14 @@ static void move_generate_movelist_rook(Bitboard *board, Movelist *movelist)
 {
 	Color to_move = board->to_move;
 	uint64_t rooks = board->boards[to_move][ROOK];
-	uint64_t full_composite = board->composite_boards[WHITE] | board->composite_boards[BLACK];
 	uint8_t src = 0;
 
 	while (rooks)
 	{
 		if (rooks & 1ULL)
 		{
-			uint64_t dests = move_generate_attacks_row(full_composite, src);
-			dests |= move_generate_attacks_col(full_composite, src);
+			uint64_t dests = move_generate_attacks_row(board->full_composite, src);
+			dests |= move_generate_attacks_col(board->full_composite, src);
 
 			dests &= ~(board->composite_boards[to_move]);
 			uint8_t dest = 0;
