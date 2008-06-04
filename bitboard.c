@@ -143,7 +143,14 @@ void board_do_move(Bitboard *board, Move move)
 	if (move_is_castle(move) || move_piecetype(move) == KING)
 		board->castle_status &= ~((5 << 4) << move_color(move));
 
-	// TODO: update enpassant index
+	// if src and dest are 16 or -16 units apart (two rows) on a pawn move,
+	// update the enpassant index with the destination square
+	// if this didn't happen, clear the enpassant index
+	int delta = src - dest;
+	if (move_piecetype(move) == PAWN && (delta == 16 || delta == -16))
+		board->enpassant_index = dest;
+	else
+		board->enpassant_index = 0;
 
 	board_doundo_move_common(board, move);
 }
@@ -198,9 +205,15 @@ static void board_doundo_move_common(Bitboard *board, Move move)
 		}
 	}
 
-	board->to_move = (1 - board->to_move);
+	if (move_is_enpassant(move))
+	{
+		if (color == WHITE) // the captured pawn is one row behind
+			board_toggle_piece(board, PAWN, BLACK, dest - 8);
+		else // the captured pawn is one row up
+			board_toggle_piece(board, PAWN, WHITE, dest + 8);
+	}
 
-	// TODO: en passant
+	board->to_move = (1 - board->to_move);
 }
 
 static void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, uint8_t loc)
