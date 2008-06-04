@@ -150,7 +150,8 @@ void board_do_move(Bitboard *board, Move move)
 
 void board_undo_move(Bitboard *board, Move move)
 {
-	uint16_t undo_data = board->undo_ring_buffer[board->undo_index--];
+	// restore from undo ring buffer
+	uint16_t undo_data = board->undo_ring_buffer[--(board->undo_index)];
 	board->enpassant_index = undo_data & 0x3F;
 	board->castle_status &= 0x0F;
 	board->castle_status |= ((undo_data >> 6) & 0x0F) << 4;

@@ -25,6 +25,7 @@ int main(int argc, char** argv)
 	*/
 
 	Movelist moves;
+	Move last_move = 0;
 	char* srcdest_form = malloc(6 * sizeof(char));
 	char* input_move = malloc(6 * sizeof(char));
 
@@ -33,6 +34,7 @@ int main(int argc, char** argv)
 		board_print(test->boards);
 		move_generate_movelist(test, &moves);
 
+		printf("Enpassant index: %x\tHalfmove count: %x\tCastle status: %x\n", test->enpassant_index, test->halfmove_count, test->castle_status);
 		printf("To move: %i\tAvailable moves: %i\n", test->to_move, moves.num);
 
 		for (int i = 0; i < moves.num; i++)
@@ -44,6 +46,8 @@ int main(int argc, char** argv)
 		printf("\n");
 
 		scanf("%5s", input_move);
+		if (!strcmp(input_move, "undo"))
+			board_undo_move(test, last_move);
 
 		for (int i = 0; i < moves.num; i++)
 		{
@@ -51,7 +55,8 @@ int main(int argc, char** argv)
 			move_srcdest_form(move, srcdest_form);
 			if (!strcmp(input_move, srcdest_form))
 			{
-				board_do_move(test, move);
+				last_move = move;
+				board_do_move(test, last_move);
 				break;
 			}
 		}
