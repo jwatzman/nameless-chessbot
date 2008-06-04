@@ -139,7 +139,8 @@ void board_do_move(Bitboard *board, Move move)
 		board->castle_status &= ~(1 << 5); // black can no longer castle KS
 
 	// moving your king at all means you can no longer castle on either side
-	if (move_piecetype(move) == KING)
+	// castling also means you can no longer castle (again) on either side
+	if (move_is_castle(move) || move_piecetype(move) == KING)
 		board->castle_status &= ~((5 << 4) << move_color(move));
 
 	// TODO: update enpassant index
@@ -149,6 +150,13 @@ void board_do_move(Bitboard *board, Move move)
 
 void board_undo_move(Bitboard *board, Move move)
 {
+	uint16_t undo_data = board->undo_ring_buffer[board->undo_index--];
+	board->enpassant_index = undo_data & 0x3F;
+	board->castle_status &= 0x0F;
+	board->castle_status |= ((undo_data >> 6) & 0x0F) << 4;
+	board->halfmove_count = (undo_data >> 10) & 0x3F;
+
+	board_doundo_move_common(board, move);
 }
 
 static void board_doundo_move_common(Bitboard *board, Move move)
@@ -172,9 +180,26 @@ static void board_doundo_move_common(Bitboard *board, Move move)
 	if (move_is_capture(move))
 		board_toggle_piece(board, move_captured_piecetype(move), 1 - color, dest);
 
+	// put the rook in the proper place for a castle and set the right bits in the castle info
+	if (move_is_castle(move))
+	{
+		if (board_col_of(dest) == 2) // queenside castle
+		{
+			board_toggle_piece(board, ROOK, color, dest - 2);
+			board_toggle_piece(board, ROOK, color, dest + 1);
+			board->castle_status ^= (4 << color);
+		}
+		else // kingside castle
+		{
+			board_toggle_piece(board, ROOK, color, dest + 1);
+			board_toggle_piece(board, ROOK, color, dest - 1);
+			board->castle_status ^= (1 << color);
+		}
+	}
+
 	board->to_move = (1 - board->to_move);
 
-	// TODO: castling, en passant
+	// TODO: en passant
 }
 
 static void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, uint8_t loc)
