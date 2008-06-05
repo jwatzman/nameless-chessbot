@@ -8,7 +8,7 @@ uint64_t up_left_attack(int position_mask, int pos)
 
 	for (int cur_pos = pos + 1; cur_pos < 8; cur_pos++)
 	{
-		result |= (1ULL << board_index_of(cur_pos, 7 - cur_pos));
+		result |= (1ULL << board_index_of(7 - cur_pos, cur_pos));
 
 		if (position_mask & (1 << cur_pos))
 			break;
@@ -23,7 +23,7 @@ uint64_t down_right_attack(int position_mask, int pos)
 
 	for (int cur_pos = pos - 1; cur_pos >= 0; cur_pos--)
 	{
-		result |= (1ULL << board_index_of(cur_pos, 7 - cur_pos));
+		result |= (1ULL << board_index_of(7 - cur_pos, cur_pos));
 
 		if (position_mask & (1 << cur_pos))
 			break;
@@ -40,13 +40,13 @@ int main(int argc, char** argv)
 	{
 		printf("\t{");
 
-		for (int pos = 7; pos >= 0; pos--)
+		for (int pos = 0; pos <= 7; pos++)
 		{
 			uint64_t attack_mask = up_left_attack(position_mask, pos);
 			attack_mask |= down_right_attack(position_mask, pos);
 
 			printf("0x%.16llx", attack_mask);
-			if (pos > 0) printf(", ");
+			if (pos < 7) printf(", ");
 		}
 
 		printf("}");
