@@ -421,9 +421,35 @@ static uint64_t move_generate_attacks_col(uint64_t composite_board, uint8_t inde
 	return attacks << board_col_of(index);
 }
 
+// for moving minor diagonals back into place when they are actually located on the major
+uint8_t result_shift_left[] = { 0, 0, 0, 0, 0, 0, 0, 0, 8, 16, 24, 32, 40, 48, 56 };
+uint8_t result_shift_right[] = { 56, 48, 40, 32, 24, 16, 8, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+// for the shorter diagonals, we move them up or down the right number of columns so that
+// when we take out the 8 LSB corresponding to the "full" diagonal, there is some garbage.
+// this will fall off the end of the board when we shift back
 static uint64_t move_generate_attacks_diag45(uint64_t composite_board, uint8_t index)
 {
-	return 0;
+	static const uint8_t diagonal_numbers[] = {
+    	0,  1,  2,  3,  4,  5,  6,  7,
+    	1,  2,  3,  4,  5,  6,  7,  8,
+    	2,  3,  4,  5,  6,  7,  8,  9,
+    	3,  4,  5,  6,  7,  8,  9, 10,
+    	4,  5,  6,  7,  8,  9, 10, 11,
+    	5,  6,  7,  8,  9, 10, 11, 12,
+    	6,  7,  8,  9, 10, 11, 12, 13,
+    	7,  8,  9, 10, 11, 12, 13, 14
+	};
+
+	static const uint8_t diagonal_number_shift[] =
+		{ 0, 1, 3, 6, 10, 15, 21, 28, 35, 41, 46, 60, 53, 55, 56 };
+
+
+	uint8_t diagonal_number = diagonal_numbers[index];
+	uint8_t occupied_diag = (composite_board >> diagonal_number_shift[diagonal_number]) & 0xFF;
+	uint64_t attacks = diag_attacks_45[occupied_diag][board_col_of(index)];
+
+	return (attacks >> result_shift_right[diagonal_number]) << result_shift_left[diagonal_number];
 }
 
 static uint64_t move_generate_attacks_diag315(uint64_t composite_board, uint8_t index)
