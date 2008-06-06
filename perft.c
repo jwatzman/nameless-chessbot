@@ -19,6 +19,7 @@ int main(int argc, char** argv)
 	perft(max_depth);
 
 	printf("%lu nodes\n", nodes);
+	free(board);
 	return 0;
 }
 
