@@ -35,7 +35,7 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 	move_generate_movelist_queen(board, movelist);
 
 	move_generate_movelist_castle(board, movelist);
-	move_generate_movelist_enpassant(board, movelist);
+//	move_generate_movelist_enpassant(board, movelist);
 }
 
 int move_square_is_attacked(Bitboard *board, Color attacker, uint8_t square)
@@ -409,6 +409,32 @@ static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 
 static void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist)
 {
+	uint8_t ep_index = board->enpassant_index;
+	Color color = board->to_move;
+	if (ep_index)
+	{
+		if (board_row_of(ep_index) > 0 && (board->boards[color][PAWN] & (1ULL << (ep_index - 1))))
+		{
+			Move move = 0;
+			move |= (ep_index - 1) << move_source_index_offset;
+			move |= (color == WHITE ? ep_index + 8 : ep_index - 8) << move_destination_index_offset;
+			move |= PAWN << move_piecetype_offset;
+			move |= color << move_color_offset;
+			move |= 1 << move_is_enpassant_offset;
+			movelist->moves[movelist->num++] = move;
+		}
+
+		if (board_row_of(ep_index) < 7 && (board->boards[color][PAWN] & (1ULL << (ep_index + 1))))
+		{
+			Move move = 0;
+			move |= (ep_index + 1) << move_source_index_offset;
+			move |= (color == WHITE ? ep_index + 8 : ep_index - 8) << move_destination_index_offset;
+			move |= PAWN << move_piecetype_offset;
+			move |= color << move_color_offset;
+			move |= 1 << move_is_enpassant_offset;
+			movelist->moves[movelist->num++] = move;
+		}
+	}
 }
 
 static uint64_t move_generate_attacks_row(uint64_t composite_board, uint8_t index)
