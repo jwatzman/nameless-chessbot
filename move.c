@@ -405,6 +405,95 @@ static void move_generate_movelist_queen(Bitboard *board, Movelist *movelist)
 
 static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 {
+	// squares that must be clear for a castle: (along with the king not being in check)
+	// W QS: empty 1 2 3, not attacked 2 3
+	// W KS: empty 5 6, not attacked 5 6
+	// B QS: empty 57 58 59, not attacked 58 59
+	// B KS: empty 61 62, not attacked 61 62
+
+	Color color = board->to_move;
+	if (board_in_check(board, color))
+		return;
+
+	// white queenside
+	if ((color == WHITE) && (board->castle_status & (1 << 6)))
+	{
+		uint64_t clear = (1ULL << 1) | (1ULL << 2) | (1ULL << 3);
+		if (!(board->full_composite & clear))
+		{
+			if (!move_square_is_attacked(board, 1-color, 2)
+				&& !move_square_is_attacked(board, 1-color, 3))
+			{
+				Move move = 0;
+				move |= 4 << move_source_index_offset;
+				move |= 2 << move_destination_index_offset;
+				move |= KING << move_piecetype_offset;
+				move |= color << move_color_offset;
+				move |= 1 << move_is_castle_offset;
+				movelist->moves[movelist->num++] = move;
+			}
+		}
+	}
+
+	// white kingside
+	if ((color == WHITE) && (board->castle_status & (1 << 4)))
+	{
+		uint64_t clear = (1ULL << 5) | (1ULL << 6);
+		if (!(board->full_composite & clear))
+		{
+			if (!move_square_is_attacked(board, 1-color, 5)
+				&& !move_square_is_attacked(board, 1-color, 6))
+			{
+				Move move = 0;
+				move |= 4 << move_source_index_offset;
+				move |= 6 << move_destination_index_offset;
+				move |= KING << move_piecetype_offset;
+				move |= color << move_color_offset;
+				move |= 1 << move_is_castle_offset;
+				movelist->moves[movelist->num++] = move;
+			}
+		}
+	}
+
+	// black queenside
+	if ((color == BLACK) && (board->castle_status & (1 << 7)))
+	{
+		uint64_t clear = (1ULL << 57) | (1ULL << 58) | (1ULL << 59);
+		if (!(board->full_composite & clear))
+		{
+			if (!move_square_is_attacked(board, 1-color, 58)
+				&& !move_square_is_attacked(board, 1-color, 59))
+			{
+				Move move = 0;
+				move |= 60 << move_source_index_offset;
+				move |= 58 << move_destination_index_offset;
+				move |= KING << move_piecetype_offset;
+				move |= color << move_color_offset;
+				move |= 1 << move_is_castle_offset;
+				movelist->moves[movelist->num++] = move;
+			}
+		}
+	}
+
+	// black kingside
+	if ((color == BLACK) && (board->castle_status & (1 << 5)))
+	{
+		uint64_t clear = (1ULL << 61) | (1ULL << 62);
+		if (!(board->full_composite & clear))
+		{
+			if (!move_square_is_attacked(board, 1-color, 61)
+				&& !move_square_is_attacked(board, 1-color, 62))
+			{
+				Move move = 0;
+				move |= 60 << move_source_index_offset;
+				move |= 62 << move_destination_index_offset;
+				move |= KING << move_piecetype_offset;
+				move |= color << move_color_offset;
+				move |= 1 << move_is_castle_offset;
+				movelist->moves[movelist->num++] = move;
+			}
+		}
+	}
 }
 
 static void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist)
