@@ -112,7 +112,7 @@ static void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)
 			if (to_move == WHITE) dest = board_index_of(row + 1, col);
 			else dest = board_index_of(row - 1, col);
 
-			if (!((board->composite_boards[0] | board->composite_boards[1]) & (1ULL << dest)))
+			if (!(board->full_composite & (1ULL << dest)))
 			{
 				Move move = 0;
 				move |= src << move_source_index_offset;
@@ -132,27 +132,27 @@ static void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)
 				}
 				else
 					movelist->moves[movelist->num++] = move;
+
+				// try to move two spaces forward
+				if ((to_move == WHITE && row == 1) || (to_move == BLACK && row == 6))
+				{
+					if (to_move == WHITE) dest = board_index_of(row + 2, col);
+					else dest = board_index_of(row - 2, col);
+		
+					if (!(board->full_composite & (1ULL << dest)))
+					{
+						move = 0;
+						move |= src << move_source_index_offset;
+						move |= dest << move_destination_index_offset;
+						move |= PAWN << move_piecetype_offset;
+						move |= to_move << move_color_offset;
+		
+						movelist->moves[movelist->num++] = move;
+					}
+				}
 			}
 		}
 
-		// try to move two spaces forward
-		if ((to_move == WHITE && row == 1) || (to_move == BLACK && row == 6))
-		{
-			uint8_t dest;
-			if (to_move == WHITE) dest = board_index_of(row + 2, col);
-			else dest = board_index_of(row - 2, col);
-
-			if (!((board->composite_boards[0] | board->composite_boards[1]) & (1ULL << dest)))
-			{
-				Move move = 0;
-				move |= src << move_source_index_offset;
-				move |= dest << move_destination_index_offset;
-				move |= PAWN << move_piecetype_offset;
-				move |= to_move << move_color_offset;
-
-				movelist->moves[movelist->num++] = move;
-			}
-		}
 
 		// try to capture left
 		if (((to_move == WHITE && row < 7) || (to_move == BLACK && row > 0)) && col > 0)
