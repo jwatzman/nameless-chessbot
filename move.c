@@ -449,7 +449,7 @@ static uint64_t move_generate_attacks_diag45(uint64_t composite_board, uint8_t i
 	};
 
 	static const uint8_t diagonal_number_shift[] =
-		{ 0, 1, 3, 6, 10, 15, 21, 28, 35, 41, 46, 60, 53, 55, 56 };
+		{ 0, 1, 3, 6, 10, 15, 21, 28, 35, 41, 46, 50, 53, 55, 56 };
 
 
 	uint8_t diagonal_number = diagonal_numbers[index];
