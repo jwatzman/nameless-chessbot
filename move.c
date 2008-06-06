@@ -35,7 +35,7 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 	move_generate_movelist_queen(board, movelist);
 
 	move_generate_movelist_castle(board, movelist);
-//	move_generate_movelist_enpassant(board, movelist);
+	move_generate_movelist_enpassant(board, movelist);
 }
 
 int move_square_is_attacked(Bitboard *board, Color attacker, uint8_t square)
@@ -413,7 +413,7 @@ static void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist
 	Color color = board->to_move;
 	if (ep_index)
 	{
-		if (board_row_of(ep_index) > 0 && (board->boards[color][PAWN] & (1ULL << (ep_index - 1))))
+		if (board_col_of(ep_index) > 0 && (board->boards[color][PAWN] & (1ULL << (ep_index - 1))))
 		{
 			Move move = 0;
 			move |= (ep_index - 1) << move_source_index_offset;
@@ -424,7 +424,7 @@ static void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist
 			movelist->moves[movelist->num++] = move;
 		}
 
-		if (board_row_of(ep_index) < 7 && (board->boards[color][PAWN] & (1ULL << (ep_index + 1))))
+		if (board_col_of(ep_index) < 7 && (board->boards[color][PAWN] & (1ULL << (ep_index + 1))))
 		{
 			Move move = 0;
 			move |= (ep_index + 1) << move_source_index_offset;
