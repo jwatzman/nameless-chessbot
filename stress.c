@@ -26,6 +26,9 @@ int main(int argc, char** argv)
 
 		board_do_move(stress, m);
 
+		if (board_in_check(stress, 1-stress->to_move))
+			board_undo_move(stress, move_buffer[--cur_move]);
+
 		if (cur_move == max_moves)
 			while (cur_move)
 				board_undo_move(stress, move_buffer[--cur_move]);

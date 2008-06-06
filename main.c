@@ -57,6 +57,11 @@ int main(int argc, char** argv)
 			{
 				last_move = move;
 				board_do_move(test, last_move);
+				if (board_in_check(test, 1-test->to_move))
+				{
+					printf("Can't leave king in check\n");
+					board_undo_move(test, last_move);
+				}
 				break;
 			}
 		}

@@ -40,6 +40,35 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 
 int move_square_is_attacked(Bitboard *board, Color attacker, uint8_t square)
 {
+	if (knight_attacks[square] & board->boards[attacker][KNIGHT])
+		return 1;
+
+	uint64_t row_attacks = move_generate_attacks_row(board->full_composite, square);
+	if (row_attacks & board->boards[attacker][ROOK])
+		return 1;
+	if (row_attacks & board->boards[attacker][QUEEN])
+		return 1;
+
+	uint64_t col_attacks = move_generate_attacks_col(board->full_composite_90, square);
+	if (col_attacks & board->boards[attacker][ROOK])
+		return 1;
+	if (col_attacks & board->boards[attacker][QUEEN])
+		return 1;
+
+	uint64_t diag45_attacks = move_generate_attacks_diag45(board->full_composite_45, square);
+	if (diag45_attacks & board->boards[attacker][BISHOP])
+		return 1;
+	if (diag45_attacks & board->boards[attacker][QUEEN])
+		return 1;
+
+	uint64_t diag315_attacks = move_generate_attacks_diag315(board->full_composite_315, square);
+	if (diag315_attacks & board->boards[attacker][BISHOP])
+		return 1;
+	if (diag315_attacks & board->boards[attacker][QUEEN])
+		return 1;
+
+	// TODO; check pawns
+
 	return 0;
 }
 

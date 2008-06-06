@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -228,7 +229,7 @@ static void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, ui
 
 int board_in_check(Bitboard *board, Color color)
 {
-	return 0;
+	return move_square_is_attacked(board, 1-color, ffsll(board->boards[color][KING]) - 1);
 }
 
 void board_print(uint64_t boards[2][6])
