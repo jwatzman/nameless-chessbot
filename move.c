@@ -418,14 +418,14 @@ uint8_t result_shift_right[] = { 56, 48, 40, 32, 24, 16, 8, 0, 0, 0, 0, 0, 0, 0,
 static uint64_t move_generate_attacks_diag45(uint64_t composite_board, uint8_t index)
 {
 	static const uint8_t diagonal_numbers[] = {
-    	0,  1,  2,  3,  4,  5,  6,  7,
-    	1,  2,  3,  4,  5,  6,  7,  8,
-    	2,  3,  4,  5,  6,  7,  8,  9,
-    	3,  4,  5,  6,  7,  8,  9, 10,
-    	4,  5,  6,  7,  8,  9, 10, 11,
-    	5,  6,  7,  8,  9, 10, 11, 12,
-    	6,  7,  8,  9, 10, 11, 12, 13,
-    	7,  8,  9, 10, 11, 12, 13, 14
+		0,  1,  2,  3,  4,  5,  6,  7,
+		1,  2,  3,  4,  5,  6,  7,  8,
+		2,  3,  4,  5,  6,  7,  8,  9,
+		3,  4,  5,  6,  7,  8,  9, 10,
+		4,  5,  6,  7,  8,  9, 10, 11,
+		5,  6,  7,  8,  9, 10, 11, 12,
+		6,  7,  8,  9, 10, 11, 12, 13,
+		7,  8,  9, 10, 11, 12, 13, 14
 	};
 
 	static const uint8_t diagonal_number_shift[] =
@@ -439,8 +439,37 @@ static uint64_t move_generate_attacks_diag45(uint64_t composite_board, uint8_t i
 	return (attacks >> result_shift_right[diagonal_number]) << result_shift_left[diagonal_number];
 }
 
+// like 45, but we move the lower diagonals to align with the MSB and the higher ones
+// to align with the LSB
+// (this makes the shifting a bit less clean than 45)
 static uint64_t move_generate_attacks_diag315(uint64_t composite_board, uint8_t index)
 {
-	return 0;
+	static const uint8_t diagonal_numbers[] = {
+	7,  6,  5,  4,  3,  2,  1,  0,
+	8,  7,  6,  5,  4,  3,  2,  1,
+	9,  8,  7,  6,  5,  4,  3,  2,
+	10,  9,  8,  7,  6,  5,  4,  3,
+	11, 10,  9,  8,  7,  6,  5,  4,
+	12, 11, 10,  9,  8,  7,  6,  5,
+	13, 12, 11, 10,  9,  8,  7,  6,
+	14, 13, 12, 11, 10,  9,  8,  7
+	};
+
+	static const uint8_t diagonal_number_shift_left[] =
+		{ 7, 5, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	static const uint8_t diagonal_number_shift_right[] =
+		{ 0, 0, 0, 2, 7, 13, 20, 28, 36, 43, 49, 54, 58, 61, 63 };
+
+	
+	uint8_t diagonal_number = diagonal_numbers[index];
+	uint8_t occupied_diag =
+		((composite_board >> diagonal_number_shift_right[diagonal_number])
+			<< diagonal_number_shift_left[diagonal_number])
+			& 0xFF;
+	uint64_t attacks = diag_attacks_315[occupied_diag][board_col_of(index)];
+
+	return (attacks >> result_shift_right[diagonal_number]) << result_shift_left[diagonal_number];
+
 }
 
