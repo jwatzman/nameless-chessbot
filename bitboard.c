@@ -89,7 +89,7 @@ void board_init(Bitboard *board)
 
 static void board_init_zobrist(Bitboard *board)
 {
-	srandom(time(0));
+	srand(time(0));
 	board->zobrist = 0;
 
 	for (int i = 0; i < 2; i++)
