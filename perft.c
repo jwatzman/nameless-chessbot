@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 
 	perft(max_depth);
 
-	printf("%lu nodes\n", nodes);
+	printf("zobrist %.16llx\n%lu nodes\n", board->zobrist, nodes);
 	free(board);
 	return 0;
 }

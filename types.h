@@ -37,6 +37,13 @@ typedef struct
 	// old halfmove_count [max value 50] (6 bits)
 	uint8_t undo_index;
 	uint16_t undo_ring_buffer[256];
+
+	uint64_t zobrist;
+	uint64_t zobrist_pos[2][6][64];
+	uint64_t zobrist_castle[256];
+	uint64_t zobrist_enpassant[64];
+	uint64_t zobrist_halfmove[64];
+	uint64_t zobrist_black;
 }
 Bitboard;
 

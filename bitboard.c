@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 #include <stdint.h>
 #include "bitboard.h"
 #include "move.h"
@@ -43,9 +44,15 @@ static const uint8_t board_rotation_index_315[64] = {
 63, 62, 60, 57, 53, 48, 42, 35
 };
 
+static void board_init_zobrist(Bitboard *board);
 static uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64]);
 static void board_doundo_move_common(Bitboard *board, Move move);
 static void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, uint8_t loc);
+
+static inline uint64_t board_rand64()
+{
+	return (((uint64_t)rand()) << 32) | ((uint64_t)rand());
+}
 
 void board_init(Bitboard *board)
 {
@@ -76,6 +83,30 @@ void board_init(Bitboard *board)
 	board->halfmove_count = 0;
 	board->to_move = WHITE;
 	board->undo_index = 0;
+
+	board_init_zobrist(board);
+}
+
+static void board_init_zobrist(Bitboard *board)
+{
+	srandom(time(0));
+	board->zobrist = 0;
+
+	for (int i = 0; i < 2; i++)
+		for (int j = 0; j < 6; j++)
+			for (int k = 0; k < 64; k++)
+				board->zobrist_pos[i][j][k] = board_rand64();
+
+	for (int i = 0; i < 256; i++)
+		board->zobrist_castle[i] = board_rand64();
+
+	for (int i = 0; i < 64; i++)
+	{
+		board->zobrist_enpassant[i] = board_rand64();
+		board->zobrist_halfmove[i] = board_rand64();
+	}
+
+	board->zobrist_black = board_rand64();
 }
 
 uint64_t board_rotate_90(uint64_t board)
@@ -121,14 +152,18 @@ void board_do_move(Bitboard *board, Move move)
 	board->undo_ring_buffer[board->undo_index++] = undo_data;
 
 	// halfmove_count is reset on pawn moves or captures
+	board->zobrist ^= board->zobrist_halfmove[board->halfmove_count];
 	if (move_piecetype(move) == PAWN || move_is_capture(move))
 		board->halfmove_count = 0;
 	else
 		board->halfmove_count++;
+	board->zobrist ^= board->zobrist_halfmove[board->halfmove_count];
 
 	// moving to or from a rook square means you can no longer castle on that side
 	uint8_t src = move_source_index(move);
 	uint8_t dest = move_destination_index(move);
+
+	board->zobrist ^= board->zobrist_castle[board->castle_status];
 
 	if (src == 0 || dest == 0)
 		board->castle_status &= ~(1 << 6); // white can no longer castle QS
@@ -144,26 +179,38 @@ void board_do_move(Bitboard *board, Move move)
 	if (move_is_castle(move) || move_piecetype(move) == KING)
 		board->castle_status &= ~((5 << 4) << move_color(move));
 
+	board->zobrist ^= board->zobrist_castle[board->castle_status];
+
 	// if src and dest are 16 or -16 units apart (two rows) on a pawn move,
 	// update the enpassant index with the destination square
 	// if this didn't happen, clear the enpassant index
+	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
 	int delta = src - dest;
 	if (move_piecetype(move) == PAWN && (delta == 16 || delta == -16))
 		board->enpassant_index = dest;
 	else
 		board->enpassant_index = 0;
+	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
 
 	board_doundo_move_common(board, move);
 }
 
 void board_undo_move(Bitboard *board, Move move)
 {
+	board->zobrist ^= board->zobrist_halfmove[board->halfmove_count];
+	board->zobrist ^= board->zobrist_castle[board->castle_status];
+	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
+
 	// restore from undo ring buffer
 	uint16_t undo_data = board->undo_ring_buffer[--(board->undo_index)];
 	board->enpassant_index = undo_data & 0x3F;
 	board->castle_status &= 0x0F;
 	board->castle_status |= ((undo_data >> 6) & 0x0F) << 4;
 	board->halfmove_count = (undo_data >> 10) & 0x3F;
+
+	board->zobrist ^= board->zobrist_halfmove[board->halfmove_count];
+	board->zobrist ^= board->zobrist_castle[board->castle_status];
+	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
 
 	board_doundo_move_common(board, move);
 }
@@ -196,13 +243,19 @@ static void board_doundo_move_common(Bitboard *board, Move move)
 		{
 			board_toggle_piece(board, ROOK, color, dest - 2);
 			board_toggle_piece(board, ROOK, color, dest + 1);
+
+			board->zobrist ^= board->zobrist_castle[board->castle_status];
 			board->castle_status ^= (4 << color);
+			board->zobrist ^= board->zobrist_castle[board->castle_status];
 		}
 		else // kingside castle
 		{
 			board_toggle_piece(board, ROOK, color, dest + 1);
 			board_toggle_piece(board, ROOK, color, dest - 1);
+
+			board->zobrist ^= board->zobrist_castle[board->castle_status];
 			board->castle_status ^= (1 << color);
+			board->zobrist ^= board->zobrist_castle[board->castle_status];
 		}
 	}
 
@@ -215,6 +268,7 @@ static void board_doundo_move_common(Bitboard *board, Move move)
 	}
 
 	board->to_move = (1 - board->to_move);
+	board->zobrist ^= board->zobrist_black;
 }
 
 static void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, uint8_t loc)
@@ -225,6 +279,7 @@ static void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, ui
 	board->full_composite_45 ^= 1ULL << board_rotation_index_45[loc];
 	board->full_composite_90 ^= 1ULL << board_rotation_index_90[loc];
 	board->full_composite_315 ^= 1ULL << board_rotation_index_315[loc];
+	board->zobrist ^= board->zobrist_pos[color][piece][loc];
 }
 
 int board_in_check(Bitboard *board, Color color)
