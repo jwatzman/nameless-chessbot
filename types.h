@@ -1,8 +1,13 @@
 #ifndef _TYPES_H
 #define _TYPES_H
 
+#include <stdint.h>
+
 typedef enum { WHITE=0, BLACK } Color;
 typedef enum { PAWN=0, BISHOP, KNIGHT, ROOK, QUEEN, KING } Piecetype;
+
+static const int INFINITY = 1000000;
+static const int MATE = 300000;
 
 typedef struct
 {

@@ -3,6 +3,7 @@
 #include <string.h>
 #include "bitboard.h"
 #include "move.h"
+#include "evaluate.h"
 
 int main(int argc, char** argv)
 {
@@ -36,6 +37,7 @@ int main(int argc, char** argv)
 
 		printf("Enpassant index: %x\tHalfmove count: %x\tCastle status: %x\n", test->enpassant_index, test->halfmove_count, test->castle_status);
 		printf("Zobrist: %.16llx\n", test->zobrist);
+		printf("Evaluation: %i\n", evaluate_board(test));
 		printf("To move: %i\tAvailable moves: %i\n", test->to_move, moves.num);
 
 		for (int i = 0; i < moves.num; i++)
