@@ -100,7 +100,7 @@ static void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)
 	while (pawns)
 	{
 		uint8_t src = ffsll(pawns) - 1;
-		pawns &= ~(1ULL << src);
+		pawns ^= 1ULL << src;
 
 		uint8_t row = board_row_of(src);
 		uint8_t col = board_col_of(src);
@@ -228,7 +228,7 @@ static void move_generate_movelist_knight(Bitboard *board, Movelist *movelist)
 	while (knights)
 	{
 		uint8_t src = ffsll(knights) - 1;
-		knights &= ~(1ULL << src);
+		knights ^= 1ULL << src;
 
 		uint64_t dests = knight_attacks[src];
 		dests &= ~(board->composite_boards[to_move]);
@@ -236,7 +236,7 @@ static void move_generate_movelist_knight(Bitboard *board, Movelist *movelist)
 		while (dests)
 		{
 			uint8_t dest = ffsll(dests) - 1;
-			dests &= ~(1ULL << dest);
+			dests ^= 1ULL << dest;
 
 			Move move = 0;
 			move |= src << move_source_index_offset;
@@ -263,7 +263,7 @@ static void move_generate_movelist_king(Bitboard *board, Movelist *movelist)
 	while (kings)
 	{
 		uint8_t src = ffsll(kings) - 1;
-		kings &= ~(1ULL << src);
+		kings ^= 1ULL << src;
 
 		uint64_t dests = king_attacks[src];
 		dests &= ~(board->composite_boards[to_move]);
@@ -271,7 +271,7 @@ static void move_generate_movelist_king(Bitboard *board, Movelist *movelist)
 		while (dests)
 		{
 			uint8_t dest = ffsll(dests) - 1;
-			dests &= ~(1ULL << dest);
+			dests ^= 1ULL << dest;
 			
 			Move move = 0;
 			move |= src << move_source_index_offset;
@@ -298,7 +298,7 @@ static void move_generate_movelist_rook(Bitboard *board, Movelist *movelist)
 	while (rooks)
 	{
 		uint8_t src = ffsll(rooks) - 1;
-		rooks &= ~(1ULL << src);
+		rooks ^= 1ULL << src;
 
 		uint64_t dests = move_generate_attacks_row(board->full_composite, src);
 		dests |= move_generate_attacks_col(board->full_composite_90, src);
@@ -308,7 +308,7 @@ static void move_generate_movelist_rook(Bitboard *board, Movelist *movelist)
 		while (dests)
 		{
 			uint8_t dest = ffsll(dests) - 1;
-			dests &= ~(1ULL << dest);
+			dests ^= 1ULL << dest;
 
 			Move move = 0;
 			move |= src << move_source_index_offset;
@@ -335,7 +335,7 @@ static void move_generate_movelist_bishop(Bitboard *board, Movelist *movelist)
 	while (bishops)
 	{
 		uint8_t src = ffsll(bishops) - 1;
-		bishops &= ~(1ULL << src);
+		bishops ^= 1ULL << src;
 
 		uint64_t dests = move_generate_attacks_diag45(board->full_composite_45, src);
 		dests |= move_generate_attacks_diag315(board->full_composite_315, src);
@@ -345,7 +345,7 @@ static void move_generate_movelist_bishop(Bitboard *board, Movelist *movelist)
 		while (dests)
 		{
 			uint8_t dest = ffsll(dests) - 1;
-			dests &= ~(1ULL << dest);
+			dests ^= 1ULL << dest;
 
 			Move move = 0;
 			move |= src << move_source_index_offset;
@@ -372,7 +372,7 @@ static void move_generate_movelist_queen(Bitboard *board, Movelist *movelist)
 	while (queens)
 	{
 		uint8_t src = ffsll(queens) - 1;
-		queens &= ~(1ULL << src);
+		queens ^= 1ULL << src;
 
 		uint64_t dests = move_generate_attacks_row(board->full_composite, src);
 		dests |= move_generate_attacks_col(board->full_composite_90, src);
@@ -384,7 +384,7 @@ static void move_generate_movelist_queen(Bitboard *board, Movelist *movelist)
 		while (dests)
 		{
 			uint8_t dest = ffsll(dests) - 1;
-			dests &= ~(1ULL << dest);
+			dests ^= 1ULL << dest;
 
 			Move move = 0;
 			move |= src << move_source_index_offset;

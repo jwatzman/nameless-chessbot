@@ -70,7 +70,7 @@ int evaluate_board(Bitboard *board)
 			while (pieces)
 			{
 				uint8_t loc = ffsll(pieces) - 1;
-				pieces &= ~(1ULL << loc);
+				pieces ^= 1ULL << loc;
 
 				if (piece == PAWN) loc = 63 - loc;
 
