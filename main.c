@@ -4,6 +4,10 @@
 #include "bitboard.h"
 #include "move.h"
 #include "evaluate.h"
+#include "search.h"
+
+Move get_human_move(Bitboard *board);
+Move get_computer_move(Bitboard *board);
 
 int main(int argc, char** argv)
 {
@@ -25,32 +29,48 @@ int main(int argc, char** argv)
 	board_do_move(test, test_move);
 	*/
 
-	Movelist moves;
-	Move last_move = 0;
-	char* srcdest_form = malloc(6 * sizeof(char));
-	char* input_move = malloc(6 * sizeof(char));
-
 	while (1)
 	{
 		board_print(test->boards);
-		move_generate_movelist(test, &moves);
 
 		printf("Enpassant index: %x\tHalfmove count: %x\tCastle status: %x\n", test->enpassant_index, test->halfmove_count, test->castle_status);
 		printf("Zobrist: %.16llx\n", test->zobrist);
 		printf("Evaluation: %i\n", evaluate_board(test));
-		printf("To move: %i\tAvailable moves: %i\n", test->to_move, moves.num);
+		printf("To move: %i\n", test->to_move);
 
-		for (int i = 0; i < moves.num; i++)
-		{
-			Move move = moves.moves[i];
-			move_srcdest_form(move, srcdest_form);
-			printf("%s ", srcdest_form);
-		}
-		printf("\n");
+		Move next_move;
+		if (test->to_move == WHITE)
+			next_move = get_human_move(test);
+		else
+			next_move = get_computer_move(test);
 
+		board_do_move(test, next_move);
+	}
+
+	free(test);
+	return 0;
+}
+
+Move get_human_move(Bitboard *board)
+{
+	char* srcdest_form = malloc(6 * sizeof(char));
+	char* input_move = malloc(6 * sizeof(char));
+
+	Move result = 0;
+	Movelist moves;
+	move_generate_movelist(board, &moves);
+
+	for (int i = 0; i < moves.num; i++)
+	{
+		Move move = moves.moves[i];
+		move_srcdest_form(move, srcdest_form);
+		printf("%s ", srcdest_form);
+	}
+	printf("\n");
+
+	while (!result)
+	{
 		scanf("%5s", input_move);
-		if (!strcmp(input_move, "undo"))
-			board_undo_move(test, last_move);
 
 		for (int i = 0; i < moves.num; i++)
 		{
@@ -58,13 +78,13 @@ int main(int argc, char** argv)
 			move_srcdest_form(move, srcdest_form);
 			if (!strcmp(input_move, srcdest_form))
 			{
-				last_move = move;
-				board_do_move(test, last_move);
-				if (board_in_check(test, 1-test->to_move))
-				{
+				board_do_move(board, move);
+				if (board_in_check(board, 1-board->to_move))
 					printf("Can't leave king in check\n");
-					board_undo_move(test, last_move);
-				}
+				else
+					result = move;
+
+				board_undo_move(board, move);
 				break;
 			}
 		}
@@ -72,6 +92,10 @@ int main(int argc, char** argv)
 
 	free(srcdest_form);
 	free(input_move);
-	free(test);
-	return 0;
+	return result;
+}
+
+Move get_computer_move(Bitboard *board)
+{
+	return search_find_move(board);
 }
