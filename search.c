@@ -7,7 +7,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 Move search_find_move(Bitboard *board)
 {
 	Move best_move;
-	search_alpha_beta(board, -INFINITY, INFINITY, 4, &best_move);
+	search_alpha_beta(board, -INFINITY, INFINITY, 5, &best_move);
 	return best_move;
 }
 
