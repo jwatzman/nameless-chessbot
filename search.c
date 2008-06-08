@@ -20,30 +20,37 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	move_generate_movelist(board, &moves);
 	int found_move = 0;
 
-	for (int i = 0; i < moves.num; i++)
+	for (int done_captures = 0; done_captures <= 1; done_captures++)
 	{
-		Move move = moves.moves[i];
-		board_do_move(board, move);
-
-		if (!board_in_check(board, 1-board->to_move))
+		for (int i = 0; i < moves.num; i++)
 		{
-			found_move = 1;
-			int recursive_value = -search_alpha_beta(board, -beta, -alpha, depth - 1, 0);
-			board_undo_move(board, move);
+			Move move = moves.moves[i];
 
-			if (recursive_value >= beta)
-				return beta;
+			int is_capture = move_is_capture(move);
+			if ((!done_captures && !is_capture) || (done_captures && is_capture))
+				continue;
 
-			if (recursive_value > alpha)
+			board_do_move(board, move);
+
+			if (!board_in_check(board, 1-board->to_move))
 			{
-				alpha = recursive_value;
-				if (best_move)
-					*best_move = move;
-			}
-		}
-		else
-			board_undo_move(board, move);
+				found_move = 1;
+				int recursive_value = -search_alpha_beta(board, -beta, -alpha, depth - 1, 0);
+				board_undo_move(board, move);
 
+				if (recursive_value >= beta)
+					return beta;
+
+				if (recursive_value > alpha)
+				{
+					alpha = recursive_value;
+					if (best_move)
+						*best_move = move;
+				}
+			}
+			else
+				board_undo_move(board, move);
+		}
 	}
 
 	if (!found_move)
