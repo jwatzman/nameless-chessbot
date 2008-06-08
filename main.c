@@ -60,6 +60,12 @@ int main(int argc, char** argv)
 			break;
 		}
 
+		if (board->halfmove_count == 50)
+		{
+			printf("DRAW BY 50 MOVE RULE"\n);
+			break;
+		}
+
 		Move next_move;
 		if (test->to_move == WHITE)
 			next_move = get_human_move(test, legal_moves);

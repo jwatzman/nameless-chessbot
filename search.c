@@ -16,6 +16,9 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	if (depth == 0)
 		return evaluate_board(board);
 
+	if (board->halfmove_count == 50)
+		return 0;
+
 	Movelist moves;
 	move_generate_movelist(board, &moves);
 	int found_move = 0;
