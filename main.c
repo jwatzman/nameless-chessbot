@@ -60,9 +60,9 @@ int main(int argc, char** argv)
 			break;
 		}
 
-		if (board->halfmove_count == 50)
+		if (test->halfmove_count == 50)
 		{
-			printf("DRAW BY 50 MOVE RULE"\n);
+			printf("DRAW BY 50 MOVE RULE\n");
 			break;
 		}
 
