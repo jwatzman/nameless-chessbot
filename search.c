@@ -57,7 +57,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	}
 
 	if (!found_move)
-		return board_in_check(board, board->to_move) ? -MATE : 0;
+		return board_in_check(board, board->to_move) ? -(MATE + depth) : 0;
 	else
 		return alpha;
 }
