@@ -6,8 +6,8 @@
 #include "evaluate.h"
 #include "search.h"
 
-Move get_human_move(Bitboard *board);
-Move get_computer_move(Bitboard *board);
+static Move get_human_move(Bitboard *board, Movelist legal_moves);
+static Move get_computer_move(Bitboard *board);
 
 int main(int argc, char** argv)
 {
@@ -38,9 +38,31 @@ int main(int argc, char** argv)
 		printf("Evaluation: %i\n", evaluate_board(test));
 		printf("To move: %i\n", test->to_move);
 
+		Movelist all_moves, legal_moves;
+		legal_moves.num = 0;
+		move_generate_movelist(test, &all_moves);
+		for (int i = 0; i < all_moves.num; i++)
+		{
+			Move move = all_moves.moves[i];
+			board_do_move(test, move);
+			if (!board_in_check(test, 1-test->to_move))
+				legal_moves.moves[legal_moves.num++] = move;
+			board_undo_move(test, move);
+		}
+
+		if (legal_moves.num == 0)
+		{
+			if (board_in_check(test, test->to_move))
+				printf("CHECKMATE!\n");
+			else
+				printf("STALEMATE!\n");
+
+			break;
+		}
+
 		Move next_move;
 		if (test->to_move == WHITE)
-			next_move = get_human_move(test);
+			next_move = get_human_move(test, legal_moves);
 		else
 			next_move = get_computer_move(test);
 
@@ -51,18 +73,16 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-Move get_human_move(Bitboard *board)
+static Move get_human_move(Bitboard *board, Movelist legal_moves)
 {
 	char* srcdest_form = malloc(6 * sizeof(char));
 	char* input_move = malloc(6 * sizeof(char));
 
 	Move result = 0;
-	Movelist moves;
-	move_generate_movelist(board, &moves);
 
-	for (int i = 0; i < moves.num; i++)
+	for (int i = 0; i < legal_moves.num; i++)
 	{
-		Move move = moves.moves[i];
+		Move move = legal_moves.moves[i];
 		move_srcdest_form(move, srcdest_form);
 		printf("%s ", srcdest_form);
 	}
@@ -72,9 +92,9 @@ Move get_human_move(Bitboard *board)
 	{
 		scanf("%5s", input_move);
 
-		for (int i = 0; i < moves.num; i++)
+		for (int i = 0; i < legal_moves.num; i++)
 		{
-			Move move = moves.moves[i];
+			Move move = legal_moves.moves[i];
 			move_srcdest_form(move, srcdest_form);
 			if (!strcmp(input_move, srcdest_form))
 			{
@@ -95,7 +115,7 @@ Move get_human_move(Bitboard *board)
 	return result;
 }
 
-Move get_computer_move(Bitboard *board)
+static Move get_computer_move(Bitboard *board)
 {
 	return search_find_move(board);
 }
