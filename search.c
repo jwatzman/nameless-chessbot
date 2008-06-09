@@ -19,6 +19,13 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	if (board->halfmove_count == 100)
 		return 0;
 
+	int reps = 0;
+	for (int i = board->history_index - board->halfmove_count; i < board->history_index; i++)
+		if (board->history[i] == board->zobrist)
+			reps++;
+	if (reps >= 3)
+		return 0;
+
 	Movelist moves;
 	move_generate_movelist(board, &moves);
 	int found_move = 0;

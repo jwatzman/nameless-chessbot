@@ -48,6 +48,10 @@ typedef struct
 	uint64_t zobrist_castle[256];
 	uint64_t zobrist_enpassant[64];
 	uint64_t zobrist_black;
+
+	// previous zobrist hashes of this game
+	uint8_t history_index;
+	uint64_t history[256];
 }
 Bitboard;
 

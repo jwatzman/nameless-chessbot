@@ -85,6 +85,9 @@ void board_init(Bitboard *board)
 	board->undo_index = 0;
 
 	board_init_zobrist(board);
+
+	board->history_index = 0;
+	board->history[0] = board->zobrist;
 }
 
 static void board_init_zobrist(Bitboard *board)
@@ -188,6 +191,8 @@ void board_do_move(Bitboard *board, Move move)
 	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
 
 	board_doundo_move_common(board, move);
+
+	board->history[board->history_index++] = board->zobrist;
 }
 
 void board_undo_move(Bitboard *board, Move move)
@@ -206,6 +211,8 @@ void board_undo_move(Bitboard *board, Move move)
 	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
 
 	board_doundo_move_common(board, move);
+
+	board->history_index--;
 }
 
 static void board_doundo_move_common(Bitboard *board, Move move)
