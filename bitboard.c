@@ -101,10 +101,7 @@ static void board_init_zobrist(Bitboard *board)
 		board->zobrist_castle[i] = board_rand64();
 
 	for (int i = 0; i < 64; i++)
-	{
 		board->zobrist_enpassant[i] = board_rand64();
-		board->zobrist_halfmove[i] = board_rand64();
-	}
 
 	board->zobrist_black = board_rand64();
 }
@@ -152,12 +149,10 @@ void board_do_move(Bitboard *board, Move move)
 	board->undo_ring_buffer[board->undo_index++] = undo_data;
 
 	// halfmove_count is reset on pawn moves or captures
-	board->zobrist ^= board->zobrist_halfmove[board->halfmove_count];
 	if (move_piecetype(move) == PAWN || move_is_capture(move))
 		board->halfmove_count = 0;
 	else
 		board->halfmove_count++;
-	board->zobrist ^= board->zobrist_halfmove[board->halfmove_count];
 
 	// moving to or from a rook square means you can no longer castle on that side
 	uint8_t src = move_source_index(move);
@@ -197,7 +192,6 @@ void board_do_move(Bitboard *board, Move move)
 
 void board_undo_move(Bitboard *board, Move move)
 {
-	board->zobrist ^= board->zobrist_halfmove[board->halfmove_count];
 	board->zobrist ^= board->zobrist_castle[board->castle_status];
 	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
 
@@ -208,7 +202,6 @@ void board_undo_move(Bitboard *board, Move move)
 	board->castle_status |= ((undo_data >> 6) & 0x0F) << 4;
 	board->halfmove_count = (undo_data >> 10) & 0x3F;
 
-	board->zobrist ^= board->zobrist_halfmove[board->halfmove_count];
 	board->zobrist ^= board->zobrist_castle[board->castle_status];
 	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
 

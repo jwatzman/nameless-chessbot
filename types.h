@@ -47,7 +47,6 @@ typedef struct
 	uint64_t zobrist_pos[2][6][64];
 	uint64_t zobrist_castle[256];
 	uint64_t zobrist_enpassant[64];
-	uint64_t zobrist_halfmove[64];
 	uint64_t zobrist_black;
 }
 Bitboard;
