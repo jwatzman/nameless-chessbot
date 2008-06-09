@@ -1,8 +1,10 @@
+#include <stdlib.h>
 #include "search.h"
 #include "evaluate.h"
 #include "move.h"
 
 static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Move* best_move);
+static int search_move_comparator(const void *m1, const void *m2);
 
 Move search_find_move(Bitboard *board)
 {
@@ -28,43 +30,50 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 
 	Movelist moves;
 	move_generate_movelist(board, &moves);
+	qsort(&(moves.moves), moves.num, sizeof(Move), search_move_comparator);
 	int found_move = 0;
 
-	for (int done_captures = 0; done_captures <= 1; done_captures++)
+	for (int i = 0; i < moves.num; i++)
 	{
-		for (int i = 0; i < moves.num; i++)
+		Move move = moves.moves[i];
+
+		board_do_move(board, move);
+
+		if (!board_in_check(board, 1-board->to_move))
 		{
-			Move move = moves.moves[i];
+			found_move = 1;
+			int recursive_value = -search_alpha_beta(board, -beta, -alpha, depth - 1, 0);
+			board_undo_move(board, move);
 
-			int is_capture = move_is_capture(move);
-			if ((!done_captures && !is_capture) || (done_captures && is_capture))
-				continue;
+			if (recursive_value >= beta)
+				return beta;
 
-			board_do_move(board, move);
-
-			if (!board_in_check(board, 1-board->to_move))
+			if (recursive_value > alpha)
 			{
-				found_move = 1;
-				int recursive_value = -search_alpha_beta(board, -beta, -alpha, depth - 1, 0);
-				board_undo_move(board, move);
-
-				if (recursive_value >= beta)
-					return beta;
-
-				if (recursive_value > alpha)
-				{
-					alpha = recursive_value;
-					if (best_move)
-						*best_move = move;
-				}
+				alpha = recursive_value;
+				if (best_move)
+					*best_move = move;
 			}
-			else
-				board_undo_move(board, move);
 		}
+		else
+			board_undo_move(board, move);
 	}
 
 	if (!found_move)
 		return board_in_check(board, board->to_move) ? -(MATE + depth) : 0;
 	else
 		return alpha;
+}
+
+static int search_move_comparator(const void *m1, const void *m2)
+{
+	Move dm1 = *(Move*)m1;
+	Move dm2 = *(Move*)m2;
+
+	int score1 = move_is_capture(dm1) ?
+		15 + 2*move_captured_piecetype(dm1) - move_piecetype(dm1) : 0;
+	int score2 = move_is_capture(dm2) ?
+		15 + 2*move_captured_piecetype(dm2) - move_piecetype(dm2) : 0;
+
+	return score2 - score1;
 }
