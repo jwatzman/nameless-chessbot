@@ -72,11 +72,12 @@ int evaluate_board(Bitboard *board)
 				uint8_t loc = ffsll(pieces) - 1;
 				pieces ^= 1ULL << loc;
 
-				if (piece == PAWN) loc = 63 - loc;
+				if (piece == PAWN && color == BLACK)
+					loc = 63 - loc;
 
 				const int *table = pos_tables[piece];
 				if (table)
-					result += table[loc];
+					result += modifier * table[loc];
 				result += modifier * values[piece];
 			}
 		}
