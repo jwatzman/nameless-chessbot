@@ -6,14 +6,13 @@
 #include "move-generated.h"
 #include "bitboard.h"
 
-static void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist);
-static void move_generate_movelist_knight(Bitboard *board, Movelist *movelist);
-static void move_generate_movelist_king(Bitboard *board, Movelist *movelist);
-static void move_generate_movelist_rook(Bitboard *board, Movelist *movelist);
-static void move_generate_movelist_bishop(Bitboard *board, Movelist *movelist);
-static void move_generate_movelist_queen(Bitboard *board, Movelist *movelist);
+static void move_generate_movelist_pawn_push(Bitboard *board, Movelist *movelist);
 static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist);
 static void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist);
+
+// assuming this piece were to be at this location, where could it attack?
+// note: does *not* generate pawn pushes or mask out friendly pieces
+static uint64_t move_generate_attacks(Bitboard *board, Piecetype piece, Color color, uint8_t index);
 
 // these expect the composite_board to be of the properly rotated variant
 static uint64_t move_generate_attacks_row(uint64_t composite_board, uint8_t index);
@@ -21,21 +20,112 @@ static uint64_t move_generate_attacks_col(uint64_t composite_board, uint8_t inde
 static uint64_t move_generate_attacks_diag45(uint64_t composite_board, uint8_t index);
 static uint64_t move_generate_attacks_diag315(uint64_t composite_board, uint8_t index);
 
-
 void move_generate_movelist(Bitboard *board, Movelist *movelist)
 {
 	movelist->num = 0;
 
-	move_generate_movelist_pawn(board, movelist);
-	move_generate_movelist_knight(board, movelist);
-	move_generate_movelist_king(board, movelist);
+	Color to_move = board->to_move;
 
-	move_generate_movelist_rook(board, movelist);
-	move_generate_movelist_bishop(board, movelist);
-	move_generate_movelist_queen(board, movelist);
+	for (Piecetype piece = 0; piece < 6; piece++)
+	{
+		uint64_t pieces = board->boards[to_move][piece];
 
+		while (pieces)
+		{
+			uint8_t src = ffsll(pieces) - 1;
+			pieces ^= 1ULL << src;
+
+			uint64_t dests = move_generate_attacks(board, piece, to_move, src);
+			dests &= ~(board->composite_boards[to_move]);
+
+			uint64_t captures = dests & board->composite_boards[1-to_move];
+			uint64_t non_captures = dests & ~(board->composite_boards[1-to_move]);
+
+			if (piece == PAWN) non_captures = 0;
+
+			while (captures)
+			{
+				uint8_t dest = ffsll(captures) - 1;
+				captures ^= 1ULL << dest;
+
+				Move move = 0;
+				move |= src << move_source_index_offset;
+				move |= dest << move_destination_index_offset;
+				move |= piece << move_piecetype_offset;
+				move |= to_move << move_color_offset;
+
+				move |= 1ULL << move_is_capture_offset;
+				move |= board_piecetype_at_index(board, dest) << move_captured_piecetype_offset;
+
+				if (piece == PAWN && (board_row_of(dest) == 0 || board_row_of(dest) == 7))
+				{
+					move |= 1ULL << move_is_promotion_offset;
+
+					movelist->moves[movelist->num++] = (move | (QUEEN << move_promoted_piecetype_offset));
+					movelist->moves[movelist->num++] = (move | (ROOK << move_promoted_piecetype_offset));
+					movelist->moves[movelist->num++] = (move | (BISHOP << move_promoted_piecetype_offset));
+					movelist->moves[movelist->num++] = (move | (KNIGHT << move_promoted_piecetype_offset));
+				}
+				else
+					movelist->moves[movelist->num++] = move;
+			}
+
+			while (non_captures)
+			{
+				uint8_t dest = ffsll(non_captures) - 1;
+				non_captures ^= 1ULL << dest;
+
+				Move move = 0;
+				move |= src << move_source_index_offset;
+				move |= dest << move_destination_index_offset;
+				move |= piece << move_piecetype_offset;
+				move |= to_move << move_color_offset;
+
+				movelist->moves[movelist->num++] = move;
+			}
+		}
+	}
+
+	move_generate_movelist_pawn_push(board, movelist);
 	move_generate_movelist_castle(board, movelist);
 	move_generate_movelist_enpassant(board, movelist);
+}
+
+static uint64_t move_generate_attacks(Bitboard *board, Piecetype piece, Color color, uint8_t index)
+{
+	switch (piece)
+	{
+		case PAWN:
+			return pawn_attacks[color][index];
+			break;
+
+		case BISHOP:
+			return move_generate_attacks_diag45(board->full_composite_45, index)
+				| move_generate_attacks_diag315(board->full_composite_315, index);
+			break;
+
+		case KNIGHT:
+			return knight_attacks[index];
+			break;
+
+		case ROOK:
+			return move_generate_attacks_row(board->full_composite, index)
+				| move_generate_attacks_col(board->full_composite_90, index);
+			break;
+
+		case QUEEN:
+			return move_generate_attacks(board, BISHOP, color, index)
+				| move_generate_attacks(board, ROOK, color, index);
+			break;
+
+		case KING:
+			return king_attacks[index];
+			break;
+
+		default: // err...
+			return 0;
+			break;
+	}
 }
 
 int move_square_is_attacked(Bitboard *board, Color attacker, uint8_t square)
@@ -92,7 +182,7 @@ int move_square_is_attacked(Bitboard *board, Color attacker, uint8_t square)
 	return 0;
 }
 
-static void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)
+static void move_generate_movelist_pawn_push(Bitboard *board, Movelist *movelist)
 {
 	Color to_move = board->to_move;
 	uint64_t pawns = board->boards[to_move][PAWN];
@@ -151,254 +241,6 @@ static void move_generate_movelist_pawn(Bitboard *board, Movelist *movelist)
 					}
 				}
 			}
-		}
-
-
-		// try to capture left
-		if (((to_move == WHITE && row < 7) || (to_move == BLACK && row > 0)) && col > 0)
-		{
-			uint8_t dest;
-			if (to_move == WHITE) dest = board_index_of(row + 1, col - 1);
-			else dest = board_index_of(row - 1, col - 1);
-
-			if (board->composite_boards[1-to_move] & (1ULL << dest))
-			{
-				Move move = 0;
-				move |= src << move_source_index_offset;
-				move |= dest << move_destination_index_offset;
-				move |= PAWN << move_piecetype_offset;
-				move |= to_move << move_color_offset;
-				move |= 1ULL << move_is_capture_offset;
-				move |= board_piecetype_at_index(board, dest) << move_captured_piecetype_offset;
-
-				// promote if needed
-				if ((to_move == WHITE && row == 6) || (to_move == BLACK && row == 1))
-				{
-					move |= 1ULL << move_is_promotion_offset;
-
-					movelist->moves[movelist->num++] = (move | (QUEEN << move_promoted_piecetype_offset));
-					movelist->moves[movelist->num++] = (move | (ROOK << move_promoted_piecetype_offset));
-					movelist->moves[movelist->num++] = (move | (BISHOP << move_promoted_piecetype_offset));
-					movelist->moves[movelist->num++] = (move | (KNIGHT << move_promoted_piecetype_offset));
-				}
-				else
-					movelist->moves[movelist->num++] = move;
-			}
-		}
-
-		// try to capture right
-		if (((to_move == WHITE && row < 7) || (to_move == BLACK && row > 0)) && col < 7)
-		{
-			uint8_t dest;
-			if (to_move == WHITE) dest = board_index_of(row + 1, col + 1);
-			else dest = board_index_of(row - 1, col + 1);
-
-			if (board->composite_boards[1-to_move] & (1ULL << dest))
-			{
-				Move move = 0;
-				move |= src << move_source_index_offset;
-				move |= dest << move_destination_index_offset;
-				move |= PAWN << move_piecetype_offset;
-				move |= to_move << move_color_offset;
-				move |= 1ULL << move_is_capture_offset;
-				move |= board_piecetype_at_index(board, dest) << move_captured_piecetype_offset;
-
-				// promote if needed
-				if ((to_move == WHITE && row == 6) || (to_move == BLACK && row == 1))
-				{
-					move |= 1ULL << move_is_promotion_offset;
-
-					movelist->moves[movelist->num++] = (move | (QUEEN << move_promoted_piecetype_offset));
-					movelist->moves[movelist->num++] = (move | (ROOK << move_promoted_piecetype_offset));
-					movelist->moves[movelist->num++] = (move | (BISHOP << move_promoted_piecetype_offset));
-					movelist->moves[movelist->num++] = (move | (KNIGHT << move_promoted_piecetype_offset));
-				}
-				else
-					movelist->moves[movelist->num++] = move;
-			}
-		}
-	}
-}
-
-static void move_generate_movelist_knight(Bitboard *board, Movelist *movelist)
-{
-	Color to_move = board->to_move;
-	uint64_t knights = board->boards[to_move][KNIGHT];
-
-	while (knights)
-	{
-		uint8_t src = ffsll(knights) - 1;
-		knights ^= 1ULL << src;
-
-		uint64_t dests = knight_attacks[src];
-		dests &= ~(board->composite_boards[to_move]);
-
-		while (dests)
-		{
-			uint8_t dest = ffsll(dests) - 1;
-			dests ^= 1ULL << dest;
-
-			Move move = 0;
-			move |= src << move_source_index_offset;
-			move |= dest << move_destination_index_offset;
-			move |= KNIGHT << move_piecetype_offset;
-			move |= to_move << move_color_offset;
-
-			if (board->composite_boards[1-to_move] & (1ULL << dest))
-			{
-				move |= 1ULL << move_is_capture_offset;
-				move |= board_piecetype_at_index(board, dest) << move_captured_piecetype_offset;
-			}
-
-			movelist->moves[movelist->num++] = move;
-		}
-	}
-}
-
-static void move_generate_movelist_king(Bitboard *board, Movelist *movelist)
-{
-	Color to_move = board->to_move;
-	uint64_t kings = board->boards[to_move][KING];
-
-	while (kings)
-	{
-		uint8_t src = ffsll(kings) - 1;
-		kings ^= 1ULL << src;
-
-		uint64_t dests = king_attacks[src];
-		dests &= ~(board->composite_boards[to_move]);
-
-		while (dests)
-		{
-			uint8_t dest = ffsll(dests) - 1;
-			dests ^= 1ULL << dest;
-			
-			Move move = 0;
-			move |= src << move_source_index_offset;
-			move |= dest << move_destination_index_offset;
-			move |= KING << move_piecetype_offset;
-			move |= to_move << move_color_offset;
-
-			if (board->composite_boards[1-to_move] & (1ULL << dest))
-			{
-				move |= 1ULL << move_is_capture_offset;
-				move |= board_piecetype_at_index(board, dest) << move_captured_piecetype_offset;
-			}
-
-			movelist->moves[movelist->num++] = move;
-		}
-	}
-}
-
-static void move_generate_movelist_rook(Bitboard *board, Movelist *movelist)
-{
-	Color to_move = board->to_move;
-	uint64_t rooks = board->boards[to_move][ROOK];
-
-	while (rooks)
-	{
-		uint8_t src = ffsll(rooks) - 1;
-		rooks ^= 1ULL << src;
-
-		uint64_t dests = move_generate_attacks_row(board->full_composite, src);
-		dests |= move_generate_attacks_col(board->full_composite_90, src);
-
-		dests &= ~(board->composite_boards[to_move]);
-
-		while (dests)
-		{
-			uint8_t dest = ffsll(dests) - 1;
-			dests ^= 1ULL << dest;
-
-			Move move = 0;
-			move |= src << move_source_index_offset;
-			move |= dest << move_destination_index_offset;
-			move |= ROOK << move_piecetype_offset;
-			move |= to_move << move_color_offset;
-
-			if (board->composite_boards[1-to_move] & (1ULL << dest))
-			{
-				move |= 1ULL << move_is_capture_offset;
-				move |= board_piecetype_at_index(board, dest) << move_captured_piecetype_offset;
-			}
-
-			movelist->moves[movelist->num++] = move;
-		}
-	}
-}
-
-static void move_generate_movelist_bishop(Bitboard *board, Movelist *movelist)
-{
-	Color to_move = board->to_move;
-	uint64_t bishops = board->boards[to_move][BISHOP];
-
-	while (bishops)
-	{
-		uint8_t src = ffsll(bishops) - 1;
-		bishops ^= 1ULL << src;
-
-		uint64_t dests = move_generate_attacks_diag45(board->full_composite_45, src);
-		dests |= move_generate_attacks_diag315(board->full_composite_315, src);
-
-		dests &= ~(board->composite_boards[to_move]);
-
-		while (dests)
-		{
-			uint8_t dest = ffsll(dests) - 1;
-			dests ^= 1ULL << dest;
-
-			Move move = 0;
-			move |= src << move_source_index_offset;
-			move |= dest << move_destination_index_offset;
-			move |= BISHOP << move_piecetype_offset;
-			move |= to_move << move_color_offset;
-
-			if (board->composite_boards[1-to_move] & (1ULL << dest))
-			{
-				move |= 1ULL << move_is_capture_offset;
-				move |= board_piecetype_at_index(board, dest) << move_captured_piecetype_offset;
-			}
-
-			movelist->moves[movelist->num++] = move;
-		}
-	}
-}
-
-static void move_generate_movelist_queen(Bitboard *board, Movelist *movelist)
-{
-	Color to_move = board->to_move;
-	uint64_t queens = board->boards[to_move][QUEEN];
-
-	while (queens)
-	{
-		uint8_t src = ffsll(queens) - 1;
-		queens ^= 1ULL << src;
-
-		uint64_t dests = move_generate_attacks_row(board->full_composite, src);
-		dests |= move_generate_attacks_col(board->full_composite_90, src);
-		dests |= move_generate_attacks_diag45(board->full_composite_45, src);
-		dests |= move_generate_attacks_diag315(board->full_composite_315, src);
-
-		dests &= ~(board->composite_boards[to_move]);
-
-		while (dests)
-		{
-			uint8_t dest = ffsll(dests) - 1;
-			dests ^= 1ULL << dest;
-
-			Move move = 0;
-			move |= src << move_source_index_offset;
-			move |= dest << move_destination_index_offset;
-			move |= QUEEN << move_piecetype_offset;
-			move |= to_move << move_color_offset;
-
-			if (board->composite_boards[1-to_move] & (1ULL << dest))
-			{
-				move |= 1ULL << move_is_capture_offset;
-				move |= board_piecetype_at_index(board, dest) << move_captured_piecetype_offset;
-			}
-
-			movelist->moves[movelist->num++] = move;
 		}
 	}
 }
