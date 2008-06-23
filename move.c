@@ -4,6 +4,7 @@
 #include "types.h"
 #include "move.h"
 #include "move-generated.h"
+#include "movelist.h"
 #include "bitboard.h"
 
 static void move_generate_movelist_pawn_push(Bitboard *board, Movelist *movelist);
@@ -22,8 +23,6 @@ static uint64_t move_generate_attacks_diag315(uint64_t composite_board, uint8_t 
 
 void move_generate_movelist(Bitboard *board, Movelist *movelist)
 {
-	movelist->num = 0;
-
 	Color to_move = board->to_move;
 
 	for (Piecetype piece = 0; piece < 6; piece++)
@@ -61,13 +60,13 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 				{
 					move |= 1ULL << move_is_promotion_offset;
 
-					movelist->moves[movelist->num++] = (move | (QUEEN << move_promoted_piecetype_offset));
-					movelist->moves[movelist->num++] = (move | (ROOK << move_promoted_piecetype_offset));
-					movelist->moves[movelist->num++] = (move | (BISHOP << move_promoted_piecetype_offset));
-					movelist->moves[movelist->num++] = (move | (KNIGHT << move_promoted_piecetype_offset));
+					movelist_prepend_move(movelist, (move | (QUEEN << move_promoted_piecetype_offset)));
+					movelist_prepend_move(movelist, (move | (ROOK << move_promoted_piecetype_offset)));
+					movelist_prepend_move(movelist, (move | (BISHOP << move_promoted_piecetype_offset)));
+					movelist_prepend_move(movelist, (move | (KNIGHT << move_promoted_piecetype_offset)));
 				}
 				else
-					movelist->moves[movelist->num++] = move;
+					movelist_prepend_move(movelist, move);
 			}
 
 			while (non_captures)
@@ -81,7 +80,7 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 				move |= piece << move_piecetype_offset;
 				move |= to_move << move_color_offset;
 
-				movelist->moves[movelist->num++] = move;
+				movelist_append_move(movelist, move);
 			}
 		}
 	}
@@ -215,13 +214,13 @@ static void move_generate_movelist_pawn_push(Bitboard *board, Movelist *movelist
 				{
 					move |= 1ULL << move_is_promotion_offset;
 
-					movelist->moves[movelist->num++] = (move | (QUEEN << move_promoted_piecetype_offset));
-					movelist->moves[movelist->num++] = (move | (ROOK << move_promoted_piecetype_offset));
-					movelist->moves[movelist->num++] = (move | (BISHOP << move_promoted_piecetype_offset));
-					movelist->moves[movelist->num++] = (move | (KNIGHT << move_promoted_piecetype_offset));
+					movelist_prepend_move(movelist, (move | (QUEEN << move_promoted_piecetype_offset)));
+					movelist_prepend_move(movelist, (move | (ROOK << move_promoted_piecetype_offset)));
+					movelist_prepend_move(movelist, (move | (BISHOP << move_promoted_piecetype_offset)));
+					movelist_prepend_move(movelist, (move | (KNIGHT << move_promoted_piecetype_offset)));
 				}
 				else
-					movelist->moves[movelist->num++] = move;
+					movelist_append_move(movelist, move);
 
 				// try to move two spaces forward
 				if ((to_move == WHITE && row == 1) || (to_move == BLACK && row == 6))
@@ -237,7 +236,7 @@ static void move_generate_movelist_pawn_push(Bitboard *board, Movelist *movelist
 						move |= PAWN << move_piecetype_offset;
 						move |= to_move << move_color_offset;
 		
-						movelist->moves[movelist->num++] = move;
+						movelist_append_move(movelist, move);
 					}
 				}
 			}
@@ -272,7 +271,7 @@ static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 				move |= KING << move_piecetype_offset;
 				move |= color << move_color_offset;
 				move |= 1 << move_is_castle_offset;
-				movelist->moves[movelist->num++] = move;
+				movelist_append_move(movelist, move);
 			}
 		}
 	}
@@ -292,7 +291,7 @@ static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 				move |= KING << move_piecetype_offset;
 				move |= color << move_color_offset;
 				move |= 1 << move_is_castle_offset;
-				movelist->moves[movelist->num++] = move;
+				movelist_append_move(movelist, move);
 			}
 		}
 	}
@@ -312,7 +311,7 @@ static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 				move |= KING << move_piecetype_offset;
 				move |= color << move_color_offset;
 				move |= 1 << move_is_castle_offset;
-				movelist->moves[movelist->num++] = move;
+				movelist_append_move(movelist, move);
 			}
 		}
 	}
@@ -332,7 +331,7 @@ static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 				move |= KING << move_piecetype_offset;
 				move |= color << move_color_offset;
 				move |= 1 << move_is_castle_offset;
-				movelist->moves[movelist->num++] = move;
+				movelist_append_move(movelist, move);
 			}
 		}
 	}
@@ -352,7 +351,7 @@ static void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist
 			move |= PAWN << move_piecetype_offset;
 			move |= color << move_color_offset;
 			move |= 1 << move_is_enpassant_offset;
-			movelist->moves[movelist->num++] = move;
+			movelist_prepend_move(movelist, move);
 		}
 
 		if (board_col_of(ep_index) < 7 && (board->boards[color][PAWN] & (1ULL << (ep_index + 1))))
@@ -363,7 +362,7 @@ static void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist
 			move |= PAWN << move_piecetype_offset;
 			move |= color << move_color_offset;
 			move |= 1 << move_is_enpassant_offset;
-			movelist->moves[movelist->num++] = move;
+			movelist_prepend_move(movelist, move);
 		}
 	}
 }

@@ -70,12 +70,18 @@ Bitboard;
 // which leaves the six MSB unused
 typedef uint32_t Move;
 
+typedef struct Movelistnode
+{
+	Move move;
+	struct Movelistnode *next;
+} Movelistnode;
+
+// a movelist is sort of a hybrid stack/queue -- you can insert onto either end
+// in O(1) and remove from the front in O(1)
 typedef struct
 {
-	// according to Wikipedia, any given board has at most about 200 moves
-	Move moves[256];
-	uint8_t num;
-}
-Movelist;
+	Movelistnode *head;
+	Movelistnode *tail;
+} Movelist;
 
 #endif

@@ -4,6 +4,7 @@
 #include <signal.h>
 #include "types.h"
 #include "move.h"
+#include "movelist.h"
 #include "bitboard.h"
 #include "evaluate.h"
 #include "search.h"
@@ -13,20 +14,27 @@ static const int max_input_length = 1024;
 // returns 0 on illegal move
 static Move parse_move(Bitboard *board, char* possible_move)
 {
-	Movelist moves;
-	move_generate_movelist(board, &moves);
+	Movelist *moves = movelist_create();
+	move_generate_movelist(board, moves);
 	char test[6];
 
-	for (int i = 0; i < moves.num; i++)
+	Move m;
+	while ((m = movelist_next_move(moves)))
 	{
-		Move m = moves.moves[i];
 		move_srcdest_form(m, test);
 		if (!move_is_promotion(m) && !strncmp(test, possible_move, 4))
+		{
+			movelist_destroy(moves);
 			return m;
+		}
 		else if (!strncmp(test, possible_move, 5))
+		{
+			movelist_destroy(moves);
 			return m;
+		}
 	}
 
+	movelist_destroy(moves);
 	return 0;
 }
 

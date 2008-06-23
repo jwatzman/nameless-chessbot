@@ -2,6 +2,7 @@
 #include "search.h"
 #include "evaluate.h"
 #include "move.h"
+#include "movelist.h"
 
 typedef enum {TRANSPOSITION_EXACT, TRANSPOSITION_ALPHA, TRANSPOSITION_BETA} TranspositionType;
 
@@ -60,15 +61,13 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	if (reps >= 3)
 		return 0;
 
-	Movelist moves;
-	move_generate_movelist(board, &moves);
-	qsort(&(moves.moves), moves.num, sizeof(Move), search_move_comparator);
+	Movelist *moves = movelist_create();
+	move_generate_movelist(board, moves);
 	int found_move = 0;
 
-	for (int i = 0; i < moves.num; i++)
+	Move move;
+	while ((move = movelist_next_move(moves)))
 	{
-		Move move = moves.moves[i];
-
 		board_do_move(board, move);
 
 		if (!board_in_check(board, 1-board->to_move))
@@ -80,6 +79,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 			if (recursive_value >= beta)
 			{
 				search_transposition_put(board->zobrist, beta, TRANSPOSITION_BETA, depth);
+				movelist_destroy(moves);
 				return beta;
 			}
 
@@ -94,6 +94,8 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		else
 			board_undo_move(board, move);
 	}
+
+	movelist_destroy(moves);
 
 	if (!found_move)
 	{
