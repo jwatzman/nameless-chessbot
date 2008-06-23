@@ -88,6 +88,8 @@ void board_init(Bitboard *board)
 
 	board->history_index = 0;
 	board->history[0] = board->zobrist;
+
+	board->all_attacks_index = 0;
 }
 
 static void board_init_zobrist(Bitboard *board)
@@ -193,6 +195,13 @@ void board_do_move(Bitboard *board, Move move)
 	board_doundo_move_common(board, move);
 
 	board->history[board->history_index++] = board->zobrist;
+
+	board->all_attacks_ring_buffer[board->all_attacks_index][WHITE] = board->all_attacks[WHITE];
+	board->all_attacks_ring_buffer[board->all_attacks_index][BLACK] = board->all_attacks[BLACK];
+	board->all_attacks_index++;
+
+	board->all_attacks[WHITE] = move_generate_all_attacks(board, WHITE);
+	board->all_attacks[BLACK] = move_generate_all_attacks(board, BLACK);
 }
 
 void board_undo_move(Bitboard *board, Move move)
@@ -213,6 +222,10 @@ void board_undo_move(Bitboard *board, Move move)
 	board_doundo_move_common(board, move);
 
 	board->history_index--;
+
+	board->all_attacks_index--;
+	board->all_attacks[WHITE] = board->all_attacks_ring_buffer[board->all_attacks_index][WHITE];
+	board->all_attacks[BLACK] = board->all_attacks_ring_buffer[board->all_attacks_index][BLACK];
 }
 
 static void board_doundo_move_common(Bitboard *board, Move move)
@@ -284,7 +297,7 @@ static void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, ui
 
 int board_in_check(Bitboard *board, Color color)
 {
-	return move_square_is_attacked(board, 1-color, ffsll(board->boards[color][KING]) - 1);
+	return !!(board->all_attacks[1-color] & board->boards[color][KING]);
 }
 
 void board_print(uint64_t boards[2][6])

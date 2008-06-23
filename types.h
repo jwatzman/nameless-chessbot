@@ -52,6 +52,16 @@ typedef struct
 	// previous zobrist hashes of this game
 	uint8_t history_index;
 	uint64_t history[256];
+
+	// stores attacked bitboards, and their history in the game
+	// (the history is managed in the same manner as the undo_ring_bufffer)
+	//
+	// if, for example, the LSB is set in all_attacks[WHITE] then that means
+	// that white could capture a black piece sitting on a1, if there were to
+	// be one
+	uint64_t all_attacks[2];
+	uint8_t all_attacks_index;
+	uint64_t all_attacks_ring_buffer[256][2];
 }
 Bitboard;
 

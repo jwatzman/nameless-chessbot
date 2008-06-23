@@ -8,9 +8,7 @@
 // generates *psdueomoves* -- taking one of these moves could leave the king in check
 void move_generate_movelist(Bitboard *board, Movelist *movelist);
 
-// does not consider enpassant (this is basically for checking king move and
-// castling viability)
-int move_square_is_attacked(Bitboard *board, Color attacker, uint8_t square);
+uint64_t move_generate_all_attacks(Bitboard *board, Color attacker);
 
 static const uint8_t move_source_index_offset = 0;
 static inline uint8_t move_source_index(Move move)
