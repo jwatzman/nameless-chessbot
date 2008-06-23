@@ -23,7 +23,6 @@ static const int max_transposition_table_size = 16384;
 static TranspositionNode transposition_table[16384];
 
 static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Move* best_move);
-static int search_move_comparator(const void *m1, const void *m2);
 
 // returns INFINITY if unknown
 static int search_transposition_get_value(uint64_t zobrist, int alpha, int beta, int depth);
@@ -108,19 +107,6 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		search_transposition_put(board->zobrist, alpha, type, depth);
 		return alpha;
 	}
-}
-
-static int search_move_comparator(const void *m1, const void *m2)
-{
-	Move dm1 = *(Move*)m1;
-	Move dm2 = *(Move*)m2;
-
-	int score1 = move_is_capture(dm1) ?
-		15 + 2*move_captured_piecetype(dm1) - move_piecetype(dm1) : 0;
-	int score2 = move_is_capture(dm2) ?
-		15 + 2*move_captured_piecetype(dm2) - move_piecetype(dm2) : 0;
-
-	return score2 - score1;
 }
 
 static int search_transposition_get_value(uint64_t zobrist, int alpha, int beta, int depth)

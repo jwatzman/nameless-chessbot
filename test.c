@@ -10,7 +10,7 @@
 static Move get_human_move(Bitboard *board, Movelist *legal_moves);
 static Move get_computer_move(Bitboard *board);
 
-int main(int argc, char** argv)
+int main()
 {
 	Bitboard *test = malloc(sizeof(Bitboard));
 	board_init(test);
