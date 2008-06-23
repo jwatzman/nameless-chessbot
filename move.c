@@ -37,6 +37,7 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 
 			uint64_t dests = move_generate_attacks(board, piece, to_move, src);
 			dests &= ~(board->composite_boards[to_move]);
+			if (piece == KING) dests &= ~(board->all_attacks[1-to_move]);
 
 			uint64_t captures = dests & board->composite_boards[1-to_move];
 			uint64_t non_captures = dests & ~(board->composite_boards[1-to_move]);
