@@ -45,4 +45,6 @@ void perft(int depth)
 
 		board_undo_move(board, m);
 	}
+
+	movelist_destroy(moves);
 }
