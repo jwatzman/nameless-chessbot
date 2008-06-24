@@ -97,6 +97,8 @@ void movelist_append_movelist(Movelist *list, Movelist *append)
 		list->head = append->head;
 		list->tail = append->tail;
 	}
+
+	free(append);
 }
 
 int movelist_is_empty(Movelist *list)
