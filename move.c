@@ -25,6 +25,9 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 {
 	Color to_move = board->to_move;
 
+	Movelist *capture_list = movelist_create();
+	Movelist *non_capture_list = movelist_create();
+
 	for (Piecetype piece = 0; piece < 6; piece++)
 	{
 		uint64_t pieces = board->boards[to_move][piece];
@@ -60,13 +63,13 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 				{
 					move |= 1ULL << move_is_promotion_offset;
 
-					movelist_prepend_move(movelist, (move | (QUEEN << move_promoted_piecetype_offset)));
-					movelist_prepend_move(movelist, (move | (ROOK << move_promoted_piecetype_offset)));
-					movelist_prepend_move(movelist, (move | (BISHOP << move_promoted_piecetype_offset)));
-					movelist_prepend_move(movelist, (move | (KNIGHT << move_promoted_piecetype_offset)));
+					movelist_prepend_move(capture_list, (move | (QUEEN << move_promoted_piecetype_offset)));
+					movelist_prepend_move(capture_list, (move | (ROOK << move_promoted_piecetype_offset)));
+					movelist_prepend_move(capture_list, (move | (BISHOP << move_promoted_piecetype_offset)));
+					movelist_prepend_move(capture_list, (move | (KNIGHT << move_promoted_piecetype_offset)));
 				}
 				else
-					movelist_prepend_move(movelist, move);
+					movelist_append_move(capture_list, move);
 			}
 
 			while (non_captures)
@@ -80,14 +83,17 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 				move |= piece << move_piecetype_offset;
 				move |= to_move << move_color_offset;
 
-				movelist_append_move(movelist, move);
+				movelist_append_move(non_capture_list, move);
 			}
 		}
 	}
 
-	move_generate_movelist_pawn_push(board, movelist);
-	move_generate_movelist_castle(board, movelist);
-	move_generate_movelist_enpassant(board, movelist);
+	move_generate_movelist_pawn_push(board, capture_list);
+	move_generate_movelist_castle(board, non_capture_list);
+	move_generate_movelist_enpassant(board, capture_list);
+
+	movelist_append_movelist(movelist, capture_list);
+	movelist_append_movelist(movelist, non_capture_list);
 }
 
 static uint64_t move_generate_attacks(Bitboard *board, Piecetype piece, Color color, uint8_t index)
