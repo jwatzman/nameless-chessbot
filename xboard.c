@@ -32,11 +32,11 @@ static Move parse_move(Bitboard *board, char* possible_move)
 
 int main()
 {
-	Color computer_player; // not WHITE or BLACK if we don't play either (e.g. -1)
+	Color computer_player = -1; // not WHITE or BLACK if we don't play either (e.g. -1)
 	int game_on = 0;
 	Bitboard *board = malloc(sizeof(Bitboard));
 	char* input = malloc(sizeof(char) * max_input_length);
-	Move last_move;
+	Move last_move = 0;
 	int got_move = 0;
 
 	signal(SIGINT, SIG_IGN);

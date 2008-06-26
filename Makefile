@@ -1,5 +1,5 @@
 CFLAGS=-O3 --std=c99 -Wall -Wextra
-SOURCES_CORE=bitboard.c move.c movelist.c
+SOURCES_CORE=bitboard.c move.c
 SOURCES=${SOURCES_CORE} evaluate.c search.c
 
 all: perft test xboard
