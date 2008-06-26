@@ -1,4 +1,7 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
 #include "search.h"
 #include "evaluate.h"
 #include "move.h"
@@ -21,6 +24,11 @@ static const int max_transposition_table_size = 16384;
 // an invalid assumption, but i make it anyways :D
 static TranspositionNode transposition_table[16384];
 
+static int max_search_secs = 10;
+static int timeup;
+
+static void sigalarm_handler(int signum);
+
 static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Move* best_move);
 static int search_move_comparator(const void *m1, const void *m2);
 
@@ -28,10 +36,37 @@ static int search_move_comparator(const void *m1, const void *m2);
 static int search_transposition_get_value(uint64_t zobrist, int alpha, int beta, int depth);
 static void search_transposition_put(uint64_t zobrist, int value, TranspositionType type, int depth);
 
+static void sigalarm_handler(int signum)
+{
+	timeup = 1;
+}
+
 Move search_find_move(Bitboard *board)
 {
-	Move best_move;
-	search_alpha_beta(board, -INFINITY, INFINITY, 6, &best_move);
+	Move best_move = 0, depth_best_move = 0;
+
+	struct sigaction sigalarm_action;
+	sigalarm_action.sa_handler = sigalarm_handler;
+	sigemptyset(&sigalarm_action.sa_mask);
+	sigalarm_action.sa_flags = 0;
+	sigaction(SIGALRM, &sigalarm_action, 0);
+
+	alarm(max_search_secs);
+
+	timeup = 0;
+
+	for (int depth = 1; depth <= 10; depth++)
+	{
+		search_alpha_beta(board, -INFINITY, INFINITY, depth, &depth_best_move);
+
+		if (!timeup)
+			best_move = depth_best_move;
+		else
+			break;
+	}
+
+	alarm(0);
+
 	return best_move;
 }
 
@@ -65,7 +100,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	qsort(&(moves.moves), moves.num, sizeof(Move), search_move_comparator);
 	int found_move = 0;
 
-	for (int i = 0; i < moves.num; i++)
+	for (int i = 0; (i < moves.num) && !timeup; i++)
 	{
 		Move move = moves.moves[i];
 
@@ -144,6 +179,9 @@ static int search_transposition_get_value(uint64_t zobrist, int alpha, int beta,
 
 static void search_transposition_put(uint64_t zobrist, int value, TranspositionType type, int depth)
 {
+	if (timeup)
+		return;
+
 	TranspositionNode *node = &transposition_table[zobrist % max_transposition_table_size];
 	node->zobrist = zobrist;
 	node->depth = depth;
