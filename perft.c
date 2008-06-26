@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include "bitboard.h"
 #include "move.h"
-#include "movelist.h"
 
 Bitboard *board;
 unsigned long int nodes;
@@ -32,12 +31,12 @@ void perft(int depth)
 		return;
 	}
 
-	Movelist *moves = movelist_create();
-	move_generate_movelist(board, moves);
+	Movelist moves;
+	move_generate_movelist(board, &moves);
 
-	Move m;
-	while ((m = movelist_next_move(moves)))
+	for (int i = 0; i < moves.num; i++)
 	{
+		Move m = moves.moves[i];
 		board_do_move(board, m);
 
 		if (!board_in_check(board, 1-board->to_move))
@@ -45,6 +44,4 @@ void perft(int depth)
 
 		board_undo_move(board, m);
 	}
-
-	movelist_destroy(moves);
 }

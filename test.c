@@ -3,14 +3,13 @@
 #include <string.h>
 #include "bitboard.h"
 #include "move.h"
-#include "movelist.h"
 #include "evaluate.h"
 #include "search.h"
 
-static Move get_human_move(Bitboard *board, Movelist *legal_moves);
+static Move get_human_move(Bitboard *board, Movelist legal_moves);
 static Move get_computer_move(Bitboard *board);
 
-int main()
+int main(int argc, char** argv)
 {
 	Bitboard *test = malloc(sizeof(Bitboard));
 	board_init(test);
@@ -39,39 +38,31 @@ int main()
 		printf("Evaluation: %i\n", evaluate_board(test));
 		printf("To move: %i\n", test->to_move);
 
-		Movelist *all_moves, *legal_moves;
-		all_moves = movelist_create();
-		legal_moves = movelist_create();
-
-		move_generate_movelist(test, all_moves);
-
-		Move move;
-		while ((move = movelist_next_move(all_moves)))
+		Movelist all_moves, legal_moves;
+		legal_moves.num = 0;
+		move_generate_movelist(test, &all_moves);
+		for (int i = 0; i < all_moves.num; i++)
 		{
+			Move move = all_moves.moves[i];
 			board_do_move(test, move);
 			if (!board_in_check(test, 1-test->to_move))
-				movelist_append_move(legal_moves, move);
+				legal_moves.moves[legal_moves.num++] = move;
 			board_undo_move(test, move);
 		}
 
-		if (movelist_is_empty(legal_moves))
+		if (legal_moves.num == 0)
 		{
 			if (board_in_check(test, test->to_move))
 				printf("CHECKMATE!\n");
 			else
 				printf("STALEMATE!\n");
 
-			movelist_destroy(all_moves);
-			movelist_destroy(legal_moves);
 			break;
 		}
 
 		if (test->halfmove_count == 50)
 		{
 			printf("DRAW BY 50 MOVE RULE\n");
-
-			movelist_destroy(all_moves);
-			movelist_destroy(legal_moves);
 			break;
 		}
 
@@ -82,39 +73,34 @@ int main()
 			next_move = get_computer_move(test);
 
 		board_do_move(test, next_move);
-
-		movelist_destroy(all_moves);
-		movelist_destroy(legal_moves);
 	}
 
 	free(test);
 	return 0;
 }
 
-static Move get_human_move(Bitboard *board, Movelist *legal_moves)
+static Move get_human_move(Bitboard *board, Movelist legal_moves)
 {
 	char* srcdest_form = malloc(6 * sizeof(char));
 	char* input_move = malloc(6 * sizeof(char));
 
-	Move move, result = 0;
-	Movelist *legal_moves_clone;
+	Move result = 0;
 
-	legal_moves_clone = movelist_clone(legal_moves);
-	while ((move = movelist_next_move(legal_moves_clone)))
+	for (int i = 0; i < legal_moves.num; i++)
 	{
+		Move move = legal_moves.moves[i];
 		move_srcdest_form(move, srcdest_form);
 		printf("%s ", srcdest_form);
 	}
 	printf("\n");
-	movelist_destroy(legal_moves_clone);
 
 	while (!result)
 	{
 		scanf("%5s", input_move);
 
-		legal_moves_clone = movelist_clone(legal_moves);
-		while ((move = movelist_next_move(legal_moves_clone)))
+		for (int i = 0; i < legal_moves.num; i++)
 		{
+			Move move = legal_moves.moves[i];
 			move_srcdest_form(move, srcdest_form);
 			if (!strcmp(input_move, srcdest_form))
 			{
@@ -128,8 +114,6 @@ static Move get_human_move(Bitboard *board, Movelist *legal_moves)
 				break;
 			}
 		}
-
-		movelist_destroy(legal_moves_clone);
 	}
 
 	free(srcdest_form);
