@@ -39,6 +39,8 @@ int main()
 	Move last_move = 0;
 	int got_move = 0;
 
+	freopen("/dev/tty", "w", stderr);
+
 	signal(SIGINT, SIG_IGN);
 
 	while (1)
@@ -59,6 +61,7 @@ int main()
 
 		fflush(stdout);
 		fgets(input, max_input_length, stdin);
+		fprintf(stderr, input);
 
 		if (!strcmp("xboard\n", input))
 			; // no-op

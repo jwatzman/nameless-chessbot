@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
@@ -38,6 +39,7 @@ static void search_transposition_put(uint64_t zobrist, int value, TranspositionT
 
 static void sigalarm_handler(int signum)
 {
+	fprintf(stderr, "SEARCHER got sigalarm\n");
 	timeup = 1;
 }
 
@@ -57,6 +59,7 @@ Move search_find_move(Bitboard *board)
 
 	for (int depth = 1; depth <= 10; depth++)
 	{
+		fprintf(stderr, "SEARCHER beginning depth %i\n", depth);
 		search_alpha_beta(board, -INFINITY, INFINITY, depth, &depth_best_move);
 
 		if (!timeup)
