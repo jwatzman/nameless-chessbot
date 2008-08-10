@@ -41,8 +41,6 @@ int main()
 
 	freopen("/dev/tty", "w", stderr);
 
-	signal(SIGINT, SIG_IGN);
-
 	while (1)
 	{
 		if (game_on && got_move)
@@ -64,7 +62,7 @@ int main()
 		fprintf(stderr, input);
 
 		if (!strcmp("xboard\n", input))
-			; // no-op
+			printf("feature colors=0 sigint=0 sigterm=0 done=1\n");
 		else if (!strcmp("new\n", input))
 		{
 			board_init(board);
@@ -77,10 +75,6 @@ int main()
 			computer_player = -1;
 		else if (!strcmp("go\n", input))
 			computer_player = board->to_move;
-		/*else if (!strcmp("white\n", input))
-			computer_player = BLACK;
-		else if (!strcmp("black\n", input))
-			computer_player = WHITE;*/
 		else if (!strncmp("result", input, 6))
 		{
 			computer_player = -1;
