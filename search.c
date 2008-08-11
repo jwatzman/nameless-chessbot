@@ -92,7 +92,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		return 0;
 
 	int reps = 0;
-	for (int i = board->history_index - board->halfmove_count; i < board->history_index; i++)
+	for (uint8_t i = board->history_index - board->halfmove_count; i < board->history_index; i++)
 		if (board->history[i] == board->zobrist)
 			reps++;
 	if (reps >= 3)
