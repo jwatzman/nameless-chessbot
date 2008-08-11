@@ -62,7 +62,7 @@ int main()
 		fprintf(stderr, input);
 
 		if (!strcmp("xboard\n", input))
-			printf("feature colors=0 sigint=0 sigterm=0 done=1\n");
+			printf("feature colors=0 sigint=0 sigterm=0 variants=\"normal\" done=1\n");
 		else if (!strcmp("new\n", input))
 		{
 			board_init(board);
