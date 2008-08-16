@@ -25,12 +25,14 @@ static const int max_transposition_table_size = 16384;
 // an invalid assumption, but i make it anyways :D
 static TranspositionNode transposition_table[16384];
 
+static const int max_depth = 10;
+
 static const int max_search_secs = 12;
 static int timeup;
 
 static void sigalarm_handler(int signum);
 
-static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Move* best_move);
+static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Move* pv);
 static int search_move_comparator(const void *m1, const void *m2);
 
 // returns INFINITY if unknown
@@ -39,13 +41,13 @@ static void search_transposition_put(uint64_t zobrist, int value, TranspositionT
 
 static void sigalarm_handler(int signum)
 {
-	fprintf(stderr, "SEARCHER got sigalarm\n");
 	timeup = 1;
 }
 
 Move search_find_move(Bitboard *board)
 {
-	Move best_move = 0, depth_best_move = 0;
+	Move best_move = 0;
+	Move pv[max_depth];
 
 	struct sigaction sigalarm_action;
 	sigalarm_action.sa_handler = sigalarm_handler;
@@ -57,15 +59,31 @@ Move search_find_move(Bitboard *board)
 
 	timeup = 0;
 
-	for (int depth = 1; depth <= 10; depth++)
+	for (int depth = 1; depth <= max_depth; depth++)
 	{
-		fprintf(stderr, "SEARCHER beginning depth %i\n", depth);
-		search_alpha_beta(board, -INFINITY, INFINITY, depth, &depth_best_move);
+		fprintf(stderr, "SEARCHER depth %i", depth);
+		search_alpha_beta(board, -INFINITY, INFINITY, depth, pv);
 
 		if (!timeup)
-			best_move = depth_best_move;
+		{
+			char buf[6];
+			fprintf(stderr, " pv");
+
+			for (int i = 0; i < depth; i++)
+			{
+				move_srcdest_form(pv[i], buf);
+				fprintf(stderr, " %s", buf);
+			}
+
+			fprintf(stderr, "\n");
+
+			best_move = pv[0];
+		}
 		else
+		{
+			fprintf(stderr, " timeup\n");
 			break;
+		}
 	}
 
 	alarm(0);
@@ -73,7 +91,7 @@ Move search_find_move(Bitboard *board)
 	return best_move;
 }
 
-static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Move* best_move)
+static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Move* pv)
 {
 	TranspositionType type = TRANSPOSITION_ALPHA;
 
@@ -112,7 +130,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		if (!board_in_check(board, 1-board->to_move))
 		{
 			found_move = 1;
-			int recursive_value = -search_alpha_beta(board, -beta, -alpha, depth - 1, 0);
+			int recursive_value = -search_alpha_beta(board, -beta, -alpha, depth - 1, pv + 1);
 			board_undo_move(board, move);
 
 			if (recursive_value >= beta)
@@ -125,8 +143,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 			{
 				alpha = recursive_value;
 				type = TRANSPOSITION_EXACT;
-				if (best_move)
-					*best_move = move;
+				*pv = move;
 			}
 		}
 		else
