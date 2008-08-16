@@ -40,6 +40,8 @@ int main()
 	int got_move = 0;
 
 	freopen("/dev/tty", "w", stderr);
+	setbuf(stderr, NULL);
+	setbuf(stdout, NULL);
 
 	while (1)
 	{
@@ -57,7 +59,6 @@ int main()
 			board_do_move(board, last_move);
 		}
 
-		fflush(stdout);
 		fgets(input, max_input_length, stdin);
 		fprintf(stderr, input);
 
@@ -93,8 +94,6 @@ int main()
 		}
 		else
 			printf("Error (unknown command): %s", input);
-
-		fflush(stdout);
 	}
 
 	free(board);
