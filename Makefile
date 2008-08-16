@@ -18,4 +18,4 @@ move-generated.h: ${SOURCES_GEN}
 	./move-generated-generator.sh
 
 clean:
-	-rm -f perft test ncb-xboard move-generated.h
+	-rm -f perft test xboard move-generated.h
