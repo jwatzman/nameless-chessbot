@@ -25,7 +25,7 @@ static const int max_transposition_table_size = 16384;
 // an invalid assumption, but i make it anyways :D
 static TranspositionNode transposition_table[16384];
 
-static int max_search_secs = 10;
+static const int max_search_secs = 12;
 static int timeup;
 
 static void sigalarm_handler(int signum);
