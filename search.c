@@ -14,6 +14,7 @@ typedef struct
 	uint64_t zobrist;
 	int depth;
 	int value;
+	Move best_move;
 	TranspositionType type;
 }
 TranspositionNode;
@@ -37,7 +38,11 @@ static int search_move_comparator(const void *m1, const void *m2);
 
 // returns INFINITY if unknown
 static int search_transposition_get_value(uint64_t zobrist, int alpha, int beta, int depth);
-static void search_transposition_put(uint64_t zobrist, int value, TranspositionType type, int depth);
+
+// returns 0 if unknown
+static Move search_transposition_get_best_move(uint64_t zobrist);
+
+static void search_transposition_put(uint64_t zobrist, int value, Move best_move, TranspositionType type, int depth);
 
 static void sigalarm_handler(int signum)
 {
@@ -102,7 +107,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	if (depth == 0)
 	{
 		int eval = evaluate_board(board);
-		search_transposition_put(board->zobrist, eval, TRANSPOSITION_EXACT, depth);
+		search_transposition_put(board->zobrist, eval, 0, TRANSPOSITION_EXACT, depth);
 		return eval;
 	}
 
@@ -121,9 +126,20 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	qsort(&(moves.moves), moves.num, sizeof(Move), search_move_comparator);
 	int found_move = 0;
 
+	Move transposition_move = search_transposition_get_best_move(board->zobrist);
+
 	for (int i = 0; (i < moves.num) && !timeup; i++)
 	{
-		Move move = moves.moves[i];
+		Move move;
+
+		if (transposition_move)
+		{
+			move = transposition_move;
+			transposition_move = 0;
+			i--;
+		}
+		else
+			move = moves.moves[i];
 
 		board_do_move(board, move);
 
@@ -135,7 +151,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 
 			if (recursive_value >= beta)
 			{
-				search_transposition_put(board->zobrist, beta, TRANSPOSITION_BETA, depth);
+				search_transposition_put(board->zobrist, beta, move, TRANSPOSITION_BETA, depth);
 				return beta;
 			}
 
@@ -153,12 +169,12 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	if (!found_move)
 	{
 		int val = board_in_check(board, board->to_move) ? -(MATE + depth) : 0;
-		search_transposition_put(board->zobrist, val, TRANSPOSITION_EXACT, depth);
+		search_transposition_put(board->zobrist, val, *pv, TRANSPOSITION_EXACT, depth);
 		return val;
 	}
 	else
 	{
-		search_transposition_put(board->zobrist, alpha, type, depth);
+		search_transposition_put(board->zobrist, alpha, *pv, type, depth);
 		return alpha;
 	}
 }
@@ -197,7 +213,18 @@ static int search_transposition_get_value(uint64_t zobrist, int alpha, int beta,
 	return INFINITY;
 }
 
-static void search_transposition_put(uint64_t zobrist, int value, TranspositionType type, int depth)
+static Move search_transposition_get_best_move(uint64_t zobrist)
+{
+	Move result = 0;
+	TranspositionNode node = transposition_table[zobrist % max_transposition_table_size];
+
+	if (node.zobrist == zobrist)
+		result = node.best_move;
+
+	return result;
+}
+
+static void search_transposition_put(uint64_t zobrist, int value, Move best_move, TranspositionType type, int depth)
 {
 	if (timeup)
 		return;
@@ -206,5 +233,6 @@ static void search_transposition_put(uint64_t zobrist, int value, TranspositionT
 	node->zobrist = zobrist;
 	node->depth = depth;
 	node->value = value;
-	node-> type = type;
+	node->best_move = best_move;
+	node->type = type;
 }
