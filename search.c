@@ -54,6 +54,8 @@ Move search_find_move(Bitboard *board)
 	Move best_move = 0;
 	Move pv[max_depth];
 
+	// set up the timer; a sigalarm is sent when the search should prematurely
+	// end due to time, which in turn sets timeup = 1
 	struct sigaction sigalarm_action;
 	sigalarm_action.sa_handler = sigalarm_handler;
 	sigemptyset(&sigalarm_action.sa_mask);
@@ -64,11 +66,18 @@ Move search_find_move(Bitboard *board)
 
 	timeup = 0;
 
+	// for each depth, call the main workhorse, search_alpha_beta
 	for (int depth = 1; depth <= max_depth; depth++)
 	{
 		fprintf(stderr, "SEARCHER depth %i", depth);
 		search_alpha_beta(board, -INFINITY, INFINITY, depth, pv);
 
+		// if we sucessfully completed a depth (i.e. did not early terminate due to time),
+		// pull the first move off of the pv so that we can return it later,
+		// and then print the pv. Note that there is a minor race condition here:
+		// if we get the sigalarm after the very last check in the search_alpha_beta
+		// recursive calls, but before we get here, we can potentially throw away an entire
+		// depth's worth of work. This is unforunate but won't really hurt anything
 		if (!timeup)
 		{
 			char buf[6];
@@ -91,6 +100,7 @@ Move search_find_move(Bitboard *board)
 		}
 	}
 
+	// this shouldn't matter, but it can't hurt
 	alarm(0);
 
 	return best_move;
@@ -100,10 +110,12 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 {
 	TranspositionType type = TRANSPOSITION_ALPHA;
 
+	// if we know an acceptable value in the table, use it
 	int table_val = search_transposition_get_value(board->zobrist, alpha, beta, depth);
 	if (table_val != INFINITY)
 		return table_val;
 
+	// leaf node
 	if (depth == 0)
 	{
 		int eval = evaluate_board(board);
@@ -111,9 +123,11 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		return eval;
 	}
 
+	// 50-move rule
 	if (board->halfmove_count == 100)
 		return 0;
 
+	// 3 repitition rule
 	int reps = 0;
 	for (uint8_t i = board->history_index - board->halfmove_count; i < board->history_index; i++)
 		if (board->history[i] == board->zobrist)
@@ -121,9 +135,14 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	if (reps >= 3)
 		return 0;
 
+	// generate the list of pseudolegal moves for this board, and due move ordering via qsort
+	// and the order defined by search_move_comparator
 	Movelist moves;
 	move_generate_movelist(board, &moves);
 	qsort(&(moves.moves), moves.num, sizeof(Move), search_move_comparator);
+
+	// since we generate only pseudolegal moves, we need to keep track if there actually are
+	// any legal moves at all
 	int found_move = 0;
 
 	Move transposition_move = search_transposition_get_best_move(board->zobrist);
@@ -132,6 +151,8 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	{
 		Move move;
 
+		// if we sucessfully got a move out of the transposition table and have not tried it yet,
+		// try it first; otherwise continue moving through the main body of moves
 		if (transposition_move)
 		{
 			move = transposition_move;
@@ -143,6 +164,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 
 		board_do_move(board, move);
 
+		// make the final legality check
 		if (!board_in_check(board, 1-board->to_move))
 		{
 			found_move = 1;
@@ -151,6 +173,9 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 
 			if (recursive_value >= beta)
 			{
+				// since this move caused a beta cutoff, we don't want to bother storing it in the pv
+				// *however*, we most definately want to put it in the transposition table,
+				// since it will be searched first next time, and will thus immediately cause a cutoff again
 				search_transposition_put(board->zobrist, beta, move, TRANSPOSITION_BETA, depth);
 				return beta;
 			}
@@ -168,6 +193,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 
 	if (!found_move)
 	{
+		// there are no legal moves for this game state -- check why
 		int val = board_in_check(board, board->to_move) ? -(MATE + depth) : 0;
 		search_transposition_put(board->zobrist, val, *pv, TRANSPOSITION_EXACT, depth);
 		return val;
@@ -181,6 +207,11 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 
 static int search_move_comparator(const void *m1, const void *m2)
 {
+	// sorts in this priority:
+	// captures before noncaptures,
+	// more valuable captured pieces first,
+	// more valuable capturing pieces first
+
 	Move dm1 = *(Move*)m1;
 	Move dm2 = *(Move*)m2;
 
@@ -195,6 +226,10 @@ static int search_move_comparator(const void *m1, const void *m2)
 static int search_transposition_get_value(uint64_t zobrist, int alpha, int beta, int depth)
 {
 	TranspositionNode *node = &transposition_table[zobrist % max_transposition_table_size];
+
+	// since many zobrists may map to a single slot in the table, we want to make sure we got
+	// a match; also, we want to make sure that the entry was not made with a shallower
+	// depth than what we're currently using
 	if (node->zobrist == zobrist)
 	{
 		if (node->depth >= depth)
@@ -226,6 +261,9 @@ static Move search_transposition_get_best_move(uint64_t zobrist)
 
 static void search_transposition_put(uint64_t zobrist, int value, Move best_move, TranspositionType type, int depth)
 {
+	// make sure that only data from completed subtrees makes it in the table;
+	// since this is only called right before search_alpha_beta returns,
+	// we just want to make sure the main search loop finished for that subtree
 	if (timeup)
 		return;
 
