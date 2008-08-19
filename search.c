@@ -76,7 +76,7 @@ Move search_find_move(Bitboard *board)
 	for (int depth = 1; depth <= max_depth; depth++)
 	{
 		fprintf(stderr, "SEARCHER depth %i", depth);
-		search_alpha_beta(board, -INFINITY, INFINITY, depth, pv);
+		int val = search_alpha_beta(board, -INFINITY, INFINITY, depth, pv);
 
 		// if we sucessfully completed a depth (i.e. did not early terminate due to time),
 		// pull the first move off of the pv so that we can return it later,
@@ -91,7 +91,7 @@ Move search_find_move(Bitboard *board)
 			best_move = pv[0];
 
 			move_srcdest_form(best_move, buf);
-			fprintf(stderr, " %s\n", buf);
+			fprintf(stderr, " %s (%i)\n", buf, val);
 		}
 		else
 		{
