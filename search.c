@@ -52,6 +52,12 @@ static void sigalarm_handler(int signum)
 Move search_find_move(Bitboard *board)
 {
 	Move best_move = 0;
+
+	// note that due to the way that this is maintained, sibling nodes *will*
+	// destroy each other's values -- ONLY pv[0] is garunteed to be valid when
+	// we get all the way back up here (the other slots are used for scratch
+	// space, and are actually valid when the recursion layer using them
+	// is the top level layer -- it's only siblings that ruin things :))
 	Move pv[max_depth];
 
 	// set up the timer; a sigalarm is sent when the search should prematurely
@@ -74,24 +80,18 @@ Move search_find_move(Bitboard *board)
 
 		// if we sucessfully completed a depth (i.e. did not early terminate due to time),
 		// pull the first move off of the pv so that we can return it later,
-		// and then print the pv. Note that there is a minor race condition here:
+		// and then print it. Note that there is a minor race condition here:
 		// if we get the sigalarm after the very last check in the search_alpha_beta
 		// recursive calls, but before we get here, we can potentially throw away an entire
 		// depth's worth of work. This is unforunate but won't really hurt anything
 		if (!timeup)
 		{
 			char buf[6];
-			fprintf(stderr, " pv");
-
-			for (int i = 0; i < depth; i++)
-			{
-				move_srcdest_form(pv[i], buf);
-				fprintf(stderr, " %s", buf);
-			}
-
-			fprintf(stderr, "\n");
 
 			best_move = pv[0];
+
+			move_srcdest_form(best_move, buf);
+			fprintf(stderr, " %s\n", buf);
 		}
 		else
 		{
