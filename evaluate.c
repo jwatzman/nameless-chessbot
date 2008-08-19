@@ -2,6 +2,7 @@
 #include <string.h>
 #include "evaluate.h"
 #include "bitboard.h"
+#include "move.h"
 
 static const int rook_pos[] = {
 0, 3, 7,  8,  8, 7, 3, 0,
@@ -52,6 +53,8 @@ static const int* pos_tables[] = { pawn_pos, bishop_pos, knight_pos, rook_pos, 0
 static const int values[] = { 100, 300, 300, 500, 900, 0 };
 static const int castle_bonus = 10;
 
+static int popcnt(uint64_t x);
+
 int evaluate_board(Bitboard *board)
 {
 	int result = 0;
@@ -79,9 +82,20 @@ int evaluate_board(Bitboard *board)
 				if (table)
 					result += modifier * table[loc];
 				result += modifier * values[piece];
+
+				uint64_t attacks = move_generate_attacks(board, piece, color, loc);
+				result += modifier * popcnt(attacks);
 			}
 		}
 	}
 
 	return result;
+}
+
+static int popcnt(uint64_t x)
+{
+	x -= (x >> 1) & 0x5555555555555555;
+	x = (x & 0x3333333333333333) + ((x >> 2) & 0x3333333333333333);
+	x = (x + (x >> 4)) & 0x0f0f0f0f0f0f0f0f;
+	return (x * 0x0101010101010101)>>56;
 }

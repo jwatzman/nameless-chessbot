@@ -12,6 +12,10 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist);
 // castling viability)
 int move_square_is_attacked(Bitboard *board, Color attacker, uint8_t square);
 
+// assuming this piece were to be at this location, where could it attack?
+// note: does *not* generate pawn pushes or mask out friendly pieces
+uint64_t move_generate_attacks(Bitboard *board, Piecetype piece, Color color, uint8_t index);
+
 static const uint8_t move_source_index_offset = 0;
 static inline uint8_t move_source_index(Move move)
 {

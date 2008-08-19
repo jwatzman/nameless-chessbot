@@ -10,10 +10,6 @@ static void move_generate_movelist_pawn_push(Bitboard *board, Movelist *movelist
 static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist);
 static void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist);
 
-// assuming this piece were to be at this location, where could it attack?
-// note: does *not* generate pawn pushes or mask out friendly pieces
-static uint64_t move_generate_attacks(Bitboard *board, Piecetype piece, Color color, uint8_t index);
-
 // these expect the composite_board to be of the properly rotated variant
 static uint64_t move_generate_attacks_row(uint64_t composite_board, uint8_t index);
 static uint64_t move_generate_attacks_col(uint64_t composite_board, uint8_t index);
@@ -91,7 +87,7 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 	move_generate_movelist_enpassant(board, movelist);
 }
 
-static uint64_t move_generate_attacks(Bitboard *board, Piecetype piece, Color color, uint8_t index)
+uint64_t move_generate_attacks(Bitboard *board, Piecetype piece, Color color, uint8_t index)
 {
 	switch (piece)
 	{
