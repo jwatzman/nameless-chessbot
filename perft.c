@@ -15,10 +15,11 @@ int main(int argc, char** argv)
 	int max_depth = atoi(argv[1]);
 	
 	board_init(board);
+	printf("initial zobrist %.16llx\n", board->zobrist);
 
 	perft(max_depth);
 
-	printf("zobrist %.16llx\n%lu nodes\n", board->zobrist, nodes);
+	printf("final zobrist %.16llx\n%lu nodes\n", board->zobrist, nodes);
 	free(board);
 	return 0;
 }
