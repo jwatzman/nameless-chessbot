@@ -109,6 +109,7 @@ Move search_find_move(Bitboard *board)
 static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Move* pv)
 {
 	TranspositionType type = TRANSPOSITION_ALPHA;
+	int quiescent = depth <= 0;
 
 	// if we know an acceptable value in the table, use it
 	int table_val = search_transposition_get_value(board->zobrist, alpha, beta, depth);
@@ -116,7 +117,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		return table_val;
 
 	// leaf node
-	if (depth == 0)
+	if (depth == -3)
 	{
 		int eval = evaluate_board(board);
 		search_transposition_put(board->zobrist, eval, 0, TRANSPOSITION_EXACT, depth);
@@ -145,7 +146,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	// any legal moves at all
 	int found_move = 0;
 
-	Move transposition_move = search_transposition_get_best_move(board->zobrist);
+	Move transposition_move = quiescent ? 0 : search_transposition_get_best_move(board->zobrist);
 
 	for (int i = 0; (i < moves.num) && !timeup; i++)
 	{
@@ -161,6 +162,9 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		}
 		else
 			move = moves.moves[i];
+
+		if (quiescent && !move_is_capture(move))
+			break;
 
 		board_do_move(board, move);
 
@@ -191,12 +195,16 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 			board_undo_move(board, move);
 	}
 
-	if (!found_move)
+	if (!found_move && !quiescent)
 	{
 		// there are no legal moves for this game state -- check why
 		int val = board_in_check(board, board->to_move) ? -(MATE + depth) : 0;
 		search_transposition_put(board->zobrist, val, *pv, TRANSPOSITION_EXACT, depth);
 		return val;
+	}
+	else if (!found_move && quiescent)
+	{
+		return evaluate_board(board);
 	}
 	else
 	{
@@ -265,6 +273,10 @@ static void search_transposition_put(uint64_t zobrist, int value, Move best_move
 	// since this is only called right before search_alpha_beta returns,
 	// we just want to make sure the main search loop finished for that subtree
 	if (timeup)
+		return;
+
+	// no quiescent data either
+	if (depth <= 0)
 		return;
 
 	TranspositionNode *node = &transposition_table[zobrist % max_transposition_table_size];
