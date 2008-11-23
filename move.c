@@ -35,9 +35,7 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 			dests &= ~(board->composite_boards[to_move]);
 
 			uint64_t captures = dests & board->composite_boards[1-to_move];
-			uint64_t non_captures = dests & ~(board->composite_boards[1-to_move]);
-
-			if (piece == PAWN) non_captures = 0;
+			uint64_t non_captures = piece == PAWN ? 0 : dests & ~(board->composite_boards[1-to_move]);
 
 			while (captures)
 			{
