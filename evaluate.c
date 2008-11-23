@@ -99,6 +99,7 @@ int evaluate_board(Bitboard *board)
 					result += modifier * table[loc];
 				result += modifier * values[piece];
 
+				/*
 				// add in a bonus for every square that this piece can attack
 				// only do this for bishops and rooks; knights are sufficiently taken
 				// care of by positional bonus, and this will emphasize queens too much
@@ -107,6 +108,7 @@ int evaluate_board(Bitboard *board)
 					uint64_t attacks = move_generate_attacks(board, piece, color, loc);
 					result += modifier * popcnt(attacks);
 				}
+				*/
 			}
 		}
 	}
