@@ -16,65 +16,35 @@ int move_square_is_attacked(Bitboard *board, Color attacker, uint8_t square);
 // note: does *not* generate pawn pushes or mask out friendly pieces
 uint64_t move_generate_attacks(Bitboard *board, Piecetype piece, Color color, uint8_t index);
 
-static const uint8_t move_source_index_offset = 0;
-static inline uint8_t move_source_index(Move move)
-{
-	return move & 0x3F;
-}
+#define move_source_index_offset 0
+#define move_source_index(move) ((move) & 0x3F)
 
-static const uint8_t move_destination_index_offset = 6;
-static inline uint8_t move_destination_index(Move move)
-{
-	return (move >> move_destination_index_offset) & 0x3F;
-}
+#define move_destination_index_offset 6
+#define move_destination_index(move) (((move) >> move_destination_index_offset) & 0x3F)
 
-static const uint8_t move_piecetype_offset = 12;
-static inline Piecetype move_piecetype(Move move)
-{
-	return (move >> move_piecetype_offset) & 0x07;
-}
+#define move_piecetype_offset 12
+#define move_piecetype(move) (((move) >> move_piecetype_offset) & 0x07)
 
-static const uint8_t move_color_offset = 15;
-static inline Color move_color(Move move)
-{
-	return (move >> move_color_offset) & 0x01;
-}
+#define move_color_offset 15
+#define move_color(move) (((move) >> move_color_offset) & 0x01)
 
-static const uint8_t move_is_castle_offset = 16;
-static inline int move_is_castle(Move move)
-{
-	return (move >> move_is_castle_offset) & 0x01;
-}
+#define move_is_castle_offset 16
+#define move_is_castle(move) (((move) >> move_is_castle_offset) & 0x01)
 
-static const uint8_t move_is_enpassant_offset = 17;
-static inline int move_is_enpassant(Move move)
-{
-	return (move >> move_is_enpassant_offset) & 0x01;
-}
+#define move_is_enpassant_offset 17
+#define move_is_enpassant(move) (((move) >> move_is_enpassant_offset) & 0x01)
 
-static const uint8_t move_is_capture_offset = 18;
-static inline int move_is_capture(Move move)
-{
-	return (move >> move_is_capture_offset) & 0x01;
-}
+#define move_is_capture_offset 18
+#define move_is_capture(move) (((move) >> move_is_capture_offset) & 0x01)
 
-static const uint8_t move_is_promotion_offset = 19;
-static inline int move_is_promotion(Move move)
-{
-	return (move >> move_is_promotion_offset) & 0x01;
-}
+#define move_is_promotion_offset 19
+#define move_is_promotion(move) (((move) >> move_is_promotion_offset) & 0x01)
 
-static const uint8_t move_captured_piecetype_offset = 20;
-static inline int move_captured_piecetype(Move move)
-{
-	return (move >> move_captured_piecetype_offset) & 0x07;
-}
+#define move_captured_piecetype_offset 20
+#define move_captured_piecetype(move) (((move) >> move_captured_piecetype_offset) & 0x07)
 
-static const uint8_t move_promoted_piecetype_offset = 23;
-static inline int move_promoted_piecetype(Move move)
-{
-	return (move >> move_promoted_piecetype_offset) & 0x07;
-}
+#define move_promoted_piecetype_offset 23
+#define move_promoted_piecetype(move) (((move) >> move_promoted_piecetype_offset) & 0x07)
 
 static inline void move_srcdest_form(Move move, char srcdest_form[6])
 {

@@ -60,7 +60,7 @@ static const int* pos_tables[] = { pawn_pos, bishop_pos, knight_pos, rook_pos, 0
 // (as defined in types.h)
 static const int values[] = { 100, 300, 300, 500, 900, 0 };
 
-static const int castle_bonus = 10;
+#define castle_bonus 10
 
 static int popcnt(uint64_t x);
 

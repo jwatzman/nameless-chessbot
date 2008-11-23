@@ -19,16 +19,16 @@ typedef struct
 }
 TranspositionNode;
 
-static const int max_transposition_table_size = 16384;
+#define max_transposition_table_size 16384
 
 // this is kept over the entire run of the program, even over multiple games
 // zobrist hashes are assumed to be univerally unique... this is perhaps
 // an invalid assumption, but i make it anyways :D
-static TranspositionNode transposition_table[16384];
+static TranspositionNode transposition_table[max_transposition_table_size];
 
-static const int max_depth = 10;
+#define max_depth 10
 
-static const int max_search_secs = 12;
+#define max_search_secs 12
 static int timeup;
 
 static void sigalarm_handler(int signum);
