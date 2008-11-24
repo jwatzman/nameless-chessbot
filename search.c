@@ -147,6 +147,10 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	// any legal moves at all
 	int found_move = 0;
 
+	// since i in the loop below only tracks an index, we want an indication
+	// if this is the first move
+	int first_move = 1;
+
 	Move transposition_move = quiescent ? 0 : search_transposition_get_best_move(board->zobrist);
 
 	for (int i = 0; (i < moves.num) && !timeup; i++)
@@ -155,16 +159,23 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 
 		// if we sucessfully got a move out of the transposition table and have not tried it yet,
 		// try it first; otherwise continue moving through the main body of moves
-		if (transposition_move)
+		if (first_move && transposition_move)
 		{
 			move = transposition_move;
-			transposition_move = 0;
 			i--;
 		}
 		else
 			move = moves.moves[i];
 
+		// if we're quiescent, we only want capture moves
 		if (quiescent && !move_is_capture(move))
+		{
+			first_move = 0;
+			continue;
+		}
+
+		// only try the transposition move once
+		if (!first_move && move == transposition_move)
 			continue;
 
 		board_do_move(board, move);
@@ -194,6 +205,8 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		}
 		else
 			board_undo_move(board, move);
+
+		first_move = 0;
 	}
 
 	if (!found_move && !quiescent)
