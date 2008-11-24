@@ -144,10 +144,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		int null_move_value = evaluate_board(board);
 
 		if (null_move_value >= beta)
-		{
-			search_transposition_put(board->zobrist, beta, move, TRANSPOSITION_BETA, depth);
 			return beta;
-		}
 		else if (null_move_value > alpha)
 		{
 			alpha = null_move_value;
