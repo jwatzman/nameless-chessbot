@@ -26,9 +26,10 @@ TranspositionNode;
 // an invalid assumption, but i make it anyways :D
 static TranspositionNode transposition_table[max_transposition_table_size];
 
-#define max_depth 10
+#define max_depth 6
+#define max_quiescent_depth 30
 
-#define max_search_secs 12
+#define max_search_secs 5
 static int timeup;
 
 static void sigalarm_handler(int signum);
@@ -58,7 +59,7 @@ Move search_find_move(Bitboard *board)
 	// we get all the way back up here (the other slots are used for scratch
 	// space, and are actually valid when the recursion layer using them
 	// is the top level layer -- it's only siblings that ruin things :))
-	Move pv[max_depth];
+	Move pv[max_depth + max_quiescent_depth + 1];
 
 	// set up the timer; a sigalarm is sent when the search should prematurely
 	// end due to time, which in turn sets timeup = 1
@@ -117,7 +118,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		return table_val;
 
 	// leaf node
-	if (depth == -3)
+	if (depth == -max_quiescent_depth)
 	{
 		int eval = evaluate_board(board);
 		search_transposition_put(board->zobrist, eval, 0, TRANSPOSITION_EXACT, depth);
@@ -164,7 +165,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 			move = moves.moves[i];
 
 		if (quiescent && !move_is_capture(move))
-			break;
+			continue;
 
 		board_do_move(board, move);
 
@@ -204,7 +205,9 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	}
 	else if (!found_move && quiescent)
 	{
-		return evaluate_board(board);
+		int eval = evaluate_board(board);
+		search_transposition_put(board->zobrist, eval, 0, TRANSPOSITION_EXACT, depth);
+		return eval;
 	}
 	else
 	{
@@ -273,10 +276,6 @@ static void search_transposition_put(uint64_t zobrist, int value, Move best_move
 	// since this is only called right before search_alpha_beta returns,
 	// we just want to make sure the main search loop finished for that subtree
 	if (timeup)
-		return;
-
-	// no quiescent data either
-	if (depth <= 0)
 		return;
 
 	TranspositionNode *node = &transposition_table[zobrist % max_transposition_table_size];
