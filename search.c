@@ -149,6 +149,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		{
 			alpha = null_move_value;
 			type = TRANSPOSITION_EXACT;
+			*pv = 0; // XXX testing purposes
 		}
 	}
 
