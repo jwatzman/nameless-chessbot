@@ -112,6 +112,11 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	TranspositionType type = TRANSPOSITION_ALPHA;
 	int quiescent = depth <= 0;
 
+	// *pv is used as the best move, but we have none yet
+	// if this gets stuck in the transposition table, make
+	// sure no one uses some random data
+	*pv = 0;
+
 	// if we know an acceptable value in the table, use it
 	int table_val = search_transposition_get_value(board->zobrist, alpha, beta, depth);
 	if (table_val != INFINITY)
@@ -149,7 +154,6 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		{
 			alpha = null_move_value;
 			type = TRANSPOSITION_EXACT;
-			*pv = 0; // XXX testing purposes
 		}
 	}
 
@@ -229,7 +233,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	{
 		// there are no legal moves for this game state -- check why
 		int val = board_in_check(board, board->to_move) ? -(MATE + depth) : 0;
-		search_transposition_put(board->zobrist, val, *pv, TRANSPOSITION_EXACT, depth);
+		search_transposition_put(board->zobrist, val, 0, TRANSPOSITION_EXACT, depth);
 		return val;
 	}
 	else if (!found_move && quiescent)
