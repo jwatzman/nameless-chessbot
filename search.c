@@ -120,7 +120,10 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	// if we know an acceptable value in the table, use it
 	int table_val = search_transposition_get_value(board->zobrist, alpha, beta, depth);
 	if (table_val != INFINITY)
+	{
+		*pv = search_transposition_get_best_move(board->zobrist);
 		return table_val;
+	}
 
 	// leaf node
 	if (depth == -max_quiescent_depth)
