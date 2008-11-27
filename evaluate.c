@@ -52,13 +52,28 @@ static const int pawn_pos[] = {
 0,  0,  0,  0,  0,  0,  0,  0
 };
 
-// metatable
+// endgame only
+static const int king_endgame_pos[] = {
+0,  0,  1,  3,  3,  1,  0,  0,
+0,  5,  5,  5,  5,  5,  5,  0,
+1,  5,  8,  8,  8,  8,  5,  1,
+3,  5,  8, 10, 10,  8,  5,  3,
+3,  5,  8, 10, 10,  8,  5,  3,
+1,  5,  8,  8,  8,  8,  5,  1,
+0,  5,  5,  5,  5,  5,  5,  0,
+0,  0,  1,  3,  3,  1,  0,  0
+};
+
+// metatables
 static const int* pos_tables[] = { pawn_pos, bishop_pos, knight_pos, rook_pos, 0, 0 };
+
+static const int* endgame_pos_tables[] = { pawn_pos, bishop_pos, knight_pos, rook_pos, 0, king_endgame_pos };
 
 // piece intrinsic values, in order of:
 // pawn, bishop, knight, rook, queen, king
 // (as defined in types.h)
 static const int values[] = { 100, 300, 300, 500, 900, 0 };
+static const int endgame_values[] = { 250, 300, 300, 500, 1000, 0 };
 
 #define castle_bonus 10
 
@@ -67,6 +82,7 @@ static int popcnt(uint64_t x);
 int evaluate_board(Bitboard *board)
 {
 	int result = 0;
+	int endgame = popcnt(board->full_composite) < 6;
 	Color to_move = board->to_move;
 
 	for (Color color = 0; color < 2; color++)
@@ -94,10 +110,10 @@ int evaluate_board(Bitboard *board)
 					loc = 63 - loc;
 
 				// add in piece intrinsic value, and bonus for its location
-				const int *table = pos_tables[piece];
+				const int *table = endgame ? endgame_pos_tables[piece] : pos_tables[piece];
 				if (table)
 					result += modifier * table[loc];
-				result += modifier * values[piece];
+				result += modifier * (endgame ? endgame_values[piece] : values[piece]);
 
 				/*
 				// add in a bonus for every square that this piece can attack
