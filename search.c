@@ -138,6 +138,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		return 0;
 
 	// 3 repitition rule
+	// XXX I don't think this wraps around correctly
 	int reps = 0;
 	for (uint8_t i = board->history_index - board->halfmove_count; i < board->history_index; i++)
 		if (board->history[i] == board->zobrist)
