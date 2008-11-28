@@ -1,4 +1,4 @@
-CFLAGS=-O3 --std=c99 -Wall -Wextra -funroll-loops -combine -fwhole-program -fipa-struct-reorg -fipa-cp
+CFLAGS=-O3 --std=c99 -Wall -Wextra -march=core2 -funroll-loops -combine -fwhole-program -fipa-struct-reorg -fipa-cp
 SOURCES_GEN=bb-tablegen-col.c bb-tablegen-diag315.c bb-tablegen-diag45.c bb-tablegen-king.c bb-tablegen-knight.c bb-tablegen-pawn.c bb-tablegen-row.c
 SOURCES_CORE=bitboard.c move.c
 SOURCES=${SOURCES_CORE} evaluate.c search.c
