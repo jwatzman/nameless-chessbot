@@ -207,8 +207,27 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		// make the final legality check
 		if (!board_in_check(board, 1-board->to_move))
 		{
+			int recursive_value;
 			found_move = 1;
-			int recursive_value = -search_alpha_beta(board, -beta, -alpha, depth - 1, pv + 1);
+
+			// search down the tree from this node -- negascout
+			if (first_move)
+			{
+				// first move, full window search
+				recursive_value = -search_alpha_beta(board, -beta, -alpha, depth - 1, pv + 1);
+			}
+			else
+			{
+				// subsequent moves, try null window
+				recursive_value = -search_alpha_beta(board, -(alpha+1), -alpha, depth - 1, pv + 1);
+
+				// if null window failed, do a full window search
+				if (alpha < recursive_value && recursive_value < beta)
+				{
+					recursive_value = -search_alpha_beta(board, -beta, -alpha, depth - 1, pv + 1);
+				}
+			}
+
 			board_undo_move(board, move);
 
 			if (recursive_value >= beta)
