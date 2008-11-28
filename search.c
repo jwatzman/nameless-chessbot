@@ -277,7 +277,7 @@ static int search_move_comparator(const void *m1, const void *m2)
 	// sorts in this priority:
 	// captures before noncaptures,
 	// more valuable captured pieces first,
-	// more valuable capturing pieces first
+	// less valuable capturing pieces first
 
 	Move dm1 = *(Move*)m1;
 	Move dm2 = *(Move*)m2;
