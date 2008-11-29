@@ -165,11 +165,11 @@ void board_do_move(Bitboard *board, Move move)
 
 	if (src == 0 || dest == 0)
 		board->castle_status &= ~(1 << 6); // white can no longer castle QS
-	else if (src == 7 || dest == 7)
+	if (src == 7 || dest == 7)
 		board->castle_status &= ~(1 << 4); // white can no longer castle KS
-	else if (src == 56 || dest == 56)
+	if (src == 56 || dest == 56)
 		board->castle_status &= ~(1 << 7); // black can no longer castle QS
-	else if (src == 63 || dest == 63)
+	if (src == 63 || dest == 63)
 		board->castle_status &= ~(1 << 5); // black can no longer castle KS
 
 	// moving your king at all means you can no longer castle on either side
