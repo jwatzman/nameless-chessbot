@@ -16,5 +16,8 @@ xboard: ${SOURCES} xboard.c move-generated.h
 move-generated.h:
 	generators/move/generate.sh > move-generated.h
 
+evaluate-generated.h:
+	generators/evaluate/generate.sh > evaluate-generated.h
+
 clean:
 	-rm -f perft test xboard move-generated.h
