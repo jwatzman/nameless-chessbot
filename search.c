@@ -110,7 +110,13 @@ Move search_find_move(Bitboard *board)
 static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Move* pv)
 {
 	TranspositionType type = TRANSPOSITION_ALPHA;
+
+	// check if we're quiescent, and if we are set an in_check flag
+	// this flag is only used to know what moves to skip for a quiescent
+	// search, so don't bother doing the expensive computation if we're
+	// not quiescent -- we will do it again if it becomes necessary
 	int quiescent = depth <= 0;
+	int quiescent_in_check = quiescent ? board_in_check(board, board->to_move) : 0;
 
 	// *pv is used as the best move, but we have none yet
 	// if this gets stuck in the transposition table, make
@@ -192,7 +198,8 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 			move = moves.moves[i];
 
 		// if we're quiescent, we only want capture moves
-		if (quiescent && !move_is_capture(move))
+		// unless the original position was in check, then do everything
+		if (quiescent && !quiescent_in_check && !move_is_capture(move))
 		{
 			first_move = 0;
 			continue;
