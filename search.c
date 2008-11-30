@@ -37,8 +37,9 @@ static void sigalarm_handler(int signum);
 static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Move* pv);
 static int search_move_comparator(const void *m1, const void *m2);
 
-// returns INFINITY if unknown
-static int search_transposition_get_value(uint64_t zobrist, int alpha, int beta, int depth);
+// returns INFINITY if no immediate cutoff
+// may write to alpha/beta if it can better the bound
+static int search_transposition_get_value(uint64_t zobrist, int *alpha, int *beta, int depth);
 
 // returns 0 if unknown
 static Move search_transposition_get_best_move(uint64_t zobrist);
@@ -125,7 +126,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	*pv = 0;
 
 	// if we know an acceptable value in the table, use it
-	int table_val = search_transposition_get_value(board->zobrist, alpha, beta, depth);
+	int table_val = search_transposition_get_value(board->zobrist, &alpha, &beta, depth);
 	if (table_val != INFINITY)
 	{
 		*pv = search_transposition_get_best_move(board->zobrist);
@@ -298,7 +299,7 @@ static int search_move_comparator(const void *m1, const void *m2)
 	return score2 - score1;
 }
 
-static int search_transposition_get_value(uint64_t zobrist, int alpha, int beta, int depth)
+static int search_transposition_get_value(uint64_t zobrist, int *alpha, int *beta, int depth)
 {
 	TranspositionNode *node = &transposition_table[zobrist % max_transposition_table_size];
 
@@ -309,14 +310,26 @@ static int search_transposition_get_value(uint64_t zobrist, int alpha, int beta,
 	{
 		if (node->depth >= depth)
 		{
+			int val = node->value;
+
 			if (node->type == TRANSPOSITION_EXACT)
-				return node->value;
+				return val;
 
-			if (node->type == TRANSPOSITION_ALPHA && node->value <= alpha)
-				return alpha;
+			if (node->type == TRANSPOSITION_ALPHA)
+			{
+				if (val <= *alpha)
+					return *alpha;
+				else if (val < *beta)
+					*beta = val;
+			}
 
-			if (node->type == TRANSPOSITION_BETA && node->value >= beta)
-				return beta;
+			if (node->type == TRANSPOSITION_BETA)
+			{
+				if (val >= *beta)
+					return *beta;
+				else if (val > *alpha)
+					*alpha = val;
+			}
 		}
 	}
 
