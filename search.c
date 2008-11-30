@@ -47,6 +47,7 @@ static void search_transposition_put(uint64_t zobrist, int value, Move best_move
 
 static void sigalarm_handler(int signum)
 {
+	(void)signum;
 	timeup = 1;
 }
 
