@@ -19,7 +19,7 @@ typedef struct
 }
 TranspositionNode;
 
-#define max_transposition_table_size 16384
+#define max_transposition_table_size 16777216
 
 // this is kept over the entire run of the program, even over multiple games
 // zobrist hashes are assumed to be univerally unique... this is perhaps
