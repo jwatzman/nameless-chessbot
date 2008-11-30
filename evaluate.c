@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include <string.h>
 #include "evaluate.h"
+#include "evaluate-generated.h"
 #include "bitboard.h"
 #include "move.h"
 
@@ -76,6 +77,8 @@ static const int values[] = { 100, 300, 300, 500, 900, 0 };
 static const int endgame_values[] = { 250, 300, 300, 500, 1000, 0 };
 
 #define castle_bonus 10
+#define passed_pawn_bonus 50
+#define doubled_pawn_penalty -10
 
 static int popcnt(uint64_t x);
 
@@ -97,6 +100,11 @@ int evaluate_board(Bitboard *board)
 		if (board->castle_status & (5 << color))
 			result += modifier * castle_bonus;
 
+		// doubled pawns
+		// 0x0101010101010101 masks a single column
+		for (int col = 0; col < 8; col++)
+			result += modifier * doubled_pawn_penalty * popcnt(board->boards[color][PAWN] & (0x0101010101010101 << col));
+
 		for (Piecetype piece = 0; piece < 6; piece++)
 		{
 			uint64_t pieces = board->boards[color][piece];
@@ -105,9 +113,18 @@ int evaluate_board(Bitboard *board)
 				uint8_t loc = ffsll(pieces) - 1;
 				pieces ^= 1ULL << loc;
 
-				// since the pawn table is not hoizontally symmetric, we need to flip it for black
-				if (piece == PAWN && color == BLACK)
-					loc = 63 - loc;
+				// pawns have some special stuff done to them
+				if (piece == PAWN)
+				{
+					// passed pawn; do this before the location swap below
+					if ((front_spans[color][loc] & board->boards[1-color][PAWN]) == 0)
+						result += modifier * passed_pawn_bonus;
+
+					// since the pawn table is not hoizontally symmetric,
+					// we need to flip it for black
+					if (color == BLACK)
+						loc = 63 - loc;
+				}
 
 				// add in piece intrinsic value, and bonus for its location
 				const int *table = endgame ? endgame_pos_tables[piece] : pos_tables[piece];

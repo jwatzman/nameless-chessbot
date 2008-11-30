@@ -7,10 +7,10 @@ all: perft test xboard
 perft: ${SOURCES_CORE} perft.c move-generated.h
 	gcc ${CFLAGS} -o perft ${SOURCES_CORE} perft.c
 
-test: ${SOURCES} test.c move-generated.h
+test: ${SOURCES} test.c move-generated.h evaluate-generated.h
 	gcc ${CFLAGS} -o test ${SOURCES} test.c
 
-xboard: ${SOURCES} xboard.c move-generated.h
+xboard: ${SOURCES} xboard.c move-generated.h evaluate-generated.h
 	gcc ${CFLAGS} -o xboard ${SOURCES} xboard.c
 
 move-generated.h:
@@ -20,4 +20,4 @@ evaluate-generated.h:
 	generators/evaluate/generate.sh > evaluate-generated.h
 
 clean:
-	-rm -f perft test xboard move-generated.h
+	-rm -f perft test xboard move-generated.h evaluate-generated.h
