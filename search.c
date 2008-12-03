@@ -26,7 +26,7 @@ TranspositionNode;
 // an invalid assumption, but i make it anyways :D
 static TranspositionNode transposition_table[max_transposition_table_size];
 
-#define max_depth 7
+#define max_depth 8
 #define max_quiescent_depth 30
 
 #define max_search_secs 5
