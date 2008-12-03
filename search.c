@@ -28,6 +28,7 @@ static TranspositionNode transposition_table[max_transposition_table_size];
 
 #define max_depth 8
 #define max_quiescent_depth 30
+static int current_max_depth; // how deep *this* iteration goes
 
 #define max_search_secs 5
 static int timeup;
@@ -76,10 +77,10 @@ Move search_find_move(Bitboard *board)
 	timeup = 0;
 
 	// for each depth, call the main workhorse, search_alpha_beta
-	for (int depth = 1; depth <= max_depth; depth++)
+	for (current_max_depth = 1; current_max_depth <= max_depth; current_max_depth++)
 	{
-		fprintf(stderr, "SEARCHER depth %i", depth);
-		int val = search_alpha_beta(board, -INFINITY, INFINITY, depth, pv);
+		fprintf(stderr, "SEARCHER depth %i", current_max_depth);
+		int val = search_alpha_beta(board, -INFINITY, INFINITY, current_max_depth, pv);
 
 		// if we sucessfully completed a depth (i.e. did not early terminate due to time),
 		// pull the first move off of the pv so that we can return it later,
@@ -140,7 +141,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 
 	// if we know an acceptable value in the table, use it
 	int table_val = search_transposition_get_value(board->zobrist, &alpha, &beta, depth);
-	if (table_val != INFINITY)
+	if ((depth != current_max_depth) && (table_val != INFINITY))
 	{
 		*pv = search_transposition_get_best_move(board->zobrist);
 		return table_val;
