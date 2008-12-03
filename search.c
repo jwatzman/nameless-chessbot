@@ -125,6 +125,19 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	// sure no one uses some random data
 	*pv = 0;
 
+	// 50-move rule
+	if (board->halfmove_count == 100)
+		return 0;
+
+	// 3 repitition rule
+	// XXX I don't think this wraps around correctly
+	int reps = 0;
+	for (uint8_t i = board->history_index - board->halfmove_count; i < board->history_index; i++)
+		if (board->history[i] == board->zobrist)
+			reps++;
+	if (reps >= 3)
+		return 0;
+
 	// if we know an acceptable value in the table, use it
 	int table_val = search_transposition_get_value(board->zobrist, &alpha, &beta, depth);
 	if (table_val != INFINITY)
@@ -140,19 +153,6 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 		search_transposition_put(board->zobrist, eval, 0, TRANSPOSITION_EXACT, depth);
 		return eval;
 	}
-
-	// 50-move rule
-	if (board->halfmove_count == 100)
-		return 0;
-
-	// 3 repitition rule
-	// XXX I don't think this wraps around correctly
-	int reps = 0;
-	for (uint8_t i = board->history_index - board->halfmove_count; i < board->history_index; i++)
-		if (board->history[i] == board->zobrist)
-			reps++;
-	if (reps >= 3)
-		return 0;
 
 	// quiescent null-move
 	// this is necessary for correctness
