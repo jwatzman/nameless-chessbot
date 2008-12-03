@@ -141,7 +141,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 
 	// if we know an acceptable value in the table, use it
 	int table_val = search_transposition_get_value(board->zobrist, &alpha, &beta, depth);
-	if ((depth != current_max_depth) && (table_val != INFINITY))
+	if ((depth < current_max_depth-1) && (table_val != INFINITY))
 	{
 		*pv = search_transposition_get_best_move(board->zobrist);
 		return table_val;
