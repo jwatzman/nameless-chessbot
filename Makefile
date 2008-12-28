@@ -1,4 +1,20 @@
-CFLAGS=-O3 --std=c99 -Wall -Wextra -march=core2 -funroll-loops -combine -fwhole-program -fipa-struct-reorg -fipa-cp
+# basic CFLAGS
+CFLAGS=-O3 --std=c99 -Wall -Wextra -march=core2
+
+# STFU about printf arguments
+CFLAGS+=-Wno-format
+
+# we're compiling all at once
+CFLAGS+=-fwhole-program -combine
+
+# more flags that are not marked as unsafe but are not enabled by default
+# XXX funroll-loops does not meet this criteron -- see if it helps or not
+# XXX actually test these ;)
+CFLAGS+=-funroll-loops -fipa-struct-reorg -fipa-cp -fgcse-sm -fgcse-las
+
+# yeah yeah yeah, but this causes no warnings...
+CFLAGS+=-funsafe-loop-optimizations -Wunsafe-loop-optimizations
+
 SOURCES_CORE=bitboard.c move.c
 SOURCES=${SOURCES_CORE} evaluate.c search.c
 
