@@ -10,6 +10,12 @@ void perft(int depth);
 
 int main(int argc, char** argv)
 {
+	if (argc != 2)
+	{
+		printf("Usage: ./perft depth\n");
+		return 1;
+	}
+
 	board = malloc(sizeof(Bitboard));
 	nodes = 0;
 	int max_depth = atoi(argv[1]);
