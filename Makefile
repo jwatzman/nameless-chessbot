@@ -8,8 +8,8 @@ CFLAGS+=-Wno-format
 CFLAGS+=-fwhole-program -combine
 
 # more flags that are not marked as unsafe but are not enabled by default
-# XXX funroll-loops does not meet this criteron -- see if it helps or not
-# XXX actually test these ;)
+# funroll-loops doesn't fit this criteron, but helps perft
+# (these don't *hurt* perft, but it's unclear if they actually help)
 CFLAGS+=-funroll-loops -fipa-struct-reorg -fipa-cp -fgcse-sm -fgcse-las
 
 # yeah yeah yeah, but this causes no warnings...
