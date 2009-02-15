@@ -7,10 +7,12 @@ CFLAGS+=-Wno-format
 # we're compiling all at once
 CFLAGS+=-fwhole-program -combine
 
+# this helps perft
+CFLAGS+=-funroll-loops
+
 # more flags that are not marked as unsafe but are not enabled by default
-# funroll-loops doesn't fit this criteron, but helps perft
 # (these don't *hurt* perft, but it's unclear if they actually help)
-CFLAGS+=-funroll-loops -fipa-struct-reorg -fipa-cp -fgcse-sm -fgcse-las
+#CFLAGS+=-fipa-struct-reorg -fipa-cp -fgcse-sm -fgcse-las -ftracer -funswitch-loops -fbranch-target-load-optimize -fbranch-target-load-optimize2
 
 # yeah yeah yeah, but this causes no warnings...
 CFLAGS+=-funsafe-loop-optimizations -Wunsafe-loop-optimizations
