@@ -15,14 +15,19 @@
 
 # please please forgive me for this; they're from asubrama
 # they drop "perft 6" from ~25 seconds to ~15 seconds with the flags above
-CFLAGS=-Wall -Wextra -Wformat=2 -Wstrict-aliasing=1 -Wcast-qual -Wcast-align
-CFLAGS+=-Wunsafe-loop-optimizations -Wfloat-equal -Waggregate-return -Wswitch-default -Wmissing-prototypes
-CFLAGS+=-Wno-format
+# CC=gcc
+# CFLAGS=-Wall -Wextra -Wformat=2 -Wstrict-aliasing=1 -Wcast-qual -Wcast-align
+# CFLAGS+=-Wunsafe-loop-optimizations -Wfloat-equal -Waggregate-return -Wswitch-default -Wmissing-prototypes
+# CFLAGS+=-Wno-format
 # -fipa-pta dropped, causes an ICE
-CFLAGS+=-O3 -fgcse-las -fgcse-sm -fsee -ftree-loop-linear -fivopts -fweb -fomit-frame-pointer
-CFLAGS+=-march=core2 -mfpmath=sse,387
-CFLAGS+=-fwhole-program -fipa-matrix-reorg -fipa-struct-reorg -combine
-CFLAGS+=-funroll-loops -funsafe-loop-optimizations --std=c99
+# CFLAGS+=-O3 -fgcse-las -fgcse-sm -fsee -ftree-loop-linear -fivopts -fweb -fomit-frame-pointer
+# CFLAGS+=-march=core2 -mfpmath=sse,387
+# CFLAGS+=-fwhole-program -fipa-matrix-reorg -fipa-struct-reorg -combine
+# CFLAGS+=-funroll-loops -funsafe-loop-optimizations --std=c99
+
+# and ICC wins out, of course
+CC=/home/josh/intel/Compiler/11.0/081/bin/intel64/icc
+CFLAGS=-fast -no-multibyte-chars -std=c99
 
 SOURCES_CORE=bitboard.c move.c
 SOURCES=${SOURCES_CORE} evaluate.c search.c
@@ -30,13 +35,13 @@ SOURCES=${SOURCES_CORE} evaluate.c search.c
 all: perft test xboard
 
 perft: ${SOURCES_CORE} perft.c move-generated.h
-	gcc ${CFLAGS} -o perft ${SOURCES_CORE} perft.c
+	${CC} ${CFLAGS} -o perft ${SOURCES_CORE} perft.c
 
 test: ${SOURCES} test.c move-generated.h evaluate-generated.h
-	gcc ${CFLAGS} -o test ${SOURCES} test.c
+	${CC} ${CFLAGS} -o test ${SOURCES} test.c
 
 xboard: ${SOURCES} xboard.c move-generated.h evaluate-generated.h
-	gcc ${CFLAGS} -o xboard ${SOURCES} xboard.c
+	${CC} ${CFLAGS} -o xboard ${SOURCES} xboard.c
 
 move-generated.h:
 	generators/move/generate.sh > move-generated.h
