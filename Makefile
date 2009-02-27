@@ -18,6 +18,7 @@
 CFLAGS=-Wall -Wextra -Wformat=2 -Wstrict-aliasing=1 -Wcast-qual -Wcast-align
 CFLAGS+=-Wunsafe-loop-optimizations -Wfloat-equal -Waggregate-return -Wswitch-default -Wmissing-prototypes
 CFLAGS+=-Wno-format
+# -fipa-pta dropped, causes an ICE
 CFLAGS+=-O3 -fgcse-las -fgcse-sm -fsee -ftree-loop-linear -fivopts -fweb -fomit-frame-pointer
 CFLAGS+=-march=core2 -mfpmath=sse,387
 CFLAGS+=-fwhole-program -fipa-matrix-reorg -fipa-struct-reorg -combine
