@@ -313,6 +313,7 @@ void board_print(uint64_t boards[2][6])
 				case ROOK: sigil = 'R'; break;
 				case QUEEN: sigil = 'Q'; break;
 				case KING: sigil = 'K'; break;
+				default: sigil = '?'; break;
 				}
 
 				if (color == BLACK)

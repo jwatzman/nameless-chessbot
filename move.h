@@ -64,6 +64,7 @@ static inline void move_srcdest_form(Move move, char srcdest_form[6])
 		case ROOK: srcdest_form[4] = 'r'; break;
 		case BISHOP: srcdest_form[4] = 'b'; break;
 		case KNIGHT: srcdest_form[4] = 'n'; break;
+		default: srcdest_form[4] = '?'; break;
 		}
 
 		srcdest_form[5] = 0;

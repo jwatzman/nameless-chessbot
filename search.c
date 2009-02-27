@@ -293,8 +293,8 @@ static int search_move_comparator(const void *m1, const void *m2)
 	// more valuable captured pieces first,
 	// less valuable capturing pieces first
 
-	Move dm1 = *(Move*)m1;
-	Move dm2 = *(Move*)m2;
+	Move dm1 = *(const Move*)m1;
+	Move dm2 = *(const Move*)m2;
 
 	int score1 = move_is_capture(dm1) ?
 		15 + 2*move_captured_piecetype(dm1) - move_piecetype(dm1) : 0;
