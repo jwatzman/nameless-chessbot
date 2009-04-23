@@ -28,7 +28,7 @@ static TranspositionNode transposition_table[max_transposition_table_size];
 
 #define max_depth 8
 #define max_quiescent_depth 30
-static int current_max_depth; // how deep *this* iteration goes
+static volatile int current_max_depth; // how deep *this* iteration goes
 
 #define max_search_secs 5
 static int timeup;
