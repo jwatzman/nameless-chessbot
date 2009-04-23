@@ -155,7 +155,7 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	if (depth == -max_quiescent_depth)
 	{
 		int eval = evaluate_board(board);
-		search_transposition_put(board->zobrist, eval, 0, TRANSPOSITION_EXACT, depth);
+		//search_transposition_put(board->zobrist, eval, 0, TRANSPOSITION_EXACT, depth);
 		return eval;
 	}
 
@@ -270,13 +270,13 @@ static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Mo
 	{
 		// there are no legal moves for this game state -- check why
 		int val = board_in_check(board, board->to_move) ? -(MATE + depth) : 0;
-		search_transposition_put(board->zobrist, val, 0, TRANSPOSITION_EXACT, depth);
+		//search_transposition_put(board->zobrist, val, 0, TRANSPOSITION_EXACT, depth);
 		return val;
 	}
 	else if (!found_move && quiescent)
 	{
 		int eval = evaluate_board(board);
-		search_transposition_put(board->zobrist, eval, 0, TRANSPOSITION_EXACT, depth);
+		//search_transposition_put(board->zobrist, eval, 0, TRANSPOSITION_EXACT, depth);
 		return eval;
 	}
 	else
