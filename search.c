@@ -96,6 +96,12 @@ Move search_find_move(Bitboard *board)
 
 			move_srcdest_form(best_move, buf);
 			fprintf(stderr, " %s (%i)\n", buf, val);
+
+			if (val >= MATE)
+			{
+				fprintf(stderr, "SEARCHER found mate\n");
+				break;
+			}
 		}
 		else
 		{
