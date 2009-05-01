@@ -49,7 +49,7 @@ static const int pawn_pos[] = {
 0,  4,  6, 15, 15,  6,  4,  0,
 0,  6,  9, 10, 10,  9,  6,  0,
 4,  8, 12, 16, 16, 12,  8,  4,
-10,15, 20, 25, 25, 20, 15, 10,
+15,15, 20, 25, 25, 20, 15, 15,
 0,  0,  0,  0,  0,  0,  0,  0
 };
 
@@ -103,7 +103,8 @@ int evaluate_board(Bitboard *board)
 		// doubled pawns
 		// 0x0101010101010101 masks a single column
 		for (int col = 0; col < 8; col++)
-			result += modifier * doubled_pawn_penalty * popcnt(board->boards[color][PAWN] & (0x0101010101010101 << col));
+			result += modifier * doubled_pawn_penalty *
+				(popcnt(board->boards[color][PAWN] & (0x0101010101010101 << col)) - 1);
 
 		for (Piecetype piece = 0; piece < 6; piece++)
 		{
