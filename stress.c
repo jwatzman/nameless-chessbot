@@ -4,7 +4,7 @@
 #include "move.h"
 
 static const int max_tests = 1000000;
-static const int max_moves = 10;
+static const int max_moves = 100;
 
 int main(int argc, char** argv)
 {
