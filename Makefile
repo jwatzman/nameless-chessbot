@@ -1,8 +1,8 @@
 ifeq ($(origin CC), default)
-	CC=clang
+	export CC=clang
 endif
 
-CFLAGS=-O3 -std=c99 -Wall -Wextra
+export CFLAGS=-O3 -std=c99 -Wall -Wextra
 
 SOURCES_CORE=bitboard.o move.o
 SOURCES=$(SOURCES_CORE) evaluate.o search.o

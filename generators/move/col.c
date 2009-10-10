@@ -31,7 +31,7 @@ uint64_t down_attack(int position_mask, int row)
 	return result;
 }
 
-int main(int argc, char** argv)
+int main(void)
 {
 	printf("uint64_t col_attacks[256][8] = {\n");
 

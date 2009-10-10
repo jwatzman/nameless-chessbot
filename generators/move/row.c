@@ -31,7 +31,7 @@ uint8_t right_attack(int position_mask, int col)
 	return result;
 }
 
-int main(int argc, char** argv)
+int main(void)
 {
 	printf("uint64_t row_attacks[256][8] = {\n");
 

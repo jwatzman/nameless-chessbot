@@ -3,7 +3,7 @@
 #include "types.h"
 #include "bitboard.h"
 
-int main(int argc, char** argv)
+int main(void)
 {
 	printf("uint64_t pawn_attacks[2][64] = {\n\t{");
 

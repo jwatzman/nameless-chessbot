@@ -38,7 +38,7 @@ uint64_t front_span_black(int pos)
 	return result;
 }
 
-int main(int argc, char** argv)
+int main(void)
 {
 	printf("uint64_t front_spans[2][64] = {\n");
 

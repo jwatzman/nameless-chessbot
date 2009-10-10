@@ -32,7 +32,7 @@ uint64_t down_right_attack(int position_mask, int pos)
 	return result;
 }
 
-int main(int argc, char** argv)
+int main(void)
 {
 	printf("uint64_t diag_attacks_45[256][8] = {\n");
 

@@ -7,7 +7,7 @@ echo
 
 for i in *.c
 do
-	gcc -I../../ -o gen --std=c99 -O3 $i
+	${CC} ${CFLAGS} -I../../ -o gen $i
 	./gen
 	echo
 done

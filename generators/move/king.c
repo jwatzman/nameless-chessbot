@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include "bitboard.h"
 
-int main(int argc, char** argv)
+int main(void)
 {
 	printf("uint64_t king_attacks[64] = {\n");
 
