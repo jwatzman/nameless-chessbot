@@ -29,7 +29,10 @@ typedef struct
 	uint64_t full_composite_315;
 
 	// from LSB to MSB:
-	// white castled KS, black castled KS, white castled QS, black castled QS,
+	// white castled KS,
+	// black castled KS,
+	// white castled QS,
+	// black castled QS,
 	// white can castle KS, [...]
 	uint8_t castle_status;
 

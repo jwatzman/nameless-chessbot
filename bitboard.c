@@ -8,9 +8,9 @@
 #include "bitboard.h"
 #include "move.h"
 
-// to get the rotated index of the unrotated index 0 <= n < 64, you would say
-// board_index_90[n] for example
-// also, remember that these are upside-down, since a1/LSB must come first
+/* to get the rotated index of the unrotated index 0 <= n < 64, you would
+   say board_index_90[n] for example. Also, remember that these are
+   upside-down, since a1/LSB must come first */
 static const uint8_t board_rotation_index_90[64] = {
 0, 8,  16, 24, 32, 40, 48, 56,
 1, 9,  17, 25, 33, 41, 49, 57,
@@ -44,18 +44,29 @@ static const uint8_t board_rotation_index_315[64] = {
 63, 62, 60, 57, 53, 48, 42, 35
 };
 
-static void board_init_zobrist(Bitboard *board);
-static uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64]);
-static void board_doundo_move_common(Bitboard *board, Move move);
-static void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, uint8_t loc);
+// generate a 64-bit random number
+static inline uint64_t board_rand64(void);
 
-static inline uint64_t board_rand64()
-{
-	return (((uint64_t)rand()) << 32) | ((uint64_t)rand());
-}
+// generate a bunch of random numbers to put in for zobrists
+static void board_init_zobrist(Bitboard *board);
+
+/* for rotating board states when creating the board. The rotated versions
+   are normally mutated along with the normal state, so this should not
+   need to be used when making and undoing moved */
+static uint64_t board_rotate_90(uint64_t board);
+static uint64_t board_rotate_45(uint64_t board);
+static uint64_t board_rotate_315(uint64_t board);
+static uint64_t board_rotate_internal(uint64_t board,
+		const uint8_t rotation_index[64]);
+
+// common bits of making and undoing moves that can be easily factored out
+static void board_doundo_move_common(Bitboard *board, Move move);
+static void board_toggle_piece(Bitboard *board, Piecetype piece,
+		Color color, uint8_t loc);
 
 void board_init(Bitboard *board)
 {
+	// bitmasks for starting positions of pieces
 	board->boards[WHITE][PAWN] = 0x000000000000FF00;
 	board->boards[WHITE][BISHOP] = 0x0000000000000024;
 	board->boards[WHITE][KNIGHT] = 0x0000000000000042;
@@ -73,63 +84,82 @@ void board_init(Bitboard *board)
 	board->composite_boards[WHITE] = 0x000000000000FFFF;
 	board->composite_boards[BLACK] = 0xFFFF000000000000;
 
-	board->full_composite = board->composite_boards[WHITE] | board->composite_boards[BLACK];
+	// generate composities and rotate
+	board->full_composite =
+		board->composite_boards[WHITE] | board->composite_boards[BLACK];
 	board->full_composite_45 = board_rotate_45(board->full_composite);
 	board->full_composite_90 = board_rotate_90(board->full_composite);
 	board->full_composite_315 = board_rotate_315(board->full_composite);
 
-	board->castle_status = 0xF0; // both sides can castle, but have not yet
+	// both sides can castle, but have not yet
+	board->castle_status = 0xF0;
+
+	// clean board state
 	board->enpassant_index = 0;
 	board->halfmove_count = 0;
 	board->to_move = WHITE;
 	board->undo_index = 0;
-
-	board_init_zobrist(board);
-
 	board->history_index = 0;
 	board->history[0] = board->zobrist;
+
+	// set up the mess of zobrist random numbers
+	board_init_zobrist(board);
+}
+
+static inline uint64_t board_rand64()
+{
+	// OR two 32-bit randoms together
+	return (((uint64_t)random()) << 32) | ((uint64_t)random());
 }
 
 static void board_init_zobrist(Bitboard *board)
 {
-	srand(time(0));
+	srandom(time(0));
+
+	// initially start with a random zobrist
 	board->zobrist = board_rand64();
 
+	// fill in each color/piece/position combination with a random mask
 	for (int i = 0; i < 2; i++)
 		for (int j = 0; j < 6; j++)
 			for (int k = 0; k < 64; k++)
 				board->zobrist_pos[i][j][k] = board_rand64();
 
+	// same for each castle status ...
 	for (int i = 0; i < 256; i++)
 		board->zobrist_castle[i] = board_rand64();
 
+	// ... and enpassant index ...
 	for (int i = 0; i < 64; i++)
 		board->zobrist_enpassant[i] = board_rand64();
 
+	// ... and to move
 	board->zobrist_black = board_rand64();
 }
 
-uint64_t board_rotate_90(uint64_t board)
+static uint64_t board_rotate_90(uint64_t board)
 {
 	return board_rotate_internal(board, board_rotation_index_90);
 }
 
-uint64_t board_rotate_45(uint64_t board)
+static uint64_t board_rotate_45(uint64_t board)
 {
 	return board_rotate_internal(board, board_rotation_index_45);
 }
 
-uint64_t board_rotate_315(uint64_t board)
+static uint64_t board_rotate_315(uint64_t board)
 {
 	return board_rotate_internal(board, board_rotation_index_315);
 }
 
-static uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_index[64])
+static uint64_t board_rotate_internal(uint64_t board,
+		const uint8_t rotation_index[64])
 {
 	uint64_t result = 0;
 	static const uint64_t bit = 1;
 	uint8_t current_index = 0;
 
+	// scan down each bit, flipping the right bit in the rotated result
 	while (board)
 	{
 		if (board & bit)
@@ -144,7 +174,8 @@ static uint64_t board_rotate_internal(uint64_t board, const uint8_t rotation_ind
 
 void board_do_move(Bitboard *board, Move move)
 {
-	// save data to undo ring buffer
+	/* save data to undo ring buffer. 0x3F == 63. Max value for
+	   enpassant_index is 63, max value for halfmove_count is 50 */
 	uint16_t undo_data = 0;
 	undo_data |= board->enpassant_index & 0x3F;
 	undo_data |= ((board->castle_status >> 4) & 0x0F) << 6;
@@ -157,7 +188,8 @@ void board_do_move(Bitboard *board, Move move)
 	else
 		board->halfmove_count++;
 
-	// moving to or from a rook square means you can no longer castle on that side
+	/* moving to or from a rook square means you can no longer castle on
+	   that side */
 	uint8_t src = move_source_index(move);
 	uint8_t dest = move_destination_index(move);
 
@@ -172,16 +204,17 @@ void board_do_move(Bitboard *board, Move move)
 	if (src == 63 || dest == 63)
 		board->castle_status &= ~(1 << 5); // black can no longer castle KS
 
-	// moving your king at all means you can no longer castle on either side
-	// castling also means you can no longer castle (again) on either side
+	/* moving your king at all means you can no longer castle on either
+	   side. Castling also means you can no longer castle (again) on either
+	   side */
 	if (move_is_castle(move) || move_piecetype(move) == KING)
 		board->castle_status &= ~((5 << 4) << move_color(move));
 
 	board->zobrist ^= board->zobrist_castle[board->castle_status];
 
-	// if src and dest are 16 or -16 units apart (two rows) on a pawn move,
-	// update the enpassant index with the destination square
-	// if this didn't happen, clear the enpassant index
+	/* if src and dest are 16 or -16 units apart (two rows) on a pawn move,
+	   update the enpassant index with the destination square. If this
+	   didn't happen, clear the enpassant index */
 	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
 	int delta = src - dest;
 	if (move_piecetype(move) == PAWN && (delta == 16 || delta == -16))
@@ -190,8 +223,10 @@ void board_do_move(Bitboard *board, Move move)
 		board->enpassant_index = 0;
 	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
 
+	// common bits of doing and undoing moves (bulk of the logic in here)
 	board_doundo_move_common(board, move);
 
+	// write new zobrist as a game state in the history
 	board->history[board->history_index++] = board->zobrist;
 }
 
@@ -210,8 +245,10 @@ void board_undo_move(Bitboard *board, Move move)
 	board->zobrist ^= board->zobrist_castle[board->castle_status];
 	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
 
+	// common bits of doing and undoing moves (bulk of the logic in here)
 	board_doundo_move_common(board, move);
 
+	// "remove" old zobrist from seen game states
 	board->history_index--;
 }
 
@@ -230,13 +267,16 @@ static void board_doundo_move_common(Bitboard *board, Move move)
 	if (!move_is_promotion(move))
 		board_toggle_piece(board,  piece, color, dest);
 	else
-		board_toggle_piece(board, move_promoted_piecetype(move), color, dest);
+		board_toggle_piece(board, move_promoted_piecetype(move),
+				color, dest);
 
 	// remove captured piece, if applicable
 	if (move_is_capture(move))
-		board_toggle_piece(board, move_captured_piecetype(move), 1 - color, dest);
+		board_toggle_piece(board, move_captured_piecetype(move),
+				1 - color, dest);
 
-	// put the rook in the proper place for a castle and set the right bits in the castle info
+	/* put the rook in the proper place for a castle and set the right
+	   bits in the castle info */
 	if (move_is_castle(move))
 	{
 		if (board_col_of(dest) == 2) // queenside castle
@@ -271,8 +311,10 @@ static void board_doundo_move_common(Bitboard *board, Move move)
 	board->zobrist ^= board->zobrist_black;
 }
 
-static void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, uint8_t loc)
+static void board_toggle_piece(Bitboard *board, Piecetype piece,
+		Color color, uint8_t loc)
 {
+	// flip the bit in all of the copies of the board state
 	board->boards[color][piece] ^= 1ULL << loc;
 	board->composite_boards[color] ^= 1ULL << loc;
 	board->full_composite ^= 1ULL << loc;
@@ -284,7 +326,9 @@ static void board_toggle_piece(Bitboard *board, Piecetype piece, Color color, ui
 
 int board_in_check(Bitboard *board, Color color)
 {
-	return move_square_is_attacked(board, 1-color, ffsll(board->boards[color][KING]) - 1);
+	// said color is in check iff its king is being attacked
+	return move_square_is_attacked(board, 1-color,
+			ffsll(board->boards[color][KING]) - 1);
 }
 
 void board_print(uint64_t boards[2][6])
@@ -295,6 +339,10 @@ void board_print(uint64_t boards[2][6])
 
 	puts(separator);
 
+	/* print every row in sequence. Check each color and each type to see
+	   if pieces are in that row, filling in the right slot in the template
+	   with the sigil. Add the row number after each row, and print
+	   column letters after each column. */
 	for (int row = 7; row >= 0; row--)
 	{
 		strcpy(this_line, template);
@@ -319,8 +367,10 @@ void board_print(uint64_t boards[2][6])
 				if (color == BLACK)
 					sigil = tolower(sigil);
 
-				uint8_t bits = (uint8_t)((boards[color][type] >> (row << 3)) & 0xFF);
 				int column = 0;
+				uint8_t bits =
+					(uint8_t)((boards[color][type] >> (row << 3)) & 0xFF);
+
 				while (bits)
 				{
 					if (bits & 0x01)

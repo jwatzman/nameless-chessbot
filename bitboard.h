@@ -4,17 +4,18 @@
 #include <stdint.h>
 #include "types.h"
 
+// writes initial state to a board
 void board_init(Bitboard *board);
-uint64_t board_rotate_90(uint64_t board);
-uint64_t board_rotate_45(uint64_t board);
-uint64_t board_rotate_315(uint64_t board);
 
+/* make and reverse moves on a board. You can only undo moves on the board
+   they were originally made, in the reverse order they were made */
 void board_do_move(Bitboard *board, Move move);
 void board_undo_move(Bitboard *board, Move move);
 
 // returns 1 if color's king is in check, 0 otherwise
 int board_in_check(Bitboard *board, Color color);
 
+// dump a primitive printout of the board to stdout
 void board_print(uint64_t boards[2][6]);
 
 // for all of these conversions, 0 <= row,col < 8
@@ -23,7 +24,8 @@ void board_print(uint64_t boards[2][6]);
 #define board_col_of(index) ((index) % 8)
 
 // undefined return value if there is no piece at index
-static inline Piecetype board_piecetype_at_index(Bitboard *board, uint8_t index)
+static inline Piecetype board_piecetype_at_index(Bitboard *board,
+		uint8_t index)
 {
 	uint64_t bit_at_index = 1ULL << index;
 	Color color;
