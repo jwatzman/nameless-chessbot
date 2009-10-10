@@ -1,5 +1,7 @@
 move-generated.h
 evaluate-generated.h
-xboard
+*.o
 perft
+stress
 test
+xboard
