@@ -311,21 +311,21 @@ static int search_move_comparator(const void *m1, const void *m2)
 
 static int search_transposition_get_value(uint64_t zobrist, int *alpha, int *beta, int depth)
 {
-	TranspositionNode node = transposition_table[zobrist % max_transposition_table_size];
+	TranspositionNode *node = &transposition_table[zobrist % max_transposition_table_size];
 
 	// since many zobrists may map to a single slot in the table, we want to make sure we got
 	// a match; also, we want to make sure that the entry was not made with a shallower
 	// depth than what we're currently using
-	if (node.zobrist == zobrist)
+	if (node->zobrist == zobrist)
 	{
-		if (node.depth >= depth)
+		if (node->depth >= depth)
 		{
-			int val = node.value;
+			int val = node->value;
 
-			if (node.type == TRANSPOSITION_EXACT)
+			if (node->type == TRANSPOSITION_EXACT)
 				return val;
 
-			if (node.type == TRANSPOSITION_ALPHA)
+			if (node->type == TRANSPOSITION_ALPHA)
 			{
 				if (val <= *alpha)
 					return *alpha;
@@ -333,7 +333,7 @@ static int search_transposition_get_value(uint64_t zobrist, int *alpha, int *bet
 					*beta = val;
 			}
 
-			if (node.type == TRANSPOSITION_BETA)
+			if (node->type == TRANSPOSITION_BETA)
 			{
 				if (val >= *beta)
 					return *beta;
@@ -365,10 +365,10 @@ static void search_transposition_put(uint64_t zobrist, int value, Move best_move
 	if (timeup)
 		return;
 
-	TranspositionNode node = transposition_table[zobrist % max_transposition_table_size];
-	node.zobrist = zobrist;
-	node.depth = depth;
-	node.value = value;
-	node.best_move = best_move;
-	node.type = type;
+	TranspositionNode *node = &transposition_table[zobrist % max_transposition_table_size];
+	node->zobrist = zobrist;
+	node->depth = depth;
+	node->value = value;
+	node->best_move = best_move;
+	node->type = type;
 }
