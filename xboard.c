@@ -30,7 +30,7 @@ static Move parse_move(Bitboard *board, char* possible_move)
 	return 0;
 }
 
-int main()
+int main(void)
 {
 	Color computer_player = -1; // not WHITE or BLACK if we don't play either (e.g. -1)
 	int game_on = 0;
@@ -60,7 +60,7 @@ int main()
 		}
 
 		fgets(input, max_input_length, stdin);
-		fprintf(stderr, input);
+		fprintf(stderr, "%s", input);
 
 		if (!strcmp("xboard\n", input))
 			printf("feature colors=0 sigint=0 sigterm=0 variants=\"normal\" done=1\n");

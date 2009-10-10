@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <time.h>
 #include "bitboard.h"
@@ -6,7 +7,7 @@
 static const int max_tests = 1000000;
 static const int max_moves = 100;
 
-int main(int argc, char** argv)
+int main(void)
 {
 	srandom(time(NULL));
 

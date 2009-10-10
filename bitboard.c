@@ -289,11 +289,11 @@ int board_in_check(Bitboard *board, Color color)
 
 void board_print(uint64_t boards[2][6])
 {
-	char* separator = "-----------------\n";
-	char* template = "| | | | | | | | |  \n";
+	char* separator = "-----------------";
+	char* template = "| | | | | | | | |  ";
 	char* this_line = malloc(sizeof(char) * (strlen(template) + 1));
 
-	printf(separator);
+	puts(separator);
 
 	for (int row = 7; row >= 0; row--)
 	{
@@ -334,11 +334,11 @@ void board_print(uint64_t boards[2][6])
 			}
 		}
 
-		printf(this_line);
+		puts(this_line);
 	}
 
-	printf(separator);
-	printf(" a b c d e f g h \n");
+	puts(separator);
+	puts(" a b c d e f g h ");
 
 	free(this_line);
 }
