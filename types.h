@@ -36,11 +36,7 @@ typedef struct
 	// white can castle KS, [...]
 	uint8_t castle_status;
 
-	// board index, corresponding to a sqaure in 2nd or 5th rows
-	// which is the square a pawn who just moved up two can be
-	// en passant pseudo-captured in
-	// zero if no en passant ability
-	// invalid if not zero or in 2nd or 5th row
+	// destination square of a pawn moving up two squares
 	uint8_t enpassant_index;
 
 	uint8_t halfmove_count;

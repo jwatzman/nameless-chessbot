@@ -66,44 +66,144 @@ static void board_toggle_piece(Bitboard *board, Piecetype piece,
 
 void board_init(Bitboard *board)
 {
-	// bitmasks for starting positions of pieces
-	board->boards[WHITE][PAWN] = 0x000000000000FF00;
-	board->boards[WHITE][BISHOP] = 0x0000000000000024;
-	board->boards[WHITE][KNIGHT] = 0x0000000000000042;
-	board->boards[WHITE][ROOK] = 0x0000000000000081;
-	board->boards[WHITE][QUEEN] = 0x0000000000000008;
-	board->boards[WHITE][KING] = 0x0000000000000010;
+	board_init_with_fen(board,
+			"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+}
 
-	board->boards[BLACK][PAWN] = 0x00FF000000000000;
-	board->boards[BLACK][BISHOP] = 0x2400000000000000;
-	board->boards[BLACK][KNIGHT] = 0x4200000000000000;
-	board->boards[BLACK][ROOK] = 0x8100000000000000;
-	board->boards[BLACK][QUEEN] = 0x0800000000000000;
-	board->boards[BLACK][KING] = 0x1000000000000000;
+void board_init_with_fen(Bitboard *board, char *fen)
+{
+	int row = 7;
+	while (row >= 0)
+	{
+		int col = 0;
+		while (col < 8)
+		{
+			if (*fen >= '1' && *fen <= '8')
+			{
+				// skip that number of slots
+				col += (*fen - '0');
+			}
+			else
+			{
+				// figure out what piece to put here
+				Color color = WHITE;
+				Piecetype piece;
 
-	board->composite_boards[WHITE] = 0x000000000000FFFF;
-	board->composite_boards[BLACK] = 0xFFFF000000000000;
+				switch (*fen)
+				{
+					// fall through on the black ones
+					case 'p': color = BLACK;
+					case 'P': piece = PAWN; break;
 
-	// generate composities and rotate
+					case 'n': color = BLACK;
+					case 'N': piece = KNIGHT; break;
+
+					case 'b': color = BLACK;
+					case 'B': piece = BISHOP; break;
+
+					case 'r': color = BLACK;
+					case 'R': piece = ROOK; break;
+
+					case 'q': color = BLACK;
+					case 'Q': piece = QUEEN; break;
+
+					case 'k': color = BLACK;
+					case 'K': piece = KING; break;
+
+					default: piece = KING; break; // bad fen
+				}
+
+				// set the proper bit
+				board->boards[color][piece] |=
+					(1ULL << board_index_of(row, col));
+
+				col++;
+			}
+
+			fen++; // go to the next letter
+		}
+
+		fen++; // skip the slash or space
+		row--; // next row
+	}
+
+	// calculate the composite and rotated boards
+	for (Color c = WHITE; c <= BLACK; c++)
+	{
+		board->composite_boards[c] = 0;
+		for (Piecetype p = PAWN; p <= KING; p++)
+		{
+			board->composite_boards[c] |= board->boards[c][p];
+		}
+	}
+
 	board->full_composite =
 		board->composite_boards[WHITE] | board->composite_boards[BLACK];
 	board->full_composite_45 = board_rotate_45(board->full_composite);
 	board->full_composite_90 = board_rotate_90(board->full_composite);
 	board->full_composite_315 = board_rotate_315(board->full_composite);
 
-	// both sides can castle, but have not yet
-	board->castle_status = 0xF0;
+	// w or b to move
+	board->to_move = (*fen == 'w' ? WHITE : BLACK);
+	fen += 2; // skip the w or b and then the space
 
-	// clean board state
-	board->enpassant_index = 0;
-	board->halfmove_count = 0;
-	board->to_move = WHITE;
+	/* castling rights. Assume no one has castled, since we can't know
+	   otherwise */
+	board->castle_status = 0;
+	if (*fen != '-')
+	{
+		while (*fen != ' ')
+		{
+			/* the offset into castle_status is 4 for white KS. It
+			   increases from that as below */
+			int index = 4;
+			switch (*fen)
+			{
+				case 'q': index++;
+				case 'Q': index++;
+				case 'k': index++;
+				case 'K': break;
+				default: break; // bad fen
+			}
+
+			board->castle_status |= (1ULL << index);
+
+			fen++; // next castling bit
+		}
+	}
+	else
+		fen++; // skip the dash
+
+	fen++; // skip the space
+
+	// enpassant index
+	if (*fen != '-')
+	{
+		int col = *fen - 'a';
+		fen++;
+		int row = *fen - '1';
+		fen++;
+
+		// the board keeps a different notion of enpassant row than FEN
+		if (row == 2)
+			row = 3;
+		else if (row == 5)
+			row = 4;
+
+		board->enpassant_index = board_index_of(row, col);
+	}
+	else
+	{
+		board->enpassant_index = 0;
+		fen++; // skip the dash
+	}
+
+	// set up the mess of zobrist random numbers and the rest of the state
+	board_init_zobrist(board);
+	board->halfmove_count = 0; // TODO figure out what to do here
 	board->undo_index = 0;
 	board->history_index = 0;
 	board->history[0] = board->zobrist;
-
-	// set up the mess of zobrist random numbers
-	board_init_zobrist(board);
 }
 
 static inline uint64_t board_rand64()
