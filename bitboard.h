@@ -19,7 +19,7 @@ void board_undo_move(Bitboard *board, Move move);
 int board_in_check(Bitboard *board, Color color);
 
 // dump a primitive printout of the board to stdout
-void board_print(uint64_t boards[2][6]);
+void board_print(Bitboard *board);
 
 // for all of these conversions, 0 <= row,col < 8
 #define board_index_of(row, col) ((col) | ((row) << 3))

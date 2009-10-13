@@ -72,6 +72,8 @@ void board_init(Bitboard *board)
 
 void board_init_with_fen(Bitboard *board, char *fen)
 {
+	memset(board->boards, 0, 2*6*sizeof(uint64_t)); // clear out boards
+
 	int row = 7;
 	while (row >= 0)
 	{
@@ -198,9 +200,16 @@ void board_init_with_fen(Bitboard *board, char *fen)
 		fen++; // skip the dash
 	}
 
+	/* this is hax. The space does not need to be skipped, since strtol
+	   will ignore it. However we don't have any of the board history,
+	   but the halfmove count says how far back we need to check the
+	   history. So zero it out, which will hopefully not conencide
+	   with any used zobrist */
+	board->halfmove_count = strtol(fen, NULL, 10);
+	memset(board->history, 0, 256*sizeof(uint64_t));
+
 	// set up the mess of zobrist random numbers and the rest of the state
 	board_init_zobrist(board);
-	board->halfmove_count = 0; // TODO figure out what to do here
 	board->undo_index = 0;
 	board->history_index = 0;
 	board->history[0] = board->zobrist;
@@ -431,7 +440,7 @@ int board_in_check(Bitboard *board, Color color)
 			ffsll(board->boards[color][KING]) - 1);
 }
 
-void board_print(uint64_t boards[2][6])
+void board_print(Bitboard *board)
 {
 	char* separator = "-----------------";
 	char* template = "| | | | | | | | |  ";
@@ -469,7 +478,8 @@ void board_print(uint64_t boards[2][6])
 
 				int column = 0;
 				uint8_t bits =
-					(uint8_t)((boards[color][type] >> (row << 3)) & 0xFF);
+					(uint8_t)((board->boards[color][type] >> (row << 3))
+							& 0xFF);
 
 				while (bits)
 				{
@@ -491,4 +501,10 @@ void board_print(uint64_t boards[2][6])
 	puts(" a b c d e f g h ");
 
 	free(this_line);
+
+	printf("Enpassant index: %x\tHalfmove count: %x\tCastle status: %x\n",
+			board->enpassant_index, board->halfmove_count,
+			board->castle_status);
+	printf("Zobrist: %.16llx\n", board->zobrist);
+	printf("To move: %i\n", board->to_move);
 }

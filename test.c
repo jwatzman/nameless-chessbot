@@ -31,12 +31,8 @@ int main(void)
 
 	while (1)
 	{
-		board_print(test->boards);
-
-		printf("Enpassant index: %x\tHalfmove count: %x\tCastle status: %x\n", test->enpassant_index, test->halfmove_count, test->castle_status);
-		printf("Zobrist: %.16llx\n", test->zobrist);
+		board_print(test);
 		printf("Evaluation: %i\n", evaluate_board(test));
-		printf("To move: %i\n", test->to_move);
 
 		Movelist all_moves, legal_moves;
 		legal_moves.num = 0;

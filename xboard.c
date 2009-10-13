@@ -63,7 +63,7 @@ int main(void)
 		fprintf(stderr, "%s", input);
 
 		if (!strcmp("xboard\n", input))
-			printf("feature colors=0 sigint=0 sigterm=0 variants=\"normal\" done=1\n");
+			printf("feature colors=0 setboard=1 sigint=0 sigterm=0 variants=\"normal\" done=1\n");
 		else if (!strcmp("new\n", input))
 		{
 			board_init(board);
@@ -76,11 +76,15 @@ int main(void)
 			computer_player = -1;
 		else if (!strcmp("go\n", input))
 			computer_player = board->to_move;
+		else if (!strncmp("setboard ", input, 9))
+			board_init_with_fen(board, input + 9);
 		else if (!strncmp("result", input, 6))
 		{
 			computer_player = -1;
 			game_on = 0;
 		}
+		else if (!strcmp("_print\n", input))
+			board_print(board);
 		else if (input[0] >= 'a' && input[0] <= 'h'
 				&& input[1] >= '1' && input[1] <= '8'
 				&& input[2] >= 'a' && input[2] <= 'h'
