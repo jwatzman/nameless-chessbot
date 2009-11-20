@@ -47,7 +47,7 @@ static void sigalarm_handler(int signum);
 
 // main search workhorse
 static int search_alpha_beta(Bitboard *board,
-		int alpha, int beta, int depth, Move* pv);
+	int alpha, int beta, int depth, Move* pv);
 
 // used to sort the moves for move ordering
 static int search_move_comparator(const void *m1, const void *m2);
@@ -66,7 +66,7 @@ static Move search_transposition_get_best_move(uint64_t zobrist);
 
 // add to transposition table
 static void search_transposition_put(uint64_t zobrist,
-		int value, Move best_move, TranspositionType type, int depth);
+	int value, Move best_move, TranspositionType type, int depth);
 
 static void sigalarm_handler(int signum)
 {
@@ -147,20 +147,21 @@ Move search_find_move(Bitboard *board)
 }
 
 static int search_alpha_beta(Bitboard *board,
-		int alpha, int beta, int depth, Move* pv)
+	int alpha, int beta, int depth, Move* pv)
 {
 	TranspositionType type = TRANSPOSITION_ALPHA;
 
-	// check if we're quiescent, and if we are set an in_check flag
-	// this flag is only used to know what moves to skip for a quiescent
-	// search, so don't bother doing the expensive computation if we're
-	// not quiescent -- we will do it again if it becomes necessary
+	/* check if we're quiescent, and if we are set an in_check flag this
+	   flag is only used to know what moves to skip for a quiescent search,
+	   so don't bother doing the expensive computation if we're not
+	   quiescent -- we will do it again if it becomes necessary */
 	int quiescent = depth <= 0;
-	int quiescent_in_check = quiescent ? board_in_check(board, board->to_move) : 0;
+	int quiescent_in_check = quiescent ?
+		board_in_check(board, board->to_move) : 0;
 
-	// *pv is used as the best move, but we have none yet
-	// if this gets stuck in the transposition table, make
-	// sure no one uses some random data
+	/* *pv is used as the best move, but we have none yet if this gets
+	   stuck in the transposition table, make sure no one uses some random
+	   data */
 	*pv = 0;
 
 	// 50-move rule
@@ -169,17 +170,25 @@ static int search_alpha_beta(Bitboard *board,
 
 	// 3 repitition rule
 	int reps = 0;
-	for (uint8_t i = board->history_index - board->halfmove_count; i != board->history_index; i++)
+	for (uint8_t i = board->history_index - board->halfmove_count;
+	     i != board->history_index;
+	     i++)
+	{
 		if (board->history[i] == board->zobrist)
 			reps++;
+	}
 	if (reps >= 2)
 		return 0;
 
-	// if we know an acceptable value in the table, use it;
-	// however, only check the table after we get down a couple of ply
+	/* if we know an acceptable value in the table, use it; however, only
+	   check the table after we get down a couple of ply */
 	if (depth < current_max_depth - 1)
 	{
-		int table_val = search_transposition_get_value(board->zobrist, &alpha, &beta, depth);
+		int table_val = search_transposition_get_value(board->zobrist,
+		                                               &alpha,
+		                                               &beta,
+		                                               depth);
+
 		if (table_val != INFINITY)
 		{
 			*pv = search_transposition_get_best_move(board->zobrist);
@@ -195,8 +204,7 @@ static int search_alpha_beta(Bitboard *board,
 		return eval;
 	}
 
-	// quiescent null-move
-	// this is necessary for correctness
+	// quiescent null-move; this is necessary for correctness
 	if (quiescent)
 	{
 		int null_move_value = evaluate_board(board);
@@ -210,28 +218,31 @@ static int search_alpha_beta(Bitboard *board,
 		}
 	}
 
-	// generate the list of pseudolegal moves for this board, and due move ordering via qsort
-	// and the order defined by search_move_comparator
+	// generate pseudolegal moves
 	Movelist moves;
 	move_generate_movelist(board, &moves);
+
+	// move ordering
 	qsort(&(moves.moves), moves.num, sizeof(Move), search_move_comparator);
 
-	// since we generate only pseudolegal moves, we need to keep track if there actually are
-	// any legal moves at all
+	/* since we generate only pseudolegal moves, we need to keep track if
+	   there actually are any legal moves at all */
 	int found_move = 0;
 
-	// since i in the loop below only tracks an index, we want an indication
-	// if this is the first move
+	/* since i in the loop below only tracks an index, we want an
+	   indication if this is the first move */
 	int first_move = 1;
 
-	Move transposition_move = quiescent ? 0 : search_transposition_get_best_move(board->zobrist);
+	Move transposition_move = quiescent ? 0
+		: search_transposition_get_best_move(board->zobrist);
 
 	for (int i = 0; (i < moves.num) && !timeup; i++)
 	{
 		Move move;
 
-		// if we sucessfully got a move out of the transposition table and have not tried it yet,
-		// try it first; otherwise continue moving through the main body of moves
+		/* if we sucessfully got a move out of the transposition table and
+		   have not tried it yet, try it first; otherwise continue moving
+		   through the main body of moves */
 		if (first_move && transposition_move)
 		{
 			move = transposition_move;
@@ -240,8 +251,8 @@ static int search_alpha_beta(Bitboard *board,
 		else
 			move = moves.moves[i];
 
-		// if we're quiescent, we only want capture moves
-		// unless the original position was in check, then do everything
+		/* if we're quiescent, we only want capture moves unless the
+		   original position was in check, then do everything */
 		if (quiescent && !quiescent_in_check && !move_is_capture(move))
 		{
 			first_move = 0;
@@ -264,17 +275,20 @@ static int search_alpha_beta(Bitboard *board,
 			if (first_move)
 			{
 				// first move, full window search
-				recursive_value = -search_alpha_beta(board, -beta, -alpha, depth - 1, pv + 1);
+				recursive_value = -search_alpha_beta(board,
+					-beta, -alpha, depth - 1, pv + 1);
 			}
 			else
 			{
 				// subsequent moves, try null window
-				recursive_value = -search_alpha_beta(board, -(alpha+1), -alpha, depth - 1, pv + 1);
+				recursive_value = -search_alpha_beta(board,
+					-(alpha+1), -alpha, depth - 1, pv + 1);
 
 				// if null window failed, do a full window search
 				if (alpha < recursive_value && recursive_value < beta)
 				{
-					recursive_value = -search_alpha_beta(board, -beta, -alpha, depth - 1, pv + 1);
+					recursive_value = -search_alpha_beta(board,
+						-beta, -alpha, depth - 1, pv + 1);
 				}
 			}
 
@@ -282,10 +296,14 @@ static int search_alpha_beta(Bitboard *board,
 
 			if (recursive_value >= beta)
 			{
-				// since this move caused a beta cutoff, we don't want to bother storing it in the pv
-				// *however*, we most definately want to put it in the transposition table,
-				// since it will be searched first next time, and will thus immediately cause a cutoff again
-				search_transposition_put(board->zobrist, beta, move, TRANSPOSITION_BETA, depth);
+				/* since this move caused a beta cutoff, we don't want to
+				   bother storing it in the pv *however*, we most
+				   definately want to put it in the transposition table,
+				   since it will be searched first next time, and will thus
+				   immediately cause a cutoff again */
+				search_transposition_put(board->zobrist,
+					beta, move, TRANSPOSITION_BETA, depth);
+
 				return beta;
 			}
 
@@ -324,10 +342,10 @@ static int search_alpha_beta(Bitboard *board,
 
 static int search_move_comparator(const void *m1, const void *m2)
 {
-	// sorts in this priority:
-	// captures before noncaptures,
-	// more valuable captured pieces first,
-	// less valuable capturing pieces first
+	/* sorts in this priority:
+	   captures before noncaptures,
+	   more valuable captured pieces first,
+	   less valuable capturing pieces first */
 
 	Move dm1 = *(const Move*)m1;
 	Move dm2 = *(const Move*)m2;
@@ -348,7 +366,8 @@ static void search_transposition_initalize(void)
 	transposition_table_initalized = 1;
 }
 
-static int search_transposition_get_value(uint64_t zobrist, int *alpha, int *beta, int depth)
+static int search_transposition_get_value(uint64_t zobrist,
+	int *alpha, int *beta, int depth)
 {
 	int index = zobrist % max_transposition_table_size;
 	TranspositionNode *node = &transposition_table[index];
@@ -357,9 +376,10 @@ static int search_transposition_get_value(uint64_t zobrist, int *alpha, int *bet
 	pthread_mutex_lock(
 			&(transposition_muticies[index % num_transposition_muticies]));
 
-	// since many zobrists may map to a single slot in the table, we want to make sure we got
-	// a match; also, we want to make sure that the entry was not made with a shallower
-	// depth than what we're currently using
+	/* since many zobrists may map to a single slot in the table, we want
+	   to make sure we got a match; also, we want to make sure that the
+	   entry was not made with a shallower depth than what we're currently
+	   using */
 	if (node->zobrist == zobrist)
 	{
 		if (node->depth >= depth)
@@ -411,11 +431,13 @@ static Move search_transposition_get_best_move(uint64_t zobrist)
 	return result;
 }
 
-static void search_transposition_put(uint64_t zobrist, int value, Move best_move, TranspositionType type, int depth)
+static void search_transposition_put(uint64_t zobrist,
+	int value, Move best_move, TranspositionType type, int depth)
 {
-	// make sure that only data from completed subtrees makes it in the table;
-	// since this is only called right before search_alpha_beta returns,
-	// we just want to make sure the main search loop finished for that subtree
+	/* make sure that only data from completed subtrees makes it in the
+	   table; since this is only called right before search_alpha_beta
+	   returns, we just want to make sure the main search loop finished for
+	   that subtree */
 	if (timeup)
 		return;
 
