@@ -12,7 +12,6 @@ typedef enum {TRANSPOSITION_EXACT, TRANSPOSITION_ALPHA, TRANSPOSITION_BETA} Tran
 
 typedef struct
 {
-	pthread_mutex_t mutex;
 	uint64_t zobrist;
 	int depth;
 	int value;
@@ -22,11 +21,13 @@ typedef struct
 TranspositionNode;
 
 #define max_transposition_table_size 16777216
+#define num_transposition_muticies (max_transposition_table_size / 10000)
 
 // this is kept over the entire run of the program, even over multiple games
 // zobrist hashes are assumed to be univerally unique... this is perhaps
 // an invalid assumption, but i make it anyways :D
 static TranspositionNode transposition_table[max_transposition_table_size];
+static pthread_mutex_t transposition_muticies[num_transposition_muticies];
 static int transposition_table_initalized = 0;
 
 #define max_depth 8
@@ -319,8 +320,8 @@ static int search_move_comparator(const void *m1, const void *m2)
 
 static void search_transposition_initalize(void)
 {
-	for (int i = 0; i < max_transposition_table_size; i++)
-		pthread_mutex_init(&(transposition_table[i].mutex), NULL);
+	for (int i = 0; i < num_transposition_muticies; i++)
+		pthread_mutex_init(&(transposition_muticies[i]), NULL);
 
 	transposition_table_initalized = 1;
 }
@@ -331,7 +332,8 @@ static int search_transposition_get_value(uint64_t zobrist, int *alpha, int *bet
 	TranspositionNode *node = &transposition_table[index];
 	int ret = INFINITY;
 
-	pthread_mutex_lock(&(node->mutex));
+	pthread_mutex_lock(
+			&(transposition_muticies[index % num_transposition_muticies]));
 
 	// since many zobrists may map to a single slot in the table, we want to make sure we got
 	// a match; also, we want to make sure that the entry was not made with a shallower
@@ -363,7 +365,8 @@ static int search_transposition_get_value(uint64_t zobrist, int *alpha, int *bet
 		}
 	}
 
-	pthread_mutex_unlock(&(node->mutex));
+	pthread_mutex_unlock(
+			&(transposition_muticies[index % num_transposition_muticies]));
 
 	return ret;
 }
@@ -374,12 +377,14 @@ static Move search_transposition_get_best_move(uint64_t zobrist)
 	int index = zobrist % max_transposition_table_size;
 	TranspositionNode *node = &transposition_table[index];
 
-	pthread_mutex_lock(&(node->mutex));
+	pthread_mutex_lock(
+			&(transposition_muticies[index % num_transposition_muticies]));
 
 	if (node->zobrist == zobrist)
 		result = node->best_move;
 
-	pthread_mutex_unlock(&(node->mutex));
+	pthread_mutex_unlock(
+			&(transposition_muticies[index % num_transposition_muticies]));
 
 	return result;
 }
@@ -395,7 +400,8 @@ static void search_transposition_put(uint64_t zobrist, int value, Move best_move
 	int index = zobrist % max_transposition_table_size;
 	TranspositionNode *node = &transposition_table[index];
 
-	pthread_mutex_lock(&(node->mutex));
+	pthread_mutex_lock(
+			&(transposition_muticies[index % num_transposition_muticies]));
 
 	node->zobrist = zobrist;
 	node->depth = depth;
@@ -403,5 +409,6 @@ static void search_transposition_put(uint64_t zobrist, int value, Move best_move
 	node->best_move = best_move;
 	node->type = type;
 
-	pthread_mutex_unlock(&(node->mutex));
+	pthread_mutex_unlock(
+			&(transposition_muticies[index % num_transposition_muticies]));
 }
