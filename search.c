@@ -4,9 +4,12 @@
 #include <unistd.h>
 #include <signal.h>
 #include <pthread.h>
+#include <string.h>
 #include "search.h"
 #include "evaluate.h"
 #include "move.h"
+
+#define threads_enabled 1
 
 typedef enum
 {
@@ -26,7 +29,6 @@ typedef struct
 }
 TranspositionNode;
 
-
 /* the transposition table is kept over the lifetime of the program. This
    makes the assumption that zobrists will never conflict, which is
    incorrect but very unlikely to be an issue. Each block of entries in the
@@ -41,13 +43,31 @@ static int transposition_table_initalized = 0;
 #define max_quiescent_depth 30
 static volatile int current_max_depth; // how deep *this* iteration goes
 
+/* info for use with pthreads calls; embodies all arguments to
+   search_alpha_beta, return value, and thread id */
+typedef struct
+{
+	Bitboard *board;
+	int alpha;
+	int beta;
+	int depth;
+	Move move;
+	Move pv[max_depth + max_quiescent_depth + 1];
+	int result;
+	pthread_t tid;
+}
+SearchThread;
+
 #define max_search_secs 5
 static int timeup;
 static void sigalarm_handler(int signum);
 
 // main search workhorse
 static int search_alpha_beta(Bitboard *board,
-	int alpha, int beta, int depth, Move* pv);
+	int alpha, int beta, int depth, Move *pv);
+
+// pthread wrapper for search_alpha_beta
+static void* search_alpha_beta_thread(void *thread);
 
 // used to sort the moves for move ordering
 static int search_move_comparator(const void *m1, const void *m2);
@@ -147,9 +167,13 @@ Move search_find_move(Bitboard *board)
 }
 
 static int search_alpha_beta(Bitboard *board,
-	int alpha, int beta, int depth, Move* pv)
+	int alpha, int beta, int depth, Move *pv)
 {
 	TranspositionType type = TRANSPOSITION_ALPHA;
+
+	// spawn threads only at the top level
+	int spawn_threads = threads_enabled && depth == current_max_depth;
+	SearchThread *threads;
 
 	/* check if we're quiescent, and if we are set an in_check flag this
 	   flag is only used to know what moves to skip for a quiescent search,
@@ -225,9 +249,12 @@ static int search_alpha_beta(Bitboard *board,
 	// move ordering
 	qsort(&(moves.moves), moves.num, sizeof(Move), search_move_comparator);
 
+	if (spawn_threads)
+		threads = malloc(sizeof(SearchThread) * moves.num);
+
 	/* since we generate only pseudolegal moves, we need to keep track if
 	   there actually are any legal moves at all */
-	int found_move = 0;
+	int legal_moves = 0;
 
 	Move transposition_move = quiescent ? 0
 		: search_transposition_get_best_move(board->zobrist);
@@ -266,51 +293,75 @@ static int search_alpha_beta(Bitboard *board,
 		// make the final legality check
 		if (!board_in_check(board, 1-board->to_move))
 		{
-			int recursive_value;
-			found_move = 1;
-
-			// search down the tree from this node -- negascout
-			if (move_num == 0)
+			if (!spawn_threads)
 			{
-				// first move, full window search
-				recursive_value = -search_alpha_beta(board,
-					-beta, -alpha, depth - 1, pv + 1);
-			}
-			else
-			{
-				// subsequent moves, try null window
-				recursive_value = -search_alpha_beta(board,
-					-(alpha+1), -alpha, depth - 1, pv + 1);
+				// if we're not spawning threads, go as normal
+				int recursive_value;
 
-				// if null window failed, do a full window search
-				if (alpha < recursive_value && recursive_value < beta)
+				// search down the tree from this node -- negascout
+				if (move_num == 0)
 				{
+					// first move, full window search
 					recursive_value = -search_alpha_beta(board,
 						-beta, -alpha, depth - 1, pv + 1);
 				}
+				else
+				{
+					// subsequent moves, try null window
+					recursive_value = -search_alpha_beta(board,
+						-(alpha+1), -alpha, depth - 1, pv + 1);
+
+					// if null window failed, do a full window search
+					if (alpha < recursive_value && recursive_value < beta)
+					{
+						recursive_value = -search_alpha_beta(board,
+							-beta, -alpha, depth - 1, pv + 1);
+					}
+				}
+
+				board_undo_move(board, move);
+
+				if (recursive_value >= beta)
+				{
+					/* since this move caused a beta cutoff, we don't want
+					   to bother storing it in the pv *however*, we most
+					   definately want to put it in the transposition table,
+					   since it will be searched first next time, and will
+					   thus immediately cause a cutoff again */
+					search_transposition_put(board->zobrist,
+						beta, move, TRANSPOSITION_BETA, depth);
+
+					return beta;
+				}
+
+				if (recursive_value > alpha)
+				{
+					alpha = recursive_value;
+					type = TRANSPOSITION_EXACT;
+					*pv = move;
+				}
 			}
-
-			board_undo_move(board, move);
-
-			if (recursive_value >= beta)
+			else
 			{
-				/* since this move caused a beta cutoff, we don't want to
-				   bother storing it in the pv *however*, we most
-				   definately want to put it in the transposition table,
-				   since it will be searched first next time, and will thus
-				   immediately cause a cutoff again */
-				search_transposition_put(board->zobrist,
-					beta, move, TRANSPOSITION_BETA, depth);
+				// we are spawning theads here, just tell everybody to go!
+				SearchThread *thread = &(threads[legal_moves]);
 
-				return beta;
+				thread->board = malloc(sizeof(Bitboard));
+				memcpy(thread->board, board, sizeof(Bitboard));
+
+				thread->alpha = -beta;
+				thread->beta = -alpha;
+				thread->depth = depth - 1;
+				thread->move = move;
+
+				pthread_create(&(thread->tid),
+					NULL, search_alpha_beta_thread, thread);
+				// search_alpha_beta_thread(thread);
+
+				board_undo_move(board, move);
 			}
 
-			if (recursive_value > alpha)
-			{
-				alpha = recursive_value;
-				type = TRANSPOSITION_EXACT;
-				*pv = move;
-			}
+			legal_moves++;
 		}
 		else
 			board_undo_move(board, move);
@@ -318,14 +369,37 @@ static int search_alpha_beta(Bitboard *board,
 		move_num++;
 	}
 
-	if (!found_move && !quiescent)
+	if (spawn_threads)
+	{
+		// if we spanwed threads, get the result out of all of them
+		for (int i = 0; i < legal_moves; i++)
+		{
+			SearchThread *thread = &(threads[i]);
+			pthread_join(thread->tid, NULL);
+
+			/* don't bother to check beta cutoffs; we've already done all
+			   of the work */
+			if (thread->result > alpha)
+			{
+				alpha = thread->result;
+				type = TRANSPOSITION_EXACT;
+				*pv = thread->move;
+			}
+
+			free(thread->board);
+		}
+
+		free(threads);
+	}
+
+	if (legal_moves == 0 && !quiescent)
 	{
 		// there are no legal moves for this game state -- check why
 		int val = board_in_check(board, board->to_move) ? -(MATE + depth) : 0;
 		//search_transposition_put(board->zobrist, val, 0, TRANSPOSITION_EXACT, depth);
 		return val;
 	}
-	else if (!found_move && quiescent)
+	else if (legal_moves == 0 && quiescent)
 	{
 		int eval = evaluate_board(board);
 		//search_transposition_put(board->zobrist, eval, 0, TRANSPOSITION_EXACT, depth);
@@ -336,6 +410,14 @@ static int search_alpha_beta(Bitboard *board,
 		search_transposition_put(board->zobrist, alpha, *pv, type, depth);
 		return alpha;
 	}
+}
+
+static void* search_alpha_beta_thread(void *thread)
+{
+	SearchThread *thread2 = thread;
+	thread2->result = -search_alpha_beta(thread2->board,
+		thread2->alpha, thread2->beta, thread2->depth, thread2->pv);
+	return NULL;
 }
 
 static int search_move_comparator(const void *m1, const void *m2)

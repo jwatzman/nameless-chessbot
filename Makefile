@@ -2,7 +2,7 @@ ifeq ($(origin CC), default)
 	export CC=clang
 endif
 
-export CFLAGS=-O3 -std=c99 -Wall -Wextra
+export CFLAGS=-O3 -std=c99 -Wall -Wextra -pthread
 
 SOURCES_CORE=bitboard.o move.o
 SOURCES=$(SOURCES_CORE) evaluate.o search.o
