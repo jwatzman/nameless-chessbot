@@ -229,21 +229,22 @@ static int search_alpha_beta(Bitboard *board,
 	   there actually are any legal moves at all */
 	int found_move = 0;
 
-	/* since i in the loop below only tracks an index, we want an
-	   indication if this is the first move */
-	int first_move = 1;
-
 	Move transposition_move = quiescent ? 0
 		: search_transposition_get_best_move(board->zobrist);
 
-	for (int i = 0; (i < moves.num) && !timeup; i++)
+	/* loop over all of the moves. There are unfortunately two loop
+	   indicies; "i" tracks the index into the moves.moves while "move_num"
+	   tracks the absolute move number */
+	for (int i = 0, move_num = 0;
+		 (i < moves.num) && !timeup;
+		 i++)
 	{
 		Move move;
 
 		/* if we sucessfully got a move out of the transposition table and
 		   have not tried it yet, try it first; otherwise continue moving
 		   through the main body of moves */
-		if (first_move && transposition_move)
+		if (move_num == 0 && transposition_move)
 		{
 			move = transposition_move;
 			i--;
@@ -254,13 +255,10 @@ static int search_alpha_beta(Bitboard *board,
 		/* if we're quiescent, we only want capture moves unless the
 		   original position was in check, then do everything */
 		if (quiescent && !quiescent_in_check && !move_is_capture(move))
-		{
-			first_move = 0;
 			continue;
-		}
 
 		// only try the transposition move once
-		if (!first_move && move == transposition_move)
+		if (move_num > 0 && move == transposition_move)
 			continue;
 
 		board_do_move(board, move);
@@ -272,7 +270,7 @@ static int search_alpha_beta(Bitboard *board,
 			found_move = 1;
 
 			// search down the tree from this node -- negascout
-			if (first_move)
+			if (move_num == 0)
 			{
 				// first move, full window search
 				recursive_value = -search_alpha_beta(board,
@@ -317,7 +315,7 @@ static int search_alpha_beta(Bitboard *board,
 		else
 			board_undo_move(board, move);
 
-		first_move = 0;
+		move_num++;
 	}
 
 	if (!found_move && !quiescent)
