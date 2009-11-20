@@ -8,7 +8,13 @@
 #include "evaluate.h"
 #include "move.h"
 
-typedef enum {TRANSPOSITION_EXACT, TRANSPOSITION_ALPHA, TRANSPOSITION_BETA} TranspositionType;
+typedef enum
+{
+	TRANSPOSITION_EXACT,
+	TRANSPOSITION_ALPHA,
+	TRANSPOSITION_BETA
+}
+TranspositionType;
 
 typedef struct
 {
@@ -20,12 +26,13 @@ typedef struct
 }
 TranspositionNode;
 
+
+/* the transposition table is kept over the lifetime of the program. This
+   makes the assumption that zobrists will never conflict, which is
+   incorrect but very unlikely to be an issue. Each block of entries in the
+   table is protected by a mutex */
 #define max_transposition_table_size 16777216
 #define num_transposition_muticies (max_transposition_table_size / 10000)
-
-// this is kept over the entire run of the program, even over multiple games
-// zobrist hashes are assumed to be univerally unique... this is perhaps
-// an invalid assumption, but i make it anyways :D
 static TranspositionNode transposition_table[max_transposition_table_size];
 static pthread_mutex_t transposition_muticies[num_transposition_muticies];
 static int transposition_table_initalized = 0;
@@ -36,22 +43,30 @@ static volatile int current_max_depth; // how deep *this* iteration goes
 
 #define max_search_secs 5
 static int timeup;
-
 static void sigalarm_handler(int signum);
 
-static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Move* pv);
+// main search workhorse
+static int search_alpha_beta(Bitboard *board,
+		int alpha, int beta, int depth, Move* pv);
+
+// used to sort the moves for move ordering
 static int search_move_comparator(const void *m1, const void *m2);
 
+// sets up the array of muticies
 static void search_transposition_initalize(void);
 
-// returns INFINITY if no immediate cutoff
-// may write to alpha/beta if it can better the bound
-static int search_transposition_get_value(uint64_t zobrist, int *alpha, int *beta, int depth);
+/* asks the transposition table if we already know a good value for this
+   position. If we do, return it. Otherwise, return INFINITY but adjust
+   *alpha and *beta if we know better bounds for them */
+static int search_transposition_get_value(uint64_t zobrist,
+		int *alpha, int *beta, int depth);
 
-// returns 0 if unknown
+// if we have a previous best move for this zobrist, return it; 0 otherwise
 static Move search_transposition_get_best_move(uint64_t zobrist);
 
-static void search_transposition_put(uint64_t zobrist, int value, Move best_move, TranspositionType type, int depth);
+// add to transposition table
+static void search_transposition_put(uint64_t zobrist,
+		int value, Move best_move, TranspositionType type, int depth);
 
 static void sigalarm_handler(int signum)
 {
@@ -66,15 +81,15 @@ Move search_find_move(Bitboard *board)
 
 	Move best_move = 0;
 
-	// note that due to the way that this is maintained, sibling nodes *will*
-	// destroy each other's values -- ONLY pv[0] is garunteed to be valid when
-	// we get all the way back up here (the other slots are used for scratch
-	// space, and are actually valid when the recursion layer using them
-	// is the top level layer -- it's only siblings that ruin things :))
+	/* note that due to the way that this is maintained, sibling nodes will
+	   destroy each other's values. Only pv[0] is garunteed to be valid when
+	   we get all the way back up here (the other slots are used for scratch
+	   space, and are actually valid when the recursion layer using them
+	   is the top level layer -- it's only siblings that ruin things :)) */
 	Move pv[max_depth + max_quiescent_depth + 1];
 
-	// set up the timer; a sigalarm is sent when the search should prematurely
-	// end due to time, which in turn sets timeup = 1
+	/* set up the timer; a sigalarm is sent when the search should
+	   prematurely end due to time, which in turn sets timeup = 1 */
 	struct sigaction sigalarm_action;
 	sigalarm_action.sa_handler = sigalarm_handler;
 	sigemptyset(&sigalarm_action.sa_mask);
@@ -86,17 +101,23 @@ Move search_find_move(Bitboard *board)
 	timeup = 0;
 
 	// for each depth, call the main workhorse, search_alpha_beta
-	for (current_max_depth = 1; current_max_depth <= max_depth; current_max_depth++)
+	for (current_max_depth = 1;
+	     current_max_depth <= max_depth;
+	     current_max_depth++)
 	{
 		fprintf(stderr, "SEARCHER depth %i", current_max_depth);
-		int val = search_alpha_beta(board, -INFINITY, INFINITY, current_max_depth, pv);
 
-		// if we sucessfully completed a depth (i.e. did not early terminate due to time),
-		// pull the first move off of the pv so that we can return it later,
-		// and then print it. Note that there is a minor race condition here:
-		// if we get the sigalarm after the very last check in the search_alpha_beta
-		// recursive calls, but before we get here, we can potentially throw away an entire
-		// depth's worth of work. This is unforunate but won't really hurt anything
+		// here we go...
+		int val = search_alpha_beta(board,
+				-INFINITY, INFINITY, current_max_depth, pv);
+
+		/* if we sucessfully completed a depth (i.e. did not early terminate
+		   due to time), pull the first move off of the pv so that we can
+		   return it later, and then print it. Note that there is a minor
+		   race condition here: if we get the sigalarm after the very last
+		   check in the search_alpha_beta recursive calls, but before we get
+		   here, we can potentially throw away an entire depth's worth of
+		   work. This is unforunate but won't really hurt anything */
 		if (!timeup)
 		{
 			char buf[6];
@@ -125,7 +146,8 @@ Move search_find_move(Bitboard *board)
 	return best_move;
 }
 
-static int search_alpha_beta(Bitboard *board, int alpha, int beta, int depth, Move* pv)
+static int search_alpha_beta(Bitboard *board,
+		int alpha, int beta, int depth, Move* pv)
 {
 	TranspositionType type = TRANSPOSITION_ALPHA;
 
