@@ -298,26 +298,8 @@ static int search_alpha_beta(Bitboard *board,
 				// if we're not spawning threads, go as normal
 				int recursive_value;
 
-				// search down the tree from this node -- negascout
-				if (move_num == 0)
-				{
-					// first move, full window search
-					recursive_value = -search_alpha_beta(board,
-						-beta, -alpha, depth - 1, pv + 1);
-				}
-				else
-				{
-					// subsequent moves, try null window
-					recursive_value = -search_alpha_beta(board,
-						-(alpha+1), -alpha, depth - 1, pv + 1);
-
-					// if null window failed, do a full window search
-					if (alpha < recursive_value && recursive_value < beta)
-					{
-						recursive_value = -search_alpha_beta(board,
-							-beta, -alpha, depth - 1, pv + 1);
-					}
-				}
+				recursive_value = -search_alpha_beta(board,
+					-beta, -alpha, depth - 1, pv + 1);
 
 				board_undo_move(board, move);
 
