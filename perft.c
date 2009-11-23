@@ -49,6 +49,6 @@ void perft(int depth)
 		if (!board_in_check(board, 1-board->to_move))
 			perft(depth - 1);
 
-		board_undo_move(board, m);
+		board_undo_move(board);
 	}
 }

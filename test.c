@@ -43,7 +43,7 @@ int main(void)
 			board_do_move(test, move);
 			if (!board_in_check(test, 1-test->to_move))
 				legal_moves.moves[legal_moves.num++] = move;
-			board_undo_move(test, move);
+			board_undo_move(test);
 		}
 
 		if (legal_moves.num == 0)
@@ -106,7 +106,7 @@ static Move get_human_move(Bitboard *board, Movelist legal_moves)
 				else
 					result = move;
 
-				board_undo_move(board, move);
+				board_undo_move(board);
 				break;
 			}
 		}

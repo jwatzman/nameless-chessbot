@@ -48,8 +48,10 @@ typedef struct
 	// old enpassant_index (6 bits)
 	// old castling rights [upper 4 bits of castle_status] (4 bits)
 	// old halfmove_count [max value 50] (6 bits)
+	// next 16 bits unused
+	// move to undo (32 bits)
 	uint8_t undo_index;
-	uint16_t undo_ring_buffer[256];
+	uint64_t undo_ring_buffer[256];
 
 	uint64_t zobrist;
 	uint64_t zobrist_pos[2][6][64];

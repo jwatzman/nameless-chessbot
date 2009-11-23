@@ -10,10 +10,9 @@ void board_init(Bitboard *board);
 // writes board state from the fen to the board. Assumes a valid fen
 void board_init_with_fen(Bitboard *board, char *fen);
 
-/* make and reverse moves on a board. You can only undo moves on the board
-   they were originally made, in the reverse order they were made */
+// make and reverse moves on a board
 void board_do_move(Bitboard *board, Move move);
-void board_undo_move(Bitboard *board, Move move);
+void board_undo_move(Bitboard *board);
 
 // returns 1 if color's king is in check, 0 otherwise
 int board_in_check(Bitboard *board, Color color);

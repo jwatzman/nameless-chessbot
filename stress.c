@@ -15,7 +15,6 @@ int main(void)
 	Movelist *moves = malloc(sizeof(Movelist));
 	board_init(stress);
 
-	Move move_buffer[max_moves];
 	int cur_move = 0;
 
 	for (int i = 0; i < max_tests; i++)
@@ -23,16 +22,15 @@ int main(void)
 		move_generate_movelist(stress, moves);
 		
 		Move m = moves->moves[random() % moves->num];
-		move_buffer[cur_move++] = m;
-
 		board_do_move(stress, m);
+		cur_move++;
 
 		if (board_in_check(stress, 1-stress->to_move))
-			board_undo_move(stress, move_buffer[--cur_move]);
+			board_undo_move(stress);
 
 		if (cur_move == max_moves)
 			while (cur_move)
-				board_undo_move(stress, move_buffer[--cur_move]);
+				board_undo_move(stress);
 	}
 
 	free(stress);

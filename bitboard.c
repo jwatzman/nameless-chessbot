@@ -285,10 +285,11 @@ void board_do_move(Bitboard *board, Move move)
 {
 	/* save data to undo ring buffer. 0x3F == 63. Max value for
 	   enpassant_index is 63, max value for halfmove_count is 50 */
-	uint16_t undo_data = 0;
+	uint64_t undo_data = 0;
 	undo_data |= board->enpassant_index & 0x3F;
 	undo_data |= ((board->castle_status >> 4) & 0x0F) << 6;
 	undo_data |= (board->halfmove_count & 0x3F) << 10;
+	undo_data |= ((uint64_t)move) << 32;
 	board->undo_ring_buffer[board->undo_index++] = undo_data;
 
 	// halfmove_count is reset on pawn moves or captures
@@ -339,17 +340,19 @@ void board_do_move(Bitboard *board, Move move)
 	board->history[board->history_index++] = board->zobrist;
 }
 
-void board_undo_move(Bitboard *board, Move move)
+void board_undo_move(Bitboard *board)
 {
 	board->zobrist ^= board->zobrist_castle[board->castle_status];
 	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
 
 	// restore from undo ring buffer
-	uint16_t undo_data = board->undo_ring_buffer[--(board->undo_index)];
+	uint64_t undo_data = board->undo_ring_buffer[--(board->undo_index)];
 	board->enpassant_index = undo_data & 0x3F;
 	board->castle_status &= 0x0F;
 	board->castle_status |= ((undo_data >> 6) & 0x0F) << 4;
 	board->halfmove_count = (undo_data >> 10) & 0x3F;
+
+	Move move = undo_data >> 32;
 
 	board->zobrist ^= board->zobrist_castle[board->castle_status];
 	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];

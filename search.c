@@ -301,7 +301,7 @@ static int search_alpha_beta(Bitboard *board,
 				recursive_value = -search_alpha_beta(board,
 					-beta, -alpha, depth - 1, pv + 1);
 
-				board_undo_move(board, move);
+				board_undo_move(board);
 
 				if (recursive_value >= beta)
 				{
@@ -340,13 +340,13 @@ static int search_alpha_beta(Bitboard *board,
 					NULL, search_alpha_beta_thread, thread);
 				// search_alpha_beta_thread(thread);
 
-				board_undo_move(board, move);
+				board_undo_move(board);
 			}
 
 			legal_moves++;
 		}
 		else
-			board_undo_move(board, move);
+			board_undo_move(board);
 
 		move_num++;
 	}
