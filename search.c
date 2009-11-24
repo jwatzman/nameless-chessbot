@@ -186,7 +186,7 @@ static int search_alpha_beta(Bitboard *board,
 	/* *pv is used as the best move, but we have none yet if this gets
 	   stuck in the transposition table, make sure no one uses some random
 	   data */
-	*pv = 0;
+	*pv = MOVE_NULL;
 
 	// 50-move rule
 	if (board->halfmove_count == 100)
@@ -221,16 +221,17 @@ static int search_alpha_beta(Bitboard *board,
 	}
 
 	// leaf node
-	if (depth == -max_quiescent_depth)
+	if (depth <= -max_quiescent_depth)
 	{
 		int eval = evaluate_board(board);
 		//search_transposition_put(board->zobrist, eval, 0, TRANSPOSITION_EXACT, depth);
 		return eval;
 	}
 
-	// quiescent null-move; this is necessary for correctness
+	// null move pruning
 	if (quiescent)
 	{
+		// quiescent null-move; this is necessary for correctness
 		int null_move_value = evaluate_board(board);
 
 		if (null_move_value >= beta)
@@ -240,6 +241,20 @@ static int search_alpha_beta(Bitboard *board,
 			alpha = null_move_value;
 			type = TRANSPOSITION_EXACT;
 		}
+	}
+	else if (depth < current_max_depth - 1 &&
+		     board_last_move(board) != MOVE_NULL)
+	{
+		board_do_move(board, MOVE_NULL);
+
+		int recursive_value = -search_alpha_beta(board,
+			-beta, -(beta-1), depth - 3, pv + 1);
+
+		board_undo_move(board);
+
+		// TODO figure out if this can go into the table
+		if (recursive_value >= beta)
+			return beta;
 	}
 
 	// generate pseudolegal moves
@@ -256,7 +271,7 @@ static int search_alpha_beta(Bitboard *board,
 	   there actually are any legal moves at all */
 	int legal_moves = 0;
 
-	Move transposition_move = quiescent ? 0
+	Move transposition_move = quiescent ? MOVE_NULL
 		: search_transposition_get_best_move(board->zobrist);
 
 	/* loop over all of the moves. There are unfortunately two loop
@@ -271,7 +286,7 @@ static int search_alpha_beta(Bitboard *board,
 		/* if we sucessfully got a move out of the transposition table and
 		   have not tried it yet, try it first; otherwise continue moving
 		   through the main body of moves */
-		if (move_num == 0 && transposition_move)
+		if (move_num == 0 && transposition_move != MOVE_NULL)
 		{
 			move = transposition_move;
 			i--;
@@ -296,9 +311,7 @@ static int search_alpha_beta(Bitboard *board,
 			if (!spawn_threads)
 			{
 				// if we're not spawning threads, go as normal
-				int recursive_value;
-
-				recursive_value = -search_alpha_beta(board,
+				int recursive_value = -search_alpha_beta(board,
 					-beta, -alpha, depth - 1, pv + 1);
 
 				board_undo_move(board);
