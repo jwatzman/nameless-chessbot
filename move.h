@@ -5,6 +5,8 @@
 #include "types.h"
 #include "bitboard.h"
 
+#define MOVE_NULL ((Move)0)
+
 // generates *psdueomoves* -- taking one of these moves could leave the king in check
 void move_generate_movelist(Bitboard *board, Movelist *movelist);
 

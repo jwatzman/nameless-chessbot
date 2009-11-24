@@ -292,49 +292,57 @@ void board_do_move(Bitboard *board, Move move)
 	undo_data |= ((uint64_t)move) << 32;
 	board->undo_ring_buffer[board->undo_index++] = undo_data;
 
-	// halfmove_count is reset on pawn moves or captures
-	if (move_piecetype(move) == PAWN || move_is_capture(move))
-		board->halfmove_count = 0;
+	if (move != MOVE_NULL)
+	{
+		// halfmove_count is reset on pawn moves or captures
+		if (move_piecetype(move) == PAWN || move_is_capture(move))
+			board->halfmove_count = 0;
+		else
+			board->halfmove_count++;
+
+		/* moving to or from a rook square means you can no longer castle on
+		   that side */
+		uint8_t src = move_source_index(move);
+		uint8_t dest = move_destination_index(move);
+
+		board->zobrist ^= board->zobrist_castle[board->castle_status];
+
+		if (src == 0 || dest == 0)
+			board->castle_status &= ~(1 << 6); // white can no longer castle QS
+		if (src == 7 || dest == 7)
+			board->castle_status &= ~(1 << 4); // white can no longer castle KS
+		if (src == 56 || dest == 56)
+			board->castle_status &= ~(1 << 7); // black can no longer castle QS
+		if (src == 63 || dest == 63)
+			board->castle_status &= ~(1 << 5); // black can no longer castle KS
+
+		/* moving your king at all means you can no longer castle on either
+		   side. Castling also means you can no longer castle (again) on either
+		   side */
+		if (move_is_castle(move) || move_piecetype(move) == KING)
+			board->castle_status &= ~((5 << 4) << move_color(move));
+
+		board->zobrist ^= board->zobrist_castle[board->castle_status];
+
+		/* if src and dest are 16 or -16 units apart (two rows) on a pawn move,
+		   update the enpassant index with the destination square. If this
+		   didn't happen, clear the enpassant index */
+		board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
+		int delta = src - dest;
+		if (move_piecetype(move) == PAWN && (delta == 16 || delta == -16))
+			board->enpassant_index = dest;
+		else
+			board->enpassant_index = 0;
+		board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
+
+		// common bits of doing and undoing moves (bulk of the logic in here)
+		board_doundo_move_common(board, move);
+	}
 	else
-		board->halfmove_count++;
-
-	/* moving to or from a rook square means you can no longer castle on
-	   that side */
-	uint8_t src = move_source_index(move);
-	uint8_t dest = move_destination_index(move);
-
-	board->zobrist ^= board->zobrist_castle[board->castle_status];
-
-	if (src == 0 || dest == 0)
-		board->castle_status &= ~(1 << 6); // white can no longer castle QS
-	if (src == 7 || dest == 7)
-		board->castle_status &= ~(1 << 4); // white can no longer castle KS
-	if (src == 56 || dest == 56)
-		board->castle_status &= ~(1 << 7); // black can no longer castle QS
-	if (src == 63 || dest == 63)
-		board->castle_status &= ~(1 << 5); // black can no longer castle KS
-
-	/* moving your king at all means you can no longer castle on either
-	   side. Castling also means you can no longer castle (again) on either
-	   side */
-	if (move_is_castle(move) || move_piecetype(move) == KING)
-		board->castle_status &= ~((5 << 4) << move_color(move));
-
-	board->zobrist ^= board->zobrist_castle[board->castle_status];
-
-	/* if src and dest are 16 or -16 units apart (two rows) on a pawn move,
-	   update the enpassant index with the destination square. If this
-	   didn't happen, clear the enpassant index */
-	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
-	int delta = src - dest;
-	if (move_piecetype(move) == PAWN && (delta == 16 || delta == -16))
-		board->enpassant_index = dest;
-	else
-		board->enpassant_index = 0;
-	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
-
-	// common bits of doing and undoing moves (bulk of the logic in here)
-	board_doundo_move_common(board, move);
+	{
+		board->to_move = (1 - board->to_move);
+		board->zobrist ^= board->zobrist_black;
+	}
 
 	// write new zobrist as a game state in the history
 	board->history[board->history_index++] = board->zobrist;
@@ -342,23 +350,31 @@ void board_do_move(Bitboard *board, Move move)
 
 void board_undo_move(Bitboard *board)
 {
-	board->zobrist ^= board->zobrist_castle[board->castle_status];
-	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
-
-	// restore from undo ring buffer
 	uint64_t undo_data = board->undo_ring_buffer[--(board->undo_index)];
-	board->enpassant_index = undo_data & 0x3F;
-	board->castle_status &= 0x0F;
-	board->castle_status |= ((undo_data >> 6) & 0x0F) << 4;
-	board->halfmove_count = (undo_data >> 10) & 0x3F;
-
 	Move move = undo_data >> 32;
 
-	board->zobrist ^= board->zobrist_castle[board->castle_status];
-	board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
+	if (move != MOVE_NULL)
+	{
+		// restore from undo ring buffer
+		board->zobrist ^= board->zobrist_castle[board->castle_status];
+		board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
 
-	// common bits of doing and undoing moves (bulk of the logic in here)
-	board_doundo_move_common(board, move);
+		board->enpassant_index = undo_data & 0x3F;
+		board->castle_status &= 0x0F;
+		board->castle_status |= ((undo_data >> 6) & 0x0F) << 4;
+		board->halfmove_count = (undo_data >> 10) & 0x3F;
+
+		board->zobrist ^= board->zobrist_castle[board->castle_status];
+		board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
+
+		// common bits of doing and undoing moves (bulk of the logic in here)
+		board_doundo_move_common(board, move);
+	}
+	else
+	{
+		board->to_move = (1 - board->to_move);
+		board->zobrist ^= board->zobrist_black;
+	}
 
 	// "remove" old zobrist from seen game states
 	board->history_index--;
