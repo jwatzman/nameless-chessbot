@@ -244,7 +244,7 @@ static int search_alpha_beta(Bitboard *board,
 	}
 	else if (depth < current_max_depth - 1 &&
 		     board_last_move(board) != MOVE_NULL)
-	{
+	{ // TODO add the right conditions to that if statement
 		board_do_move(board, MOVE_NULL);
 
 		int recursive_value = -search_alpha_beta(board,
