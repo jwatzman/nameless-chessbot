@@ -14,6 +14,9 @@ void board_init_with_fen(Bitboard *board, char *fen);
 void board_do_move(Bitboard *board, Move move);
 void board_undo_move(Bitboard *board);
 
+// last move to be applied to this board
+Move board_last_move(Bitboard *board);
+
 // returns 1 if color's king is in check, 0 otherwise
 int board_in_check(Bitboard *board, Color color);
 

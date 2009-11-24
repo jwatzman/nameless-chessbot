@@ -443,6 +443,11 @@ int board_in_check(Bitboard *board, Color color)
 			ffsll(board->boards[color][KING]) - 1);
 }
 
+Move board_last_move(Bitboard *board)
+{
+	return board->undo_ring_buffer[board->undo_index - 1] >> 32;
+}
+
 void board_print(Bitboard *board)
 {
 	char* separator = "-----------------";
