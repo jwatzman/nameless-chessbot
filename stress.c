@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <stdlib.h>
+#include <stdio.h>
 #include <time.h>
 #include "bitboard.h"
 #include "move.h"
@@ -15,6 +16,8 @@ int main(void)
 	Movelist *moves = malloc(sizeof(Movelist));
 	board_init(stress);
 
+	printf("initial zobrist %.16llx\n", stress->zobrist);
+
 	int cur_move = 0;
 
 	for (int i = 0; i < max_tests; i++)
@@ -26,13 +29,31 @@ int main(void)
 		cur_move++;
 
 		if (board_in_check(stress, 1-stress->to_move))
+		{
 			board_undo_move(stress);
+			cur_move--;
+		}
 
 		if (cur_move == max_moves)
+		{
 			while (cur_move)
+			{
 				board_undo_move(stress);
+				cur_move--;
+			}
+		}
 	}
 
+	while (cur_move)
+	{
+		board_undo_move(stress);
+		cur_move--;
+	}
+
+	printf("final zobrist %.16llx\n", stress->zobrist);
+
+	free(moves);
 	free(stress);
+
 	return 0;
 }
