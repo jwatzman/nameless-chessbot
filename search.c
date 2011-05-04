@@ -36,8 +36,11 @@ TranspositionNode;
 #define max_transposition_table_size 16777216
 #define num_transposition_muticies (max_transposition_table_size / 10000)
 static TranspositionNode transposition_table[max_transposition_table_size];
-static pthread_mutex_t transposition_muticies[num_transposition_muticies];
 static int transposition_table_initalized = 0;
+
+#if threads_enabled
+static pthread_mutex_t transposition_muticies[num_transposition_muticies];
+#endif
 
 #define max_depth 8
 #define max_quiescent_depth 30
@@ -322,7 +325,7 @@ static int search_alpha_beta(Bitboard *board,
 				{
 					/* since this move caused a beta cutoff, we don't want
 					   to bother storing it in the pv *however*, we most
-					   definately want to put it in the transposition table,
+					   definitely want to put it in the transposition table,
 					   since it will be searched first next time, and will
 					   thus immediately cause a cutoff again */
 					search_transposition_put(board->zobrist,
@@ -437,8 +440,10 @@ static int search_move_comparator(const void *m1, const void *m2)
 
 static void search_transposition_initalize(void)
 {
+#if threads_enabled
 	for (int i = 0; i < num_transposition_muticies; i++)
 		pthread_mutex_init(&(transposition_muticies[i]), NULL);
+#endif
 
 	transposition_table_initalized = 1;
 }
@@ -450,8 +455,10 @@ static int search_transposition_get_value(uint64_t zobrist,
 	TranspositionNode *node = &transposition_table[index];
 	int ret = INFINITY;
 
+#if threads_enabled
 	pthread_mutex_lock(
 			&(transposition_muticies[index % num_transposition_muticies]));
+#endif
 
 	/* since many zobrists may map to a single slot in the table, we want
 	   to make sure we got a match; also, we want to make sure that the
@@ -484,8 +491,10 @@ static int search_transposition_get_value(uint64_t zobrist,
 		}
 	}
 
+#if threads_enabled
 	pthread_mutex_unlock(
 			&(transposition_muticies[index % num_transposition_muticies]));
+#endif
 
 	return ret;
 }
@@ -496,14 +505,18 @@ static Move search_transposition_get_best_move(uint64_t zobrist)
 	int index = zobrist % max_transposition_table_size;
 	TranspositionNode *node = &transposition_table[index];
 
+#if threads_enabled
 	pthread_mutex_lock(
 			&(transposition_muticies[index % num_transposition_muticies]));
+#endif
 
 	if (node->zobrist == zobrist)
 		result = node->best_move;
 
+#if threads_enabled
 	pthread_mutex_unlock(
 			&(transposition_muticies[index % num_transposition_muticies]));
+#endif
 
 	return result;
 }
@@ -521,8 +534,10 @@ static void search_transposition_put(uint64_t zobrist,
 	int index = zobrist % max_transposition_table_size;
 	TranspositionNode *node = &transposition_table[index];
 
+#if threads_enabled
 	pthread_mutex_lock(
 			&(transposition_muticies[index % num_transposition_muticies]));
+#endif
 
 	node->zobrist = zobrist;
 	node->depth = depth;
@@ -530,6 +545,8 @@ static void search_transposition_put(uint64_t zobrist,
 	node->best_move = best_move;
 	node->type = type;
 
+#if threads_enabled
 	pthread_mutex_unlock(
 			&(transposition_muticies[index % num_transposition_muticies]));
+#endif
 }
