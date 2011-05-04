@@ -242,6 +242,7 @@ static int search_alpha_beta(Bitboard *board,
 			type = TRANSPOSITION_EXACT;
 		}
 	}
+	/*
 	else if (depth < current_max_depth - 1 &&
 		     board_last_move(board) != MOVE_NULL)
 	{ // TODO add the right conditions to that if statement
@@ -256,6 +257,7 @@ static int search_alpha_beta(Bitboard *board,
 		if (recursive_value >= beta)
 			return beta;
 	}
+	*/
 
 	// generate pseudolegal moves
 	Movelist moves;
