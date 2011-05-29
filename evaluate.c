@@ -4,6 +4,7 @@
 #include "evaluate-generated.h"
 #include "bitboard.h"
 #include "move.h"
+#include "bitscan.h"
 
 #define fancy_popcnt 1
 
@@ -113,7 +114,7 @@ int evaluate_board(Bitboard *board)
 			uint64_t pieces = board->boards[color][piece];
 			while (pieces)
 			{
-				uint8_t loc = ffsll(pieces) - 1;
+				uint8_t loc = bitscan(pieces);
 				pieces ^= 1ULL << loc;
 
 				// pawns have some special stuff done to them

@@ -5,6 +5,7 @@
 #include "move.h"
 #include "move-generated.h"
 #include "bitboard.h"
+#include "bitscan.h"
 
 static void move_generate_movelist_pawn_push(Bitboard *board, Movelist *movelist);
 static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist);
@@ -28,7 +29,7 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 
 		while (pieces)
 		{
-			uint8_t src = ffsll(pieces) - 1;
+			uint8_t src = bitscan(pieces);
 			pieces ^= 1ULL << src;
 
 			uint64_t dests = move_generate_attacks(board, piece, to_move, src);
@@ -39,7 +40,7 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 
 			while (captures)
 			{
-				uint8_t dest = ffsll(captures) - 1;
+				uint8_t dest = bitscan(captures);
 				captures ^= 1ULL << dest;
 
 				Move move = 0;
@@ -66,7 +67,7 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 
 			while (non_captures)
 			{
-				uint8_t dest = ffsll(non_captures) - 1;
+				uint8_t dest = bitscan(non_captures);
 				non_captures ^= 1ULL << dest;
 
 				Move move = 0;
@@ -183,7 +184,7 @@ static void move_generate_movelist_pawn_push(Bitboard *board, Movelist *movelist
 
 	while (pawns)
 	{
-		uint8_t src = ffsll(pawns) - 1;
+		uint8_t src = bitscan(pawns);
 		pawns ^= 1ULL << src;
 
 		uint8_t row = board_row_of(src);

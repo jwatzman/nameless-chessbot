@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include "bitboard.h"
 #include "move.h"
+#include "bitscan.h"
 
 /* to get the rotated index of the unrotated index 0 <= n < 64, you would
    say board_index_90[n] for example. Also, remember that these are
@@ -456,7 +457,7 @@ int board_in_check(Bitboard *board, Color color)
 {
 	// said color is in check iff its king is being attacked
 	return move_square_is_attacked(board, 1-color,
-			ffsll(board->boards[color][KING]) - 1);
+			bitscan(board->boards[color][KING]));
 }
 
 Move board_last_move(Bitboard *board)
