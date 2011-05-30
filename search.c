@@ -3,13 +3,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
-#include <pthread.h>
 #include <string.h>
 #include "search.h"
 #include "evaluate.h"
 #include "move.h"
-
-#define threads_enabled 1
 
 typedef enum
 {
@@ -31,35 +28,13 @@ TranspositionNode;
 
 /* the transposition table is kept over the lifetime of the program. This
    makes the assumption that zobrists will never conflict, which is
-   incorrect but very unlikely to be an issue. Each block of entries in the
-   table is protected by a mutex */
+   incorrect but very unlikely to be an issue */
 #define max_transposition_table_size 16777216
-#define num_transposition_muticies (max_transposition_table_size / 10000)
 static TranspositionNode transposition_table[max_transposition_table_size];
-static int transposition_table_initalized = 0;
-
-#if threads_enabled
-static pthread_mutex_t transposition_muticies[num_transposition_muticies];
-#endif
 
 #define max_depth 8
 #define max_quiescent_depth 30
 static int current_max_depth; // how deep *this* iteration goes
-
-/* info for use with pthreads calls; embodies all arguments to
-   search_alpha_beta, return value, and thread id */
-typedef struct
-{
-	Bitboard *board;
-	int alpha;
-	int beta;
-	int depth;
-	Move move;
-	Move pv[max_depth + max_quiescent_depth + 1];
-	int result;
-	pthread_t tid;
-}
-SearchThread;
 
 #define max_search_secs 5
 static volatile int timeup;
@@ -69,14 +44,8 @@ static void sigalarm_handler(int signum);
 static int search_alpha_beta(Bitboard *board,
 	int alpha, int beta, int depth, Move *pv);
 
-// pthread wrapper for search_alpha_beta
-static void* search_alpha_beta_thread(void *thread);
-
 // used to sort the moves for move ordering
 static int search_move_comparator(const void *m1, const void *m2);
-
-// sets up the array of muticies
-static void search_transposition_initalize(void);
 
 /* asks the transposition table if we already know a good value for this
    position. If we do, return it. Otherwise, return INFINITY but adjust
@@ -99,9 +68,6 @@ static void sigalarm_handler(int signum)
 
 Move search_find_move(Bitboard *board)
 {
-	if (!transposition_table_initalized)
-		search_transposition_initalize();
-
 	Move best_move = 0;
 
 	/* note that due to the way that this is maintained, sibling nodes will
@@ -173,10 +139,6 @@ static int search_alpha_beta(Bitboard *board,
 	int alpha, int beta, int depth, Move *pv)
 {
 	TranspositionType type = TRANSPOSITION_ALPHA;
-
-	// spawn threads only at the top level
-	int spawn_threads = threads_enabled && depth == current_max_depth;
-	SearchThread *threads;
 
 	/* check if we're quiescent, and if we are set an in_check flag this
 	   flag is only used to know what moves to skip for a quiescent search,
@@ -269,9 +231,6 @@ static int search_alpha_beta(Bitboard *board,
 	// move ordering
 	qsort(&(moves.moves), moves.num, sizeof(Move), search_move_comparator);
 
-	if (spawn_threads)
-		threads = malloc(sizeof(SearchThread) * moves.num);
-
 	/* since we generate only pseudolegal moves, we need to keep track if
 	   there actually are any legal moves at all */
 	int legal_moves = 0;
@@ -313,52 +272,29 @@ static int search_alpha_beta(Bitboard *board,
 		// make the final legality check
 		if (!board_in_check(board, 1-board->to_move))
 		{
-			if (!spawn_threads)
+			int recursive_value = -search_alpha_beta(board,
+				-beta, -alpha, depth - 1, pv + 1);
+
+			board_undo_move(board);
+
+			if (recursive_value >= beta)
 			{
-				// if we're not spawning threads, go as normal
-				int recursive_value = -search_alpha_beta(board,
-					-beta, -alpha, depth - 1, pv + 1);
-
-				board_undo_move(board);
-
-				if (recursive_value >= beta)
-				{
-					/* since this move caused a beta cutoff, we don't want
-					   to bother storing it in the pv *however*, we most
-					   definitely want to put it in the transposition table,
-					   since it will be searched first next time, and will
-					   thus immediately cause a cutoff again */
-					search_transposition_put(board->zobrist,
+				/* since this move caused a beta cutoff, we don't want
+				   to bother storing it in the pv *however*, we most
+				   definitely want to put it in the transposition table,
+				   since it will be searched first next time, and will
+				   thus immediately cause a cutoff again */
+				search_transposition_put(board->zobrist,
 						beta, move, TRANSPOSITION_BETA, depth);
 
-					return beta; // XXX recursive_value?
-				}
-
-				if (recursive_value > alpha)
-				{
-					alpha = recursive_value;
-					type = TRANSPOSITION_EXACT;
-					*pv = move;
-				}
+				return beta; // XXX recursive_value?
 			}
-			else
+
+			if (recursive_value > alpha)
 			{
-				// we are spawning theads here, just tell everybody to go!
-				SearchThread *thread = &(threads[legal_moves]);
-
-				thread->board = malloc(sizeof(Bitboard));
-				memcpy(thread->board, board, sizeof(Bitboard));
-
-				thread->alpha = -beta;
-				thread->beta = -alpha;
-				thread->depth = depth - 1;
-				thread->move = move;
-
-				pthread_create(&(thread->tid),
-					NULL, search_alpha_beta_thread, thread);
-				// search_alpha_beta_thread(thread);
-
-				board_undo_move(board);
+				alpha = recursive_value;
+				type = TRANSPOSITION_EXACT;
+				*pv = move;
 			}
 
 			legal_moves++;
@@ -367,29 +303,6 @@ static int search_alpha_beta(Bitboard *board,
 			board_undo_move(board);
 
 		move_num++;
-	}
-
-	if (spawn_threads)
-	{
-		// if we spanwed threads, get the result out of all of them
-		for (int i = 0; i < legal_moves; i++)
-		{
-			SearchThread *thread = &(threads[i]);
-			pthread_join(thread->tid, NULL);
-
-			/* don't bother to check beta cutoffs; we've already done all
-			   of the work */
-			if (thread->result > alpha)
-			{
-				alpha = thread->result;
-				type = TRANSPOSITION_EXACT;
-				*pv = thread->move;
-			}
-
-			free(thread->board);
-		}
-
-		free(threads);
 	}
 
 	if (legal_moves == 0 && !quiescent)
@@ -412,14 +325,6 @@ static int search_alpha_beta(Bitboard *board,
 	}
 }
 
-static void* search_alpha_beta_thread(void *thread)
-{
-	SearchThread *thread2 = thread;
-	thread2->result = -search_alpha_beta(thread2->board,
-		thread2->alpha, thread2->beta, thread2->depth, thread2->pv);
-	return NULL;
-}
-
 static int search_move_comparator(const void *m1, const void *m2)
 {
 	/* sorts in this priority:
@@ -438,27 +343,12 @@ static int search_move_comparator(const void *m1, const void *m2)
 	return score2 - score1;
 }
 
-static void search_transposition_initalize(void)
-{
-#if threads_enabled
-	for (int i = 0; i < num_transposition_muticies; i++)
-		pthread_mutex_init(&(transposition_muticies[i]), NULL);
-#endif
-
-	transposition_table_initalized = 1;
-}
-
 static int search_transposition_get_value(uint64_t zobrist,
 	int *alpha, int *beta, int depth)
 {
 	int index = zobrist % max_transposition_table_size;
 	TranspositionNode *node = &transposition_table[index];
 	int ret = INFINITY;
-
-#if threads_enabled
-	pthread_mutex_lock(
-			&(transposition_muticies[index % num_transposition_muticies]));
-#endif
 
 	/* since many zobrists may map to a single slot in the table, we want
 	   to make sure we got a match; also, we want to make sure that the
@@ -491,11 +381,6 @@ static int search_transposition_get_value(uint64_t zobrist,
 		}
 	}
 
-#if threads_enabled
-	pthread_mutex_unlock(
-			&(transposition_muticies[index % num_transposition_muticies]));
-#endif
-
 	return ret;
 }
 
@@ -505,18 +390,8 @@ static Move search_transposition_get_best_move(uint64_t zobrist)
 	int index = zobrist % max_transposition_table_size;
 	TranspositionNode *node = &transposition_table[index];
 
-#if threads_enabled
-	pthread_mutex_lock(
-			&(transposition_muticies[index % num_transposition_muticies]));
-#endif
-
 	if (node->zobrist == zobrist)
 		result = node->best_move;
-
-#if threads_enabled
-	pthread_mutex_unlock(
-			&(transposition_muticies[index % num_transposition_muticies]));
-#endif
 
 	return result;
 }
@@ -534,19 +409,9 @@ static void search_transposition_put(uint64_t zobrist,
 	int index = zobrist % max_transposition_table_size;
 	TranspositionNode *node = &transposition_table[index];
 
-#if threads_enabled
-	pthread_mutex_lock(
-			&(transposition_muticies[index % num_transposition_muticies]));
-#endif
-
 	node->zobrist = zobrist;
 	node->depth = depth;
 	node->value = value;
 	node->best_move = best_move;
 	node->type = type;
-
-#if threads_enabled
-	pthread_mutex_unlock(
-			&(transposition_muticies[index % num_transposition_muticies]));
-#endif
 }
