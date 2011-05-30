@@ -285,7 +285,7 @@ void board_do_move(Bitboard *board, Move move)
 	   enpassant_index is 63, max value for halfmove_count is 50 */
 	uint64_t undo_data = 0;
 	undo_data |= board->enpassant_index & 0x3F;
-	undo_data |= ((board->castle_status >> 4) & 0x0F) << 6;
+	undo_data |= (board->castle_status & 0xF0) << 2;
 	undo_data |= (board->halfmove_count & 0x3F) << 10;
 	undo_data |= ((uint64_t)move) << 32;
 	board->undo_ring_buffer[board->undo_index++] = undo_data;
