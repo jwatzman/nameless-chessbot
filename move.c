@@ -33,7 +33,7 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 			pieces ^= 1ULL << src;
 
 			uint64_t dests = move_generate_attacks(board, piece, to_move, src);
-			dests &= ~(board->composite_boards[to_move]);
+			dests &= ~(board->composite_boards[to_move]); // can't capture your own piece
 
 			uint64_t captures = dests & board->composite_boards[1-to_move];
 			uint64_t non_captures = piece == PAWN ? 0 : dests & ~(board->composite_boards[1-to_move]);
@@ -249,7 +249,7 @@ static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 	// B KS: empty 61 62, not attacked 61 62
 
 	Color color = board->to_move;
-	if (board_in_check(board, color))
+	if (board_in_check(board, color)) // TODO :(
 		return;
 
 	// white queenside

@@ -199,7 +199,7 @@ static int search_alpha_beta(Bitboard *board,
 	int reps = 0;
 	for (uint8_t i = board->history_index - board->halfmove_count;
 	     i != board->history_index;
-	     i++)
+	     i++) // TODO test i += 2, start only if halfmove_count is >= 4, cut out on 1 rep
 	{
 		if (board->history[i] == board->zobrist)
 			reps++;
@@ -331,7 +331,7 @@ static int search_alpha_beta(Bitboard *board,
 					search_transposition_put(board->zobrist,
 						beta, move, TRANSPOSITION_BETA, depth);
 
-					return beta;
+					return beta; // XXX recursive_value?
 				}
 
 				if (recursive_value > alpha)
