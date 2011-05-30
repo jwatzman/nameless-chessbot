@@ -242,9 +242,6 @@ static void board_init_zobrist(Bitboard *board)
 	// ... and enpassant index ...
 	for (int i = 0; i < 64; i++)
 		board->zobrist_enpassant[i] = board_rand64();
-
-	// ... and to move
-	board->zobrist_black = board_rand64();
 }
 
 static uint64_t board_rotate_90(uint64_t board)
@@ -340,10 +337,7 @@ void board_do_move(Bitboard *board, Move move)
 		board_doundo_move_common(board, move);
 	}
 	else
-	{
 		board->to_move = (1 - board->to_move);
-		board->zobrist ^= board->zobrist_black;
-	}
 
 	// write new zobrist as a game state in the history
 	board->history[board->history_index++] = board->zobrist;
@@ -357,28 +351,19 @@ void board_undo_move(Bitboard *board)
 	if (move != MOVE_NULL)
 	{
 		// restore from undo ring buffer
-		board->zobrist ^= board->zobrist_castle[board->castle_status];
-		board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
-
 		board->enpassant_index = undo_data & 0x3F;
 		board->castle_status &= 0x0F;
 		board->castle_status |= ((undo_data >> 6) & 0x0F) << 4;
 		board->halfmove_count = (undo_data >> 10) & 0x3F;
 
-		board->zobrist ^= board->zobrist_castle[board->castle_status];
-		board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
-
 		// common bits of doing and undoing moves (bulk of the logic in here)
 		board_doundo_move_common(board, move);
 	}
 	else
-	{
 		board->to_move = (1 - board->to_move);
-		board->zobrist ^= board->zobrist_black;
-	}
 
-	// "remove" old zobrist from seen game states
-	board->history_index--;
+	// restore old zobrist
+	board->zobrist = board->history[--board->history_index];
 }
 
 static void board_doundo_move_common(Bitboard *board, Move move)
@@ -437,7 +422,6 @@ static void board_doundo_move_common(Bitboard *board, Move move)
 	}
 
 	board->to_move = (1 - board->to_move);
-	board->zobrist ^= board->zobrist_black;
 }
 
 static void board_toggle_piece(Bitboard *board, Piecetype piece,
