@@ -44,7 +44,7 @@ static pthread_mutex_t transposition_muticies[num_transposition_muticies];
 
 #define max_depth 8
 #define max_quiescent_depth 30
-static volatile int current_max_depth; // how deep *this* iteration goes
+static int current_max_depth; // how deep *this* iteration goes
 
 /* info for use with pthreads calls; embodies all arguments to
    search_alpha_beta, return value, and thread id */
@@ -62,7 +62,7 @@ typedef struct
 SearchThread;
 
 #define max_search_secs 5
-static int timeup;
+static volatile int timeup;
 static void sigalarm_handler(int signum);
 
 // main search workhorse
