@@ -286,6 +286,9 @@ static uint64_t board_rotate_internal(uint64_t board,
 
 void board_do_move(Bitboard *board, Move move)
 {
+	// write old zobrist as a game state in the history
+	board->history[board->history_index++] = board->zobrist;
+
 	/* save data to undo ring buffer. 0x3F == 63. Max value for
 	   enpassant_index is 63, max value for halfmove_count is 50 */
 	uint64_t undo_data = 0;
@@ -343,9 +346,6 @@ void board_do_move(Bitboard *board, Move move)
 	}
 	else
 		board->to_move = (1 - board->to_move);
-
-	// write new zobrist as a game state in the history
-	board->history[board->history_index++] = board->zobrist;
 }
 
 void board_undo_move(Bitboard *board)
