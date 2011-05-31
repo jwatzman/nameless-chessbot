@@ -9,6 +9,10 @@
 #include "move.h"
 #include "bitscan.h"
 
+#define IN_CHECK_UNKNOWN -1
+#define IN_CHECK_FALSE 0
+#define IN_CHECK_TRUE 1
+
 /* to get the rotated index of the unrotated index 0 <= n < 64, you would
    say board_index_90[n] for example. Also, remember that these are
    upside-down, since a1/LSB must come first */
@@ -214,6 +218,7 @@ void board_init_with_fen(Bitboard *board, char *fen)
 	board->undo_index = 0;
 	board->history_index = 0;
 	board->history[0] = board->zobrist;
+	board->in_check[0] = board->in_check[1] = IN_CHECK_UNKNOWN;
 }
 
 static inline uint64_t board_rand64()
@@ -422,6 +427,7 @@ static void board_doundo_move_common(Bitboard *board, Move move)
 	}
 
 	board->to_move = (1 - board->to_move);
+	board->in_check[0] = board->in_check[1] = IN_CHECK_UNKNOWN;
 }
 
 static void board_toggle_piece(Bitboard *board, Piecetype piece,
@@ -440,8 +446,13 @@ static void board_toggle_piece(Bitboard *board, Piecetype piece,
 int board_in_check(Bitboard *board, Color color)
 {
 	// said color is in check iff its king is being attacked
-	return move_square_is_attacked(board, 1-color,
+	if (board->in_check[color] == IN_CHECK_UNKNOWN)
+	{
+		board->in_check[color] = move_square_is_attacked(board, 1-color,
 			bitscan(board->boards[color][KING]));
+	}
+
+	return board->in_check[color];
 }
 
 Move board_last_move(Bitboard *board)

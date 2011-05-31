@@ -42,6 +42,9 @@ typedef struct
 	uint8_t halfmove_count;
 	Color to_move;
 
+	// cache for board_in_check, do not access directly
+	int8_t in_check[2];
+
 	// undo information is stored in a ring buffer
 	// we let the index wrap around 255 <-> 0 since it's an unsigned int
 	// from LSB to MSB:
