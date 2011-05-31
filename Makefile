@@ -2,7 +2,7 @@ ifeq ($(origin CC), default)
 	export CC=clang
 endif
 
-LDFLAGS=-O3 -Wall -Wextra
+LDFLAGS=-O4 -Wall -Wextra
 export CFLAGS=$(LDFLAGS) -std=c99 -pthread
 #export CFLAGS+=-O0 -ftrapv -fcatch-undefined-behavior -g
 
