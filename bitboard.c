@@ -434,6 +434,7 @@ static void board_toggle_piece(Bitboard *board, Piecetype piece,
 		Color color, uint8_t loc)
 {
 	// flip the bit in all of the copies of the board state
+	// TODO: try recomputing composities instead of xor all the time
 	board->boards[color][piece] ^= 1ULL << loc;
 	board->composite_boards[color] ^= 1ULL << loc;
 	board->full_composite ^= 1ULL << loc;
@@ -445,6 +446,7 @@ static void board_toggle_piece(Bitboard *board, Piecetype piece,
 
 int board_in_check(Bitboard *board, Color color)
 {
+	// TODO: is this worth it? try caching in unused undo_data bits
 	// said color is in check iff its king is being attacked
 	if (board->in_check[color] == IN_CHECK_UNKNOWN)
 	{
