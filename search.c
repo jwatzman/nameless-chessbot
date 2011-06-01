@@ -45,7 +45,7 @@ static int search_alpha_beta(Bitboard *board,
 	int alpha, int beta, int depth, Move *pv);
 
 // used to sort the moves for move ordering
-static int search_move_comparator(const void *m1, const void *m2);
+static int search_move_comparator(void *tm, const void *m1, const void *m2);
 
 /* asks the transposition table if we already know a good value for this
    position. If we do, return it. Otherwise, return INFINITY but adjust
@@ -211,43 +211,32 @@ static int search_alpha_beta(Bitboard *board,
 	Movelist moves;
 	move_generate_movelist(board, &moves);
 
-	// move ordering
-	qsort(&(moves.moves), moves.num, sizeof(Move), search_move_comparator);
+	// grab move from transposition table if we are not quiescent
+	Move transposition_move = quiescent ? MOVE_NULL
+		: search_transposition_get_best_move(board->zobrist);
+
+	// move ordering; order transposition move first
+	qsort_r(&(moves.moves),
+		moves.num,
+		sizeof(Move),
+		&transposition_move,
+		search_move_comparator);
+
+	if (transposition_move && moves.moves[0] != transposition_move)
+		fprintf(stderr, "wut\n");
 
 	/* since we generate only pseudolegal moves, we need to keep track if
 	   there actually are any legal moves at all */
 	int legal_moves = 0;
 
-	Move transposition_move = quiescent ? MOVE_NULL
-		: search_transposition_get_best_move(board->zobrist);
-
-	/* loop over all of the moves. There are unfortunately two loop
-	   indicies; "i" tracks the index into the moves.moves while "move_num"
-	   tracks the absolute move number */
-	for (int i = 0, move_num = 0;
-		 (i < moves.num) && !timeup;
-		 i++)
+	// while we still have time, loop thru all the moves
+	for (int i = 0; (i < moves.num) && !timeup; i++)
 	{
-		Move move;
-
-		/* if we sucessfully got a move out of the transposition table and
-		   have not tried it yet, try it first; otherwise continue moving
-		   through the main body of moves */
-		if (move_num == 0 && transposition_move != MOVE_NULL)
-		{
-			move = transposition_move;
-			i--;
-		}
-		else
-			move = moves.moves[i];
+		Move move = moves.moves[i];
 
 		/* if we're quiescent, we only want capture moves unless the
 		   original position was in check, then do everything */
 		if (quiescent && !quiescent_in_check && !move_is_capture(move))
-			continue;
-
-		// only try the transposition move once
-		if (move_num > 0 && move == transposition_move)
 			continue;
 
 		board_do_move(board, move);
@@ -284,8 +273,6 @@ static int search_alpha_beta(Bitboard *board,
 		}
 		else
 			board_undo_move(board);
-
-		move_num++;
 	}
 
 	if (legal_moves == 0 && !quiescent)
@@ -306,15 +293,22 @@ static int search_alpha_beta(Bitboard *board,
 	}
 }
 
-static int search_move_comparator(const void *m1, const void *m2)
+static int search_move_comparator(void *tm, const void *m1, const void *m2)
 {
 	/* sorts in this priority:
+	   transposition move first,
 	   captures before noncaptures,
 	   more valuable captured pieces first,
 	   less valuable capturing pieces first */
 
+	Move dtm = *(Move*)tm;
 	Move dm1 = *(const Move*)m1;
 	Move dm2 = *(const Move*)m2;
+
+	if (dtm == dm1)
+		return -1;
+	else if (dtm == dm2)
+		return 1;
 
 	int score1 = move_is_capture(dm1) ?
 		15 + 2*move_captured_piecetype(dm1) - move_piecetype(dm1) : 0;
