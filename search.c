@@ -189,7 +189,6 @@ static int search_alpha_beta(Bitboard *board,
 	if (depth <= -max_quiescent_depth)
 	{
 		int eval = evaluate_board(board);
-		//search_transposition_put(board->zobrist, eval, 0, TRANSPOSITION_EXACT, depth);
 		return eval;
 	}
 
@@ -207,22 +206,6 @@ static int search_alpha_beta(Bitboard *board,
 			type = TRANSPOSITION_EXACT;
 		}
 	}
-	/*
-	else if (depth < current_max_depth - 1 &&
-		     board_last_move(board) != MOVE_NULL)
-	{ // TODO add the right conditions to that if statement
-		board_do_move(board, MOVE_NULL);
-
-		int recursive_value = -search_alpha_beta(board,
-			-beta, -(beta-1), depth - 3, pv + 1);
-
-		board_undo_move(board);
-
-		// TODO figure out if this can go into the table
-		if (recursive_value >= beta)
-			return beta;
-	}
-	*/
 
 	// generate pseudolegal moves
 	Movelist moves;
@@ -309,13 +292,11 @@ static int search_alpha_beta(Bitboard *board,
 	{
 		// there are no legal moves for this game state -- check why
 		int val = board_in_check(board, board->to_move) ? -(MATE + depth) : 0;
-		//search_transposition_put(board->zobrist, val, 0, TRANSPOSITION_EXACT, depth);
 		return val;
 	}
 	else if (legal_moves == 0 && quiescent)
 	{
 		int eval = evaluate_board(board);
-		//search_transposition_put(board->zobrist, eval, 0, TRANSPOSITION_EXACT, depth);
 		return eval;
 	}
 	else
