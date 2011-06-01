@@ -7,7 +7,7 @@ export CFLAGS=$(LDFLAGS) -std=c99 -pthread
 #export CFLAGS+=-O0 -ftrapv -fcatch-undefined-behavior -g
 
 SOURCES_CORE=bitboard.o move.o
-SOURCES=$(SOURCES_CORE) evaluate.o search.o
+SOURCES=$(SOURCES_CORE) evaluate.o search.o timer.o
 
 all: perft stress test xboard
 

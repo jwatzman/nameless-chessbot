@@ -7,6 +7,7 @@
 #include "bitboard.h"
 #include "evaluate.h"
 #include "search.h"
+#include "timer.h"
 
 static const int max_input_length = 1024;
 
@@ -63,7 +64,7 @@ int main(void)
 		fprintf(stderr, "%s", input);
 
 		if (!strcmp("xboard\n", input))
-			printf("feature colors=0 setboard=1 sigint=0 sigterm=0 variants=\"normal\" done=1\n");
+			printf("feature colors=0 setboard=1 time=0 sigint=0 sigterm=0 variants=\"normal\" done=1\n");
 		else if (!strcmp("new\n", input))
 		{
 			board_init(board);
@@ -83,6 +84,8 @@ int main(void)
 			computer_player = -1;
 			game_on = 0;
 		}
+		else if (!strncmp("level ", input, 6))
+			timer_init(input);
 		else if (!strcmp("_print\n", input))
 			board_print(board);
 		else if (input[0] >= 'a' && input[0] <= 'h'

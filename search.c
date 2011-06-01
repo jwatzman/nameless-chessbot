@@ -2,11 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <signal.h>
 #include <string.h>
 #include "search.h"
 #include "evaluate.h"
 #include "move.h"
+#include "timer.h"
 
 typedef enum
 {
@@ -32,13 +32,11 @@ TranspositionNode;
 #define max_transposition_table_size 16777216
 static TranspositionNode transposition_table[max_transposition_table_size];
 
-#define max_depth 8
+#define max_depth 10
 #define max_quiescent_depth 30
 static int current_max_depth; // how deep *this* iteration goes
 
-#define max_search_secs 5
 static volatile int timeup;
-static void sigalarm_handler(int signum);
 
 // main search workhorse
 static int search_alpha_beta(Bitboard *board,
@@ -60,12 +58,6 @@ static Move search_transposition_get_best_move(uint64_t zobrist);
 static void search_transposition_put(uint64_t zobrist,
 	int value, Move best_move, TranspositionType type, int depth);
 
-static void sigalarm_handler(int signum)
-{
-	(void)signum;
-	timeup = 1;
-}
-
 Move search_find_move(Bitboard *board)
 {
 	Move best_move = 0;
@@ -77,17 +69,8 @@ Move search_find_move(Bitboard *board)
 	   is the top level layer -- it's only siblings that ruin things :)) */
 	Move pv[max_depth + max_quiescent_depth + 1];
 
-	/* set up the timer; a sigalarm is sent when the search should
-	   prematurely end due to time, which in turn sets timeup = 1 */
-	struct sigaction sigalarm_action;
-	sigalarm_action.sa_handler = sigalarm_handler;
-	sigemptyset(&sigalarm_action.sa_mask);
-	sigalarm_action.sa_flags = 0;
-	sigaction(SIGALRM, &sigalarm_action, 0);
-
-	alarm(max_search_secs);
-
 	timeup = 0;
+	timer_begin(&timeup);
 
 	// for each depth, call the main workhorse, search_alpha_beta
 	for (current_max_depth = 1;
@@ -129,8 +112,7 @@ Move search_find_move(Bitboard *board)
 		}
 	}
 
-	// this shouldn't matter, but it can't hurt
-	alarm(0);
+	timer_end();
 
 	return best_move;
 }
