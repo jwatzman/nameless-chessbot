@@ -247,6 +247,9 @@ static void board_init_zobrist(Bitboard *board)
 	// ... and enpassant index ...
 	for (int i = 0; i < 64; i++)
 		board->zobrist_enpassant[i] = board_rand64();
+
+	// ... and to move
+	board->zobrist_black = board_rand64();
 }
 
 static uint64_t board_rotate_90(uint64_t board)
@@ -345,7 +348,10 @@ void board_do_move(Bitboard *board, Move move)
 		board_doundo_move_common(board, move);
 	}
 	else
+	{
 		board->to_move = (1 - board->to_move);
+		board->zobrist ^= board->zobrist_black;
+	}
 }
 
 void board_undo_move(Bitboard *board)
@@ -427,6 +433,8 @@ static void board_doundo_move_common(Bitboard *board, Move move)
 	}
 
 	board->to_move = (1 - board->to_move);
+	board->zobrist ^= board->zobrist_black;
+
 	board->in_check[0] = board->in_check[1] = IN_CHECK_UNKNOWN;
 }
 
