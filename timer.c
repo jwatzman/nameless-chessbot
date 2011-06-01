@@ -20,15 +20,9 @@ void timer_init(char *level)
 	int ret = sscanf(level, "level %d %d %d", &moves, &base, &inc);
 
 	if (ret == 3 && moves == 0)
-	{
-		fprintf(stderr, "using inc %d\n", inc);
 		secs = inc;
-	}
 	else
-	{
-		fprintf(stderr, "using default\n");
 		secs = 5;
-	}
 
 	struct sigaction sigalarm_action;
 	sigalarm_action.sa_handler = timer_timeup;
