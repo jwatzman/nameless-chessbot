@@ -147,13 +147,8 @@ static int search_alpha_beta(Bitboard *board,
 {
 	TranspositionType type = TRANSPOSITION_ALPHA;
 
-	/* check if we're quiescent, and if we are set an in_check flag this
-	   flag is only used to know what moves to skip for a quiescent search,
-	   so don't bother doing the expensive computation if we're not
-	   quiescent -- we will do it again if it becomes necessary */
 	int quiescent = depth <= 0;
-	int quiescent_in_check = quiescent ?
-		board_in_check(board, board->to_move) : 0;
+	int in_check = board_in_check(board, board->to_move);
 
 	/* *pv is used as the best move, but we have none yet if this gets
 	   stuck in the transposition table, make sure no one uses some random
@@ -240,7 +235,7 @@ static int search_alpha_beta(Bitboard *board,
 
 		/* if we're quiescent, we only want capture moves unless the
 		   original position was in check, then do everything */
-		if (quiescent && !quiescent_in_check && !move_is_capture(move))
+		if (quiescent && !in_check && !move_is_capture(move))
 			continue;
 
 		board_do_move(board, move);
@@ -300,7 +295,7 @@ static int search_alpha_beta(Bitboard *board,
 	if (legal_moves == 0 && !quiescent)
 	{
 		// there are no legal moves for this game state -- check why
-		int val = board_in_check(board, board->to_move) ? -(MATE + depth) : 0;
+		int val = in_check ? -(MATE + depth) : 0;
 		return val;
 	}
 	else if (legal_moves == 0 && quiescent)
