@@ -1,0 +1,3 @@
+#!/bin/sh
+xboard -fcp ./xboard -scp crafty -xponder -mm
+rm book.lrn game.001 log.001 position.bin position.lrn
