@@ -32,8 +32,8 @@ TranspositionNode;
 #define max_transposition_table_size 16777216
 static TranspositionNode transposition_table[max_transposition_table_size];
 
-#define max_depth 10
-#define max_quiescent_depth 30
+#define max_depth 15
+#define max_quiescent_depth 50
 static int current_max_depth; // how deep *this* iteration goes
 
 #define aspiration_window 30
