@@ -146,17 +146,13 @@ static int search_alpha_beta(Bitboard *board,
 	{
 		// 3 repetition rule
 		// TODO test i += 2, start only if halfmove_count is >= 4, cut out on 1 rep
-		int reps = 0;
 		for (uint8_t i = board->history_index - board->halfmove_count;
 			i != board->history_index;
 			i++)
 		{
 			if (board->history[i] == board->zobrist)
-				reps++;
+				return 0;
 		}
-
-		if (reps >= 2)
-			return 0;
 
 		// check transposition table for a useful value
 		int table_val = search_transposition_get_value(board->zobrist,
