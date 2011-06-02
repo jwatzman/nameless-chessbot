@@ -36,6 +36,8 @@ static TranspositionNode transposition_table[max_transposition_table_size];
 #define max_quiescent_depth 30
 static int current_max_depth; // how deep *this* iteration goes
 
+#define aspiration_window 30
+
 static volatile int timeup;
 
 // main search workhorse
@@ -80,16 +82,28 @@ Move search_find_move(Bitboard *board)
 	timeup = 0;
 	timer_begin(&timeup);
 
+	int alpha = -INFINITY;
+	int beta = INFINITY;
+
 	// for each depth, call the main workhorse, search_alpha_beta
 	for (current_max_depth = 1;
 	     current_max_depth <= max_depth;
 	     current_max_depth++)
 	{
-		fprintf(stderr, "SEARCHER depth %i", current_max_depth);
+		fprintf(stderr, "SEARCHER depth %i ", current_max_depth);
 
 		// here we go...
-		int val = search_alpha_beta(board,
-				-INFINITY, INFINITY, current_max_depth, pv);
+		int val = search_alpha_beta(board, alpha, beta, current_max_depth, pv);
+
+		if ((val <= alpha) || (val >= beta))
+		{
+			// aspiration window failure
+			fprintf(stderr, "aspiration failure (%i)\n", val);
+			alpha = -INFINITY;
+			beta = INFINITY;
+			current_max_depth--;
+			continue;
+		}
 
 		/* if we sucessfully completed a depth (i.e. did not early terminate
 		   due to time), pull the first move off of the pv so that we can
@@ -105,7 +119,10 @@ Move search_find_move(Bitboard *board)
 			best_move = pv[0];
 
 			move_srcdest_form(best_move, buf);
-			fprintf(stderr, " %s (%i)\n", buf, val);
+			fprintf(stderr, "%s (%i)\n", buf, val);
+
+			alpha = val - aspiration_window;
+			beta = val + aspiration_window;
 
 			if (val >= MATE)
 			{
@@ -115,7 +132,7 @@ Move search_find_move(Bitboard *board)
 		}
 		else
 		{
-			fprintf(stderr, " timeup\n");
+			fprintf(stderr, "timeup\n");
 			break;
 		}
 	}
