@@ -161,10 +161,7 @@ static int search_alpha_beta(Bitboard *board,
 		                                               depth);
 
 		if (table_val != INFINITY)
-		{
-			*pv = search_transposition_get_best_move(board->zobrist);
 			return table_val;
-		}
 	}
 
 	// leaf node
