@@ -12,7 +12,8 @@ typedef enum
 {
 	TRANSPOSITION_EXACT,
 	TRANSPOSITION_ALPHA,
-	TRANSPOSITION_BETA
+	TRANSPOSITION_BETA,
+	TRANSPOSITION_INVALIDATED
 }
 TranspositionType;
 
@@ -26,9 +27,8 @@ typedef struct
 }
 TranspositionNode;
 
-/* the transposition table is kept over the lifetime of the program. This
-   makes the assumption that zobrists will never conflict, which is
-   incorrect but very unlikely to be an issue */
+/* the transposition table. It's kept over the lifetime of the program, but the
+   values (not moves) in it are invalidated each new search */
 #define max_transposition_table_size 16777216
 static TranspositionNode transposition_table[max_transposition_table_size];
 
@@ -68,6 +68,14 @@ Move search_find_move(Bitboard *board)
 	   space, and are actually valid when the recursion layer using them
 	   is the top level layer -- it's only siblings that ruin things :)) */
 	Move pv[max_depth + max_quiescent_depth + 1];
+
+	/* invalidate the entries (but not the moves) stored in the transposition
+	   table. The values *should* be usable in subsequent runs, but for some
+	   reason I've had a ton of trouble with this not quite working as well as
+	   you might hope. The moves are definitely usable though to try and get
+	   a faster cutoff */
+	for (unsigned int i = 0; i < max_transposition_table_size; i++)
+		transposition_table[i].type = TRANSPOSITION_INVALIDATED;
 
 	timeup = 0;
 	timer_begin(&timeup);
