@@ -308,6 +308,9 @@ static int search_transposition_get_value(uint64_t zobrist,
 	TranspositionNode *node = &transposition_table[index];
 	int ret = INFINITY;
 
+	if (depth < 1)
+		return INFINITY;
+
 	/* since many zobrists may map to a single slot in the table, we want
 	   to make sure we got a match; also, we want to make sure that the
 	   entry was not made with a shallower depth than what we're currently
@@ -361,7 +364,7 @@ static void search_transposition_put(uint64_t zobrist,
 	   table; since this is only called right before search_alpha_beta
 	   returns, we just want to make sure the main search loop finished for
 	   that subtree */
-	if (timeup)
+	if (timeup || depth < 1)
 		return;
 
 	int index = zobrist % max_transposition_table_size;
