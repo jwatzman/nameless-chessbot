@@ -139,22 +139,26 @@ static int search_alpha_beta(Bitboard *board,
 	if (board->halfmove_count == 100)
 		return 0;
 
-	// 3 repitition rule
-	int reps = 0;
-	for (uint8_t i = board->history_index - board->halfmove_count;
-	     i != board->history_index;
-	     i++) // TODO test i += 2, start only if halfmove_count is >= 4, cut out on 1 rep
+	/* only check for repetitions down at least 1 ply, since it results in a
+	   search termination without the game actually being over. Similarly, only
+	   check the transposition table two at least 1 ply */
+	if (depth < current_max_depth)
 	{
-		if (board->history[i] == board->zobrist)
-			reps++;
-	}
-	if (reps >= 2)
-		return 0;
+		// 3 repetition rule
+		// TODO test i += 2, start only if halfmove_count is >= 4, cut out on 1 rep
+		int reps = 0;
+		for (uint8_t i = board->history_index - board->halfmove_count;
+			i != board->history_index;
+			i++)
+		{
+			if (board->history[i] == board->zobrist)
+				reps++;
+		}
 
-	/* if we know an acceptable value in the table, use it; however, only
-	   check the table after we get down a couple of ply */
-	if (depth < current_max_depth - 1)
-	{
+		if (reps >= 2)
+			return 0;
+
+		// check transposition table for a useful value
 		int table_val = search_transposition_get_value(board->zobrist,
 		                                               &alpha,
 		                                               &beta,
