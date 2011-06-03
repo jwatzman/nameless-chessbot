@@ -221,9 +221,6 @@ static int search_alpha_beta(Bitboard *board,
 		&transposition_move,
 		search_move_comparator);
 
-	if (transposition_move && moves.moves[0] != transposition_move)
-		fprintf(stderr, "wut\n");
-
 	/* since we generate only pseudolegal moves, we need to keep track if
 	   there actually are any legal moves at all */
 	int legal_moves = 0;
