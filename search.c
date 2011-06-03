@@ -243,27 +243,34 @@ static int search_alpha_beta(Bitboard *board,
 		// make the final legality check
 		if (!board_in_check(board, 1-board->to_move))
 		{
+			// value from recursive call to alpha-beta search
 			int recursive_value;
+
+			// keeps track of various re-search conditions
+			int search_completed = 0;
+
 			if (type == TRANSPOSITION_EXACT)
 			{
 				// PV search
+				search_completed = 1;
 				recursive_value = -search_alpha_beta(board,
 					-alpha - 1, -alpha, depth - 1, pv + 1);
 
 				if ((recursive_value > alpha) && (recursive_value < beta))
 				{
 					// PV search failed
-					recursive_value = -search_alpha_beta(board,
-						-beta, -alpha, depth - 1, pv + 1);
+					search_completed = 0;
 				}
 			}
 			else if (i > 4 && depth > 2 && !move_is_capture(move) && !move_is_promotion(move) && !in_check && !board_in_check(board, board->to_move))
 			{
 				// LMR
+				search_completed = 1;
 				recursive_value = -search_alpha_beta(board,
 					-beta, -alpha, depth - 2, pv + 1);
 			}
-			else
+
+			if (!search_completed)
 			{
 				// normal search
 				recursive_value = -search_alpha_beta(board,
