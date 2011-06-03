@@ -145,6 +145,9 @@ Move search_find_move(Bitboard *board)
 static int search_alpha_beta(Bitboard *board,
 	int alpha, int beta, int depth, Move *pv)
 {
+	if (timeup)
+		return 0;
+
 	TranspositionType type = TRANSPOSITION_ALPHA;
 
 	int quiescent = depth <= 0;
@@ -228,8 +231,8 @@ static int search_alpha_beta(Bitboard *board,
 	   there actually are any legal moves at all */
 	int legal_moves = 0;
 
-	// while we still have time, loop thru all the moves
-	for (int i = 0; (i < moves.num) && !timeup; i++)
+	// loop thru all moves
+	for (int i = 0; i < moves.num; i++)
 	{
 		Move move = moves.moves[i];
 
@@ -297,6 +300,9 @@ static int search_alpha_beta(Bitboard *board,
 		else
 			board_undo_move(board);
 	}
+
+	if (timeup)
+		return 0;
 
 	if (legal_moves == 0 && !quiescent)
 	{
