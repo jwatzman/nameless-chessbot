@@ -267,7 +267,13 @@ static int search_alpha_beta(Bitboard *board,
 				// LMR
 				search_completed = 1;
 				recursive_value = -search_alpha_beta(board,
-					-beta, -alpha, depth - 2, pv + 1);
+					-alpha - 1, -alpha, depth - 2, pv + 1);
+
+				if (recursive_value > alpha)
+				{
+					// LMR failed
+					search_completed = 0;
+				}
 			}
 
 			if (!search_completed)
