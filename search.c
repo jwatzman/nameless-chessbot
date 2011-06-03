@@ -257,6 +257,12 @@ static int search_alpha_beta(Bitboard *board,
 						-beta, -alpha, depth - 1, pv + 1);
 				}
 			}
+			else if (i > 4 && depth > 2 && !move_is_capture(move) && !move_is_promotion(move) && !in_check && !board_in_check(board, board->to_move))
+			{
+				// LMR
+				recursive_value = -search_alpha_beta(board,
+					-beta, -alpha, depth - 2, pv + 1);
+			}
 			else
 			{
 				// normal search
