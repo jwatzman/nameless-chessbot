@@ -290,9 +290,9 @@ static int search_alpha_beta(Bitboard *board,
 				   since it will be searched first next time, and will
 				   thus immediately cause a cutoff again */
 				search_transposition_put(board->zobrist,
-						beta, move, TRANSPOSITION_BETA, depth);
+						recursive_value, move, TRANSPOSITION_BETA, depth);
 
-				return beta; // XXX recursive_value?
+				return recursive_value;
 			}
 
 			if (recursive_value > alpha)
