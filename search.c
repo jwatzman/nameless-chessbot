@@ -124,7 +124,7 @@ Move search_find_move(Bitboard *board)
 			alpha = val - aspiration_window;
 			beta = val + aspiration_window;
 
-			if (val >= MATE)
+			if ((val >= MATE) || (val <= -MATE))
 			{
 				fprintf(stderr, "SEARCHER found mate\n");
 				break;
