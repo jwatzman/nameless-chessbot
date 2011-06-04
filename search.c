@@ -71,14 +71,6 @@ Move search_find_move(Bitboard *board)
 	   is the top level layer -- it's only siblings that ruin things :)) */
 	Move pv[max_depth + max_quiescent_depth + 1];
 
-	/* invalidate the entries (but not the moves) stored in the transposition
-	   table. The values *should* be usable in subsequent runs, but for some
-	   reason I've had a ton of trouble with this not quite working as well as
-	   you might hope. The moves are definitely usable though to try and get
-	   a faster cutoff */
-	for (unsigned int i = 0; i < max_transposition_table_size; i++)
-		transposition_table[i].type = TRANSPOSITION_INVALIDATED;
-
 	timeup = 0;
 	timer_begin(&timeup);
 
