@@ -233,7 +233,7 @@ static int search_alpha_beta(Bitboard *board,
 		/* if we're quiescent, we only want capture moves unless the
 		   original position was in check, then do everything */
 		if (quiescent && !in_check && !move_is_capture(move))
-			continue;
+			break;
 
 		board_do_move(board, move);
 
