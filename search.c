@@ -87,7 +87,7 @@ Move search_find_move(Bitboard *board)
 		// here we go...
 		int val = search_alpha_beta(board, alpha, beta, current_max_depth, pv);
 
-		if ((val <= alpha) || (val >= beta))
+		if (((val <= alpha) || (val >= beta)) && !timeup)
 		{
 			// aspiration window failure
 			fprintf(stderr, "aspiration failure (%i)\n", val);
