@@ -395,15 +395,21 @@ static Move search_transposition_get_best_move(uint64_t zobrist)
 static void search_transposition_put(uint64_t zobrist,
 	int value, Move best_move, TranspositionType type, int depth)
 {
-	/* make sure that only data from completed subtrees makes it in the
-	   table; since this is only called right before search_alpha_beta
-	   returns, we just want to make sure the main search loop finished for
-	   that subtree */
-	if (timeup || depth < 1)
+	/* we might not store in the transnposition table if:
+	    - time is up, thus we can't garuntee this was a full search
+	    - the depth is not deep enough to be useful
+	    - the value is dependent upon the ply at which it was searched and the
+	      depth to which it was searched (currently, only MATE moves)
+	    - it would replace a deeper search of this node
+	 */
+	if (timeup || (depth < 1) || (value >= MATE) || (value <= -MATE))
 		return;
 
 	int index = zobrist % max_transposition_table_size;
 	TranspositionNode *node = &transposition_table[index];
+
+	if ((node->zobrist == zobrist) && (node->depth > depth))
+		return;
 
 	node->zobrist = zobrist;
 	node->depth = depth;
