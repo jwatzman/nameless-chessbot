@@ -51,7 +51,7 @@ static int search_move_comparator(void *tm, const void *m1, const void *m2);
    position. If we do, return it. Otherwise, return INFINITY but adjust
    *alpha and *beta if we know better bounds for them */
 static int search_transposition_get_value(uint64_t zobrist,
-		int *alpha, int *beta, int depth);
+		int alpha, int beta, int depth);
 
 // if we have a previous best move for this zobrist, return it; 0 otherwise
 static Move search_transposition_get_best_move(uint64_t zobrist);
@@ -179,8 +179,8 @@ static int search_alpha_beta(Bitboard *board,
 
 		// check transposition table for a useful value
 		int table_val = search_transposition_get_value(board->zobrist,
-		                                               &alpha,
-		                                               &beta,
+		                                               alpha,
+		                                               beta,
 		                                               depth);
 
 		if (table_val != INFINITY)
@@ -224,9 +224,6 @@ static int search_alpha_beta(Bitboard *board,
 		&transposition_move,
 		search_move_comparator);
 
-	if (transposition_move && moves.moves[0] != transposition_move)
-		fprintf(stderr, "wut\n");
-
 	/* since we generate only pseudolegal moves, we need to keep track if
 	   there actually are any legal moves at all */
 	int legal_moves = 0;
@@ -239,34 +236,47 @@ static int search_alpha_beta(Bitboard *board,
 		/* if we're quiescent, we only want capture moves unless the
 		   original position was in check, then do everything */
 		if (quiescent && !in_check && !move_is_capture(move))
-			continue;
+			break;
 
 		board_do_move(board, move);
 
 		// make the final legality check
 		if (!board_in_check(board, 1-board->to_move))
 		{
+			// value from recursive call to alpha-beta search
 			int recursive_value;
+
+			// keeps track of various re-search conditions
+			int search_completed = 0;
+
 			if (type == TRANSPOSITION_EXACT)
 			{
 				// PV search
+				search_completed = 1;
 				recursive_value = -search_alpha_beta(board,
 					-alpha - 1, -alpha, depth - 1, pv + 1);
 
 				if ((recursive_value > alpha) && (recursive_value < beta))
 				{
 					// PV search failed
-					recursive_value = -search_alpha_beta(board,
-						-beta, -alpha, depth - 1, pv + 1);
+					search_completed = 0;
 				}
 			}
 			else if (i > 4 && depth > 2 && !move_is_capture(move) && !move_is_promotion(move) && !in_check && !board_in_check(board, board->to_move))
 			{
 				// LMR
+				search_completed = 1;
 				recursive_value = -search_alpha_beta(board,
-					-beta, -alpha, depth - 2, pv + 1);
+					-alpha - 1, -alpha, depth - 2, pv + 1);
+
+				if (recursive_value > alpha)
+				{
+					// LMR failed
+					search_completed = 0;
+				}
 			}
-			else
+
+			if (!search_completed)
 			{
 				// normal search
 				recursive_value = -search_alpha_beta(board,
@@ -283,9 +293,9 @@ static int search_alpha_beta(Bitboard *board,
 				   since it will be searched first next time, and will
 				   thus immediately cause a cutoff again */
 				search_transposition_put(board->zobrist,
-						beta, move, TRANSPOSITION_BETA, depth);
+						recursive_value, move, TRANSPOSITION_BETA, depth);
 
-				return beta; // XXX recursive_value?
+				return recursive_value;
 			}
 
 			if (recursive_value > alpha)
@@ -348,11 +358,10 @@ static int search_move_comparator(void *tm, const void *m1, const void *m2)
 }
 
 static int search_transposition_get_value(uint64_t zobrist,
-	int *alpha, int *beta, int depth)
+	int alpha, int beta, int depth)
 {
 	int index = zobrist % max_transposition_table_size;
 	TranspositionNode *node = &transposition_table[index];
-	int ret = INFINITY;
 
 	if (depth < 1)
 		return INFINITY;
@@ -368,27 +377,15 @@ static int search_transposition_get_value(uint64_t zobrist,
 			int val = node->value;
 
 			if (node->type == TRANSPOSITION_EXACT)
-			{
-				ret = val;
-			}
-			else if (node->type == TRANSPOSITION_ALPHA)
-			{
-				if (val <= *alpha)
-					ret = *alpha;
-				else if (val < *beta)
-					*beta = val;
-			}
-			else if (node->type == TRANSPOSITION_BETA)
-			{
-				if (val >= *beta)
-					ret = *beta;
-				else if (val > *alpha)
-					*alpha = val;
-			}
+				return val;
+			else if ((node->type == TRANSPOSITION_ALPHA) && (val <= alpha))
+				return alpha;
+			else if ((node->type == TRANSPOSITION_BETA) && (val >= beta))
+				return beta;
 		}
 	}
 
-	return ret;
+	return INFINITY;
 }
 
 static Move search_transposition_get_best_move(uint64_t zobrist)
