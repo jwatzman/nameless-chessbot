@@ -34,15 +34,13 @@ static TranspositionNode transposition_table[max_transposition_table_size];
 
 #define max_depth 15
 #define max_quiescent_depth 50
-static int current_max_depth; // how deep *this* iteration goes
-
 #define aspiration_window 30
 
 static volatile int timeup;
 
 // main search workhorse
 static int search_alpha_beta(Bitboard *board,
-	int alpha, int beta, int depth, Move *pv);
+	int alpha, int beta, int depth, int ply, Move *pv);
 
 // used to sort the moves for move ordering
 static int search_move_comparator(void *tm, const void *m1, const void *m2);
@@ -78,14 +76,12 @@ Move search_find_move(Bitboard *board)
 	int beta = INFINITY;
 
 	// for each depth, call the main workhorse, search_alpha_beta
-	for (current_max_depth = 1;
-	     current_max_depth <= max_depth;
-	     current_max_depth++)
+	for (int depth = 1; depth <= max_depth; depth++)
 	{
-		fprintf(stderr, "SEARCHER depth %i ", current_max_depth);
+		fprintf(stderr, "SEARCHER depth %i ", depth);
 
 		// here we go...
-		int val = search_alpha_beta(board, alpha, beta, current_max_depth, pv);
+		int val = search_alpha_beta(board, alpha, beta, depth, 1, pv);
 
 		if (((val <= alpha) || (val >= beta)) && !timeup)
 		{
@@ -93,7 +89,7 @@ Move search_find_move(Bitboard *board)
 			fprintf(stderr, "aspiration failure (%i)\n", val);
 			alpha = -INFINITY;
 			beta = INFINITY;
-			current_max_depth--;
+			depth--;
 			continue;
 		}
 
@@ -135,7 +131,7 @@ Move search_find_move(Bitboard *board)
 }
 
 static int search_alpha_beta(Bitboard *board,
-	int alpha, int beta, int depth, Move *pv)
+	int alpha, int beta, int depth, int ply, Move *pv)
 {
 	if (timeup)
 		return 0;
@@ -157,7 +153,7 @@ static int search_alpha_beta(Bitboard *board,
 	/* only check for repetitions down at least 1 ply, since it results in a
 	   search termination without the game actually being over. Similarly, only
 	   check the transposition table two at least 1 ply */
-	if (depth < current_max_depth)
+	if (ply > 1)
 	{
 		// 3 repetition rule
 		// TODO test i += 2, start only if halfmove_count is >= 4, cut out on 1 rep
@@ -246,7 +242,7 @@ static int search_alpha_beta(Bitboard *board,
 				// PV search
 				search_completed = 1;
 				recursive_value = -search_alpha_beta(board,
-					-alpha - 1, -alpha, depth - 1, pv + 1);
+					-alpha - 1, -alpha, depth - 1, ply + 1, pv + 1);
 
 				if ((recursive_value > alpha) && (recursive_value < beta))
 				{
@@ -259,7 +255,7 @@ static int search_alpha_beta(Bitboard *board,
 				// LMR
 				search_completed = 1;
 				recursive_value = -search_alpha_beta(board,
-					-alpha - 1, -alpha, depth - 2, pv + 1);
+					-alpha - 1, -alpha, depth - 2, ply + 1, pv + 1);
 
 				if (recursive_value > alpha)
 				{
@@ -272,7 +268,7 @@ static int search_alpha_beta(Bitboard *board,
 			{
 				// normal search
 				recursive_value = -search_alpha_beta(board,
-					-beta, -alpha, depth - 1, pv + 1);
+					-beta, -alpha, depth - 1, ply + 1, pv + 1);
 			}
 
 			board_undo_move(board);
