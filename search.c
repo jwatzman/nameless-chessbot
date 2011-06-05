@@ -237,12 +237,16 @@ static int search_alpha_beta(Bitboard *board,
 			// keeps track of various re-search conditions
 			int search_completed = 0;
 
+			int move_causes_check = board_in_check(board, board->to_move);
+			int extensions = move_causes_check;
+
 			if (type == TRANSPOSITION_EXACT)
 			{
 				// PV search
 				search_completed = 1;
 				recursive_value = -search_alpha_beta(board,
-					-alpha - 1, -alpha, depth - 1, ply + 1, pv + 1);
+					-alpha - 1, -alpha,
+					depth - 1 + extensions, ply + 1, pv + 1);
 
 				if ((recursive_value > alpha) && (recursive_value < beta))
 				{
@@ -250,12 +254,15 @@ static int search_alpha_beta(Bitboard *board,
 					search_completed = 0;
 				}
 			}
-			else if (i > 4 && depth > 2 && !move_is_capture(move) && !move_is_promotion(move) && !in_check && !board_in_check(board, board->to_move))
+			else if (i > 4 && depth > 2 && extensions == 0 &&
+				!move_is_capture(move) && !move_is_promotion(move) &&
+				!in_check && !move_causes_check)
 			{
 				// LMR
 				search_completed = 1;
 				recursive_value = -search_alpha_beta(board,
-					-alpha - 1, -alpha, depth - 2, ply + 1, pv + 1);
+					-alpha - 1, -alpha,
+					depth - 2, ply + 1, pv + 1);
 
 				if (recursive_value > alpha)
 				{
@@ -268,7 +275,8 @@ static int search_alpha_beta(Bitboard *board,
 			{
 				// normal search
 				recursive_value = -search_alpha_beta(board,
-					-beta, -alpha, depth - 1, ply + 1, pv + 1);
+					-beta, -alpha, depth - 1 + extensions,
+					ply + 1, pv + 1);
 			}
 
 			board_undo_move(board);
