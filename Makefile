@@ -3,7 +3,7 @@ ifeq ($(origin CC), default)
 endif
 
 LDFLAGS=-O4 -Wall -Wextra
-export CFLAGS=$(LDFLAGS) -std=c99 -pthread
+export CFLAGS=$(LDFLAGS) -std=c99
 #export CFLAGS+=-O0 -ftrapv -fcatch-undefined-behavior -g
 
 SOURCES_CORE=bitboard.o move.o
