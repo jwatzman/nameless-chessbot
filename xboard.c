@@ -89,6 +89,7 @@ int main(void)
 		else if (!strcmp("_print\n", input))
 		{
 			board_print(board);
+			printf("Evaluation: %i\n", evaluate_board(board));
 			puts("Pseudolegal moves: ");
 
 			Movelist all_moves;
