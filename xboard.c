@@ -87,7 +87,20 @@ int main(void)
 		else if (!strncmp("level ", input, 6))
 			timer_init(input);
 		else if (!strcmp("_print\n", input))
+		{
 			board_print(board);
+			puts("Pseudolegal moves: ");
+
+			Movelist all_moves;
+			char srcdest_form[6];
+			move_generate_movelist(board, &all_moves);
+			for (int i = 0; i < all_moves.num; i++)
+			{
+				move_srcdest_form(all_moves.moves[i], srcdest_form);
+				printf("%s ", srcdest_form);
+			}
+			puts("\n");
+		}
 		else if (input[0] >= 'a' && input[0] <= 'h'
 				&& input[1] >= '1' && input[1] <= '8'
 				&& input[2] >= 'a' && input[2] <= 'h'
