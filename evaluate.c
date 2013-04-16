@@ -132,7 +132,7 @@ int evaluate_board(Bitboard *board)
 				{
 					// passed pawn; do this before the location swap below
 					int passed_pawn = 0;
-					if ((front_spans[color][loc] & board->boards[1-color][PAWN]) == 0) // XXX
+					if ((front_spans[color][loc] & board->boards[1-color][PAWN]) == 0)
 						passed_pawn = 1;
 
 					// since the pawn table is not hoizontally symmetric,
