@@ -43,7 +43,7 @@ static const int knight_pos[] = {
 -10, -7, -5, -5, -5, -5, -7,-10
 };
 
-// the only one that isn't hoizontally symmetric;
+// pawns aren't hoizontally symmetric;
 // this needs to be special-cased, see below
 static const int pawn_pos[] = {
 0,  0,  0,  0,  0,  0,  0,  0,
@@ -54,6 +54,17 @@ static const int pawn_pos[] = {
 4,  8, 12, 16, 16, 12,  8,  4,
 15,15, 20, 25, 25, 20, 15, 15,
 0,  0,  0,  0,  0,  0,  0,  0
+};
+
+static const int passed_pawn_bonus[] = {
+  0,  0,  0,  0,  0,  0,  0,  0,
+ 10, 10, 10, 10, 10, 10, 10, 10,
+ 15, 15, 15, 15, 15, 15, 15, 15,
+ 25, 25, 25, 25, 25, 25, 25, 25,
+ 50, 50, 50, 50, 50, 50, 50, 50,
+ 65, 65, 65, 65, 65, 65, 65, 65,
+ 80, 80, 80, 80, 80, 80, 80, 80,
+  0,  0,  0,  0,  0,  0,  0,  0
 };
 
 // endgame only
@@ -80,7 +91,6 @@ static const int values[] = { 100, 300, 300, 500, 900, 0 };
 static const int endgame_values[] = { 250, 300, 300, 500, 1000, 0 };
 
 #define castle_bonus 10
-#define passed_pawn_bonus 50
 #define doubled_pawn_penalty -10
 
 static int popcnt(uint64_t x);
@@ -121,13 +131,17 @@ int evaluate_board(Bitboard *board)
 				if (piece == PAWN)
 				{
 					// passed pawn; do this before the location swap below
-					if ((front_spans[color][loc] & board->boards[1-color][PAWN]) == 0)
-						result += modifier * passed_pawn_bonus;
+					int passed_pawn = 0;
+					if ((front_spans[color][loc] & board->boards[1-color][PAWN]) == 0) // XXX
+						passed_pawn = 1;
 
 					// since the pawn table is not hoizontally symmetric,
 					// we need to flip it for black
 					if (color == BLACK)
 						loc = 63 - loc;
+
+					if (passed_pawn)
+						result += modifier * passed_pawn_bonus[loc];
 				}
 
 				// add in piece intrinsic value, and bonus for its location
