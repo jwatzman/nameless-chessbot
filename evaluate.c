@@ -88,7 +88,7 @@ static const int* endgame_pos_tables[] = { pawn_pos, bishop_pos, knight_pos, roo
 // pawn, bishop, knight, rook, queen, king
 // (as defined in types.h)
 static const int values[] = { 100, 300, 300, 500, 900, 0 };
-static const int endgame_values[] = { 250, 300, 300, 500, 1000, 0 };
+static const int endgame_values[] = { 175, 300, 300, 500, 1000, 0 };
 
 #define castle_bonus 10
 #define doubled_pawn_penalty -10
