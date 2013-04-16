@@ -98,7 +98,7 @@ static int popcnt(uint64_t x);
 int evaluate_board(Bitboard *board)
 {
 	int result = 0;
-	int endgame = popcnt(board->full_composite) < 6;
+	int endgame = popcnt(board->full_composite) < 8;
 	Color to_move = board->to_move;
 
 	for (Color color = 0; color < 2; color++)
