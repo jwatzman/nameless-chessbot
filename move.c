@@ -247,6 +247,10 @@ static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 	// W KS: empty 5 6, not attacked 5 6
 	// B QS: empty 57 58 59, not attacked 58 59
 	// B KS: empty 61 62, not attacked 61 62
+	// 
+	// XXX this assumes the validity of the castling rights, in particular
+	// that there actually are a rook/king in the right spot, funny things
+	// happen if you, e.g., load a FEN with an invalid set of rights
 
 	Color color = board->to_move;
 	if (board_in_check(board, color)) // TODO :(
