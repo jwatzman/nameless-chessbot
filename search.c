@@ -58,6 +58,9 @@ static Move search_transposition_get_best_move(uint64_t zobrist);
 static void search_transposition_put(uint64_t zobrist,
 	int value, Move best_move, TranspositionType type, int depth);
 
+// try and opportunistically print the pv out of the transposition table
+static void search_transposition_print_pv(Bitboard *board, Move move, int depth);
+
 Move search_find_move(Bitboard *board)
 {
 	Move best_move = 0;
@@ -102,12 +105,13 @@ Move search_find_move(Bitboard *board)
 		   work. This is unforunate but won't really hurt anything */
 		if (!timeup)
 		{
-			char buf[6];
-
 			best_move = pv[0];
 
-			move_srcdest_form(best_move, buf);
-			fprintf(stderr, "%s (%i)\n", buf, val);
+			/* use max_depth here, not depth -- we want to print out as much
+			   of the PV as we have, but need to cut off repetitions somehow */
+			search_transposition_print_pv(board, best_move, max_depth);
+
+			fprintf(stderr, "(%i)\n", val);
 
 			alpha = val - aspiration_window;
 			beta = val + aspiration_window;
@@ -420,4 +424,22 @@ static void search_transposition_put(uint64_t zobrist,
 	node->value = value;
 	node->best_move = best_move;
 	node->type = type;
+}
+
+static void search_transposition_print_pv(Bitboard *board, Move move, int depth) {
+	char buf[6];
+
+	if (!move || !depth)
+		return;
+
+	move_srcdest_form(move, buf);
+	fprintf(stderr, "%s ", buf);
+
+	board_do_move(board, move);
+	search_transposition_print_pv(
+		board,
+		search_transposition_get_best_move(board->zobrist),
+		depth - 1
+	);
+	board_undo_move(board);
 }
