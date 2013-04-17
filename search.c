@@ -48,6 +48,9 @@ static int search_alpha_beta(Bitboard *board,
 // used to sort the moves for move ordering
 static int search_move_comparator(void *tm, const void *m1, const void *m2);
 
+// quicksort a movelist
+static void search_sort(Movelist *moves, Move best);
+
 /* asks the transposition table if we already know a good value for this
    position. If we do, return it. Otherwise, return INFINITY but adjust
    *alpha and *beta if we know better bounds for them */
@@ -214,11 +217,7 @@ static int search_alpha_beta(Bitboard *board,
 		: search_transposition_get_best_move(board->zobrist);
 
 	// move ordering; order transposition move first
-	qsort_r(&(moves.moves),
-		moves.num,
-		sizeof(Move),
-		&transposition_move,
-		search_move_comparator);
+	search_sort(&moves, transposition_move);
 
 	/* since we generate only pseudolegal moves, we need to keep track if
 	   there actually are any legal moves at all */
@@ -453,3 +452,34 @@ static void search_transposition_print_pv(Bitboard *board, Move move, int depth)
 	);
 	board_undo_move(board);
 }
+
+#if __APPLE__
+
+static void search_sort(Movelist *moves, Move best)
+{
+	qsort_r(&(moves->moves),
+		moves->num,
+		sizeof(Move),
+		&best,
+		search_move_comparator);
+}
+
+#elif __GLIBC__
+
+static int search_move_comparator_glibc(const void *m1, const void *m2, void *tm)
+{
+	return search_move_comparator(tm, m1, m2);
+}
+
+static void search_sort(Movelist *moves, Move best)
+{
+	qsort_r(&(moves->moves),
+		moves->num,
+		sizeof(Move),
+		search_move_comparator_glibc,
+		&best);
+}
+
+#else
+#error Unknown how to call qsort_r with your libc.
+#endif
