@@ -40,6 +40,7 @@ static int generation = 0;
 #define aspiration_window 30
 
 static volatile int timeup;
+static uint64_t nodes_searched;
 
 // main search workhorse
 static int search_alpha_beta(Bitboard *board,
@@ -70,6 +71,7 @@ static void search_transposition_print_pv(Bitboard *board, Move move, int depth)
 Move search_find_move(Bitboard *board)
 {
 	Move best_move = 0;
+	nodes_searched = 0;
 
 	/* note that due to the way that this is maintained, sibling nodes will
 	   destroy each other's values. Only pv[0] is garunteed to be valid when
@@ -87,15 +89,13 @@ Move search_find_move(Bitboard *board)
 	// for each depth, call the main workhorse, search_alpha_beta
 	for (int depth = 1; depth <= max_depth; depth++)
 	{
-		fprintf(stderr, "SEARCHER depth %i ", depth);
-
 		// here we go...
 		int val = search_alpha_beta(board, alpha, beta, depth, 1, pv);
 
 		if (((val <= alpha) || (val >= beta)) && !timeup)
 		{
 			// aspiration window failure
-			fprintf(stderr, "aspiration failure (%i)\n", val);
+			printf("%i\t%i\t%i\t%llu\taspiration failure\n", depth, val, 0, nodes_searched);
 			alpha = -INFINITY;
 			beta = INFINITY;
 			depth--;
@@ -115,22 +115,23 @@ Move search_find_move(Bitboard *board)
 
 			/* use max_depth here, not depth -- we want to print out as much
 			   of the PV as we have, but need to cut off repetitions somehow */
+			printf("%i\t%i\t%i\t%llu\t", depth, val, 0, nodes_searched);
 			search_transposition_print_pv(board, best_move, max_depth);
-
-			fprintf(stderr, "(%i)\n", val);
 
 			alpha = val - aspiration_window;
 			beta = val + aspiration_window;
 
 			if ((val >= MATE) || (val <= -MATE))
 			{
-				fprintf(stderr, "SEARCHER found mate\n");
+				printf("mate\n");
 				break;
 			}
+
+			printf("\n");
 		}
 		else
 		{
-			fprintf(stderr, "timeup\n");
+			printf("%i\t%i\t%i\t%llu\ttimeup\n", depth, 0, 0, nodes_searched);
 			break;
 		}
 	}
@@ -146,6 +147,8 @@ static int search_alpha_beta(Bitboard *board,
 {
 	if (timeup)
 		return 0;
+
+	nodes_searched++;
 
 	TranspositionType type = TRANSPOSITION_ALPHA;
 
@@ -442,7 +445,7 @@ static void search_transposition_print_pv(Bitboard *board, Move move, int depth)
 		return;
 
 	move_srcdest_form(move, buf);
-	fprintf(stderr, "%s ", buf);
+	printf("%s ", buf);
 
 	board_do_move(board, move);
 	search_transposition_print_pv(
