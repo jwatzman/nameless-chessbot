@@ -113,10 +113,8 @@ Move search_find_move(Bitboard *board)
 		{
 			best_move = pv[0];
 
-			/* use max_depth here, not depth -- we want to print out as much
-			   of the PV as we have, but need to cut off repetitions somehow */
 			printf("%i\t%i\t%i\t%llu\t", depth, val, 0, nodes_searched);
-			search_transposition_print_pv(board, best_move, max_depth);
+			search_transposition_print_pv(board, best_move, depth);
 
 			alpha = val - aspiration_window;
 			beta = val + aspiration_window;
