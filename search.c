@@ -35,7 +35,7 @@ static TranspositionNode transposition_table[max_transposition_table_size];
 
 static int generation = 0;
 
-#define max_depth 15
+#define max_depth 30
 #define max_quiescent_depth 50
 #define aspiration_window 30
 
