@@ -423,9 +423,7 @@ static void search_transposition_put(uint64_t zobrist,
 	if ((node->zobrist == zobrist) && (node->depth > depth))
 		return;
 
-	// Should this be strict inequality? Seem to get a lot more hits this
-	// way.
-	if (node->generation >= generation + depth)
+	if (node->generation > generation + depth)
 		return;
 
 	node->zobrist = zobrist;
