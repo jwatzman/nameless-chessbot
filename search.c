@@ -21,6 +21,7 @@ typedef struct
 {
 	uint64_t zobrist;
 	int depth;
+	int generation;
 	int value;
 	Move best_move;
 	TranspositionType type;
@@ -31,6 +32,8 @@ TranspositionNode;
    values (not moves) in it are invalidated each new search */
 #define max_transposition_table_size 16777216
 static TranspositionNode transposition_table[max_transposition_table_size];
+
+static int generation = 0;
 
 #define max_depth 15
 #define max_quiescent_depth 50
@@ -131,6 +134,7 @@ Move search_find_move(Bitboard *board)
 
 	timer_end();
 
+	generation++;
 	return best_move;
 }
 
@@ -419,8 +423,14 @@ static void search_transposition_put(uint64_t zobrist,
 	if ((node->zobrist == zobrist) && (node->depth > depth))
 		return;
 
+	// Should this be strict inequality? Seem to get a lot more hits this
+	// way.
+	if (node->generation >= generation + depth)
+		return;
+
 	node->zobrist = zobrist;
 	node->depth = depth;
+	node->generation = generation + depth;
 	node->value = value;
 	node->best_move = best_move;
 	node->type = type;
