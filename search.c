@@ -201,7 +201,7 @@ static int search_alpha_beta(Bitboard *board,
 		int null_move_value = evaluate_board(board);
 
 		if (null_move_value >= beta)
-			return beta;
+			return null_move_value;
 		else if (null_move_value > alpha)
 		{
 			alpha = null_move_value;
@@ -383,9 +383,9 @@ static int search_transposition_get_value(uint64_t zobrist,
 			if (node->type == TRANSPOSITION_EXACT)
 				return val;
 			else if ((node->type == TRANSPOSITION_ALPHA) && (val <= alpha))
-				return alpha;
+				return val;
 			else if ((node->type == TRANSPOSITION_BETA) && (val >= beta))
-				return beta;
+				return val;
 		}
 	}
 
