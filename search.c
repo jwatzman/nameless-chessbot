@@ -213,9 +213,10 @@ static int search_alpha_beta(Bitboard *board,
 	Movelist moves;
 	move_generate_movelist(board, &moves);
 
-	// grab move from transposition table if we are not quiescent
-	Move transposition_move = quiescent ? MOVE_NULL
-		: search_transposition_get_best_move(board->zobrist);
+	// grab move from transposition table, but only allow captures if quiescent
+	Move transposition_move = search_transposition_get_best_move(board->zobrist);
+	if (quiescent && !move_is_capture(transposition_move))
+		transposition_move = MOVE_NULL;
 
 	// move ordering; order transposition move first
 	search_sort(&moves, transposition_move);
