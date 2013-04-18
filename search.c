@@ -263,9 +263,9 @@ static int search_alpha_beta(Bitboard *board,
 					search_completed = 0;
 				}
 			}
-			else if (i > 4 && depth > 2 && extensions == 0 &&
-				!move_is_capture(move) && !move_is_promotion(move) &&
-				!in_check && !move_causes_check)
+			else if (legal_moves > 4 && depth > 2 && extensions == 0 &&
+				!move_is_capture(move) && move_piecetype(move) != PAWN &&
+				!in_check && !move_causes_check && !quiescent)
 			{
 				// LMR
 				search_completed = 1;
