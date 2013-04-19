@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/time.h>
 #include "search.h"
 #include "evaluate.h"
 #include "move.h"
@@ -80,6 +81,9 @@ Move search_find_move(Bitboard *board)
 	   is the top level layer -- it's only siblings that ruin things :)) */
 	Move pv[max_depth + max_quiescent_depth + 1];
 
+	struct timeval start_time;
+	gettimeofday(&start_time, NULL);
+
 	timeup = 0;
 	timer_begin(&timeup);
 
@@ -92,10 +96,19 @@ Move search_find_move(Bitboard *board)
 		// here we go...
 		int val = search_alpha_beta(board, alpha, beta, depth, 1, pv);
 
+		struct timeval end_time;
+		gettimeofday(&end_time, NULL);
+		unsigned long int centiseconds_taken =
+			100*(end_time.tv_sec - start_time.tv_sec) +
+			(end_time.tv_usec - start_time.tv_usec)/10000;
+
 		if (((val <= alpha) || (val >= beta)) && !timeup)
 		{
 			// aspiration window failure
-			printf("%i\t%i\t%i\t%llu\taspiration failure\n", depth, val, 0, nodes_searched);
+			printf(
+				"%i\t%i\t%lu\t%llu\taspiration failure\n",
+				depth, val, centiseconds_taken, nodes_searched
+			);
 			alpha = -INFINITY;
 			beta = INFINITY;
 			depth--;
@@ -113,7 +126,10 @@ Move search_find_move(Bitboard *board)
 		{
 			best_move = pv[0];
 
-			printf("%i\t%i\t%i\t%llu\t", depth, val, 0, nodes_searched);
+			printf(
+				"%i\t%i\t%lu\t%llu\t",
+				depth, val, centiseconds_taken, nodes_searched
+			);
 			search_transposition_print_pv(board, best_move, depth);
 
 			alpha = val - aspiration_window;
@@ -129,7 +145,10 @@ Move search_find_move(Bitboard *board)
 		}
 		else
 		{
-			printf("%i\t%i\t%i\t%llu\ttimeup\n", depth, 0, 0, nodes_searched);
+			printf(
+				"%i\t%i\t%lu\t%llu\ttimeup\n",
+				depth, 0, centiseconds_taken, nodes_searched
+			);
 			break;
 		}
 	}
