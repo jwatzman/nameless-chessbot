@@ -2,23 +2,28 @@
 #include <stdio.h>
 #include "bitboard.h"
 #include "move.h"
+#include "moveiter.h"
 
 Bitboard *board;
 unsigned long int nodes;
+int sort_mode = 0;
 
 void perft(int depth);
 
 int main(int argc, char** argv)
 {
-	if (argc != 2)
+	if (argc < 2 || argc > 3)
 	{
-		printf("Usage: ./perft depth\n");
+		printf("Usage: ./perft depth [sortmode]\n");
 		return 1;
 	}
 
 	board = malloc(sizeof(Bitboard));
 	nodes = 0;
 	int max_depth = atoi(argv[1]);
+
+	if (argc == 3)
+		sort_mode = atoi(argv[2]);
 	
 	board_init(board);
 	printf("initial zobrist %.16llx\n", board->zobrist);
@@ -41,9 +46,12 @@ void perft(int depth)
 	Movelist moves;
 	move_generate_movelist(board, &moves);
 
-	for (int i = 0; i < moves.num; i++)
+	Moveiter iter;
+	moveiter_init(&iter, &moves, sort_mode, MOVE_NULL);
+
+	while (moveiter_has_next(&iter))
 	{
-		Move m = moves.moves[i];
+		Move m = moveiter_next(&iter);
 		board_do_move(board, m);
 
 		if (!board_in_check(board, 1-board->to_move))
