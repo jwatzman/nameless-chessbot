@@ -7,6 +7,7 @@
 #include "search.h"
 #include "evaluate.h"
 #include "move.h"
+#include "moveiter.h"
 #include "timer.h"
 
 typedef enum
@@ -46,12 +47,6 @@ static uint64_t nodes_searched;
 // main search workhorse
 static int search_alpha_beta(Bitboard *board,
 	int alpha, int beta, int depth, int ply, Move *pv);
-
-// used to sort the moves for move ordering
-static int search_move_comparator(void *tm, const void *m1, const void *m2);
-
-// quicksort a movelist
-static void search_sort(Movelist *moves, Move best);
 
 /* asks the transposition table if we already know a good value for this
    position. If we do, return it. Otherwise, return INFINITY but adjust
@@ -238,16 +233,17 @@ static int search_alpha_beta(Bitboard *board,
 		transposition_move = MOVE_NULL;
 
 	// move ordering; order transposition move first
-	search_sort(&moves, transposition_move);
+	Moveiter iter;
+	moveiter_init(&iter, &moves, MOVEITER_SORT_FULL, transposition_move);
 
 	/* since we generate only pseudolegal moves, we need to keep track if
 	   there actually are any legal moves at all */
 	int legal_moves = 0;
 
 	// loop thru all moves
-	for (int i = 0; i < moves.num; i++)
+	while (moveiter_has_next(&iter))
 	{
-		Move move = moves.moves[i];
+		Move move = moveiter_next(&iter);
 
 		/* if we're quiescent, we only want capture moves unless the
 		   original position was in check, then do everything */
@@ -356,31 +352,6 @@ static int search_alpha_beta(Bitboard *board,
 	}
 }
 
-static int search_move_comparator(void *tm, const void *m1, const void *m2)
-{
-	/* sorts in this priority:
-	   transposition move first,
-	   captures before noncaptures,
-	   more valuable captured pieces first,
-	   less valuable capturing pieces first */
-
-	Move dtm = *(Move*)tm;
-	Move dm1 = *(const Move*)m1;
-	Move dm2 = *(const Move*)m2;
-
-	if (dtm == dm1)
-		return -1;
-	else if (dtm == dm2)
-		return 1;
-
-	int score1 = move_is_capture(dm1) ?
-		15 + 2*move_captured_piecetype(dm1) - move_piecetype(dm1) : 0;
-	int score2 = move_is_capture(dm2) ?
-		15 + 2*move_captured_piecetype(dm2) - move_piecetype(dm2) : 0;
-
-	return score2 - score1;
-}
-
 static int search_transposition_get_value(uint64_t zobrist,
 	int alpha, int beta, int depth)
 {
@@ -472,33 +443,3 @@ static void search_transposition_print_pv(Bitboard *board, Move move, int depth)
 	board_undo_move(board);
 }
 
-#if __APPLE__
-
-static void search_sort(Movelist *moves, Move best)
-{
-	qsort_r(&(moves->moves),
-		moves->num,
-		sizeof(Move),
-		&best,
-		search_move_comparator);
-}
-
-#elif __GLIBC__
-
-static int search_move_comparator_glibc(const void *m1, const void *m2, void *tm)
-{
-	return search_move_comparator(tm, m1, m2);
-}
-
-static void search_sort(Movelist *moves, Move best)
-{
-	qsort_r(&(moves->moves),
-		moves->num,
-		sizeof(Move),
-		search_move_comparator_glibc,
-		&best);
-}
-
-#else
-#error Unknown how to call qsort_r with your libc.
-#endif
