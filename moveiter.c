@@ -13,7 +13,7 @@ void moveiter_init(Moveiter *iter, Movelist *list, int mode, Move forced_first)
 {
 	iter->movelist = list;
 	iter->forced_first = forced_first;
-	iter->last_score = -1;
+	iter->last_score = 100000;
 	iter->pos = 0;
 
 	switch (mode) {
@@ -72,6 +72,7 @@ static Move moveiter_next_selection(Moveiter *iter)
 		}
 	}
 
+	if (iter->last_score == best_move_score) abort();
 	iter->last_score = best_move_score;
 	return best_move;
 }
@@ -99,7 +100,7 @@ static int moveiter_score(Move m, Move best)
 	if (!move_is_capture(m))
 		return 0;
 
-	return 1000 + 2*move_captured_piecetype(m) - move_piecetype(m);
+	return 1000 + 100*move_captured_piecetype(m) - 10*move_piecetype(m);
 }
 
 #if __APPLE__
