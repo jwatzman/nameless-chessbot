@@ -13,7 +13,6 @@ struct Moveiter
 	Move (*next)(struct Moveiter *);
 	Movelist *movelist;
 	Move forced_first;
-	int last_score; // only used in ondemand
 	uint8_t pos;
 };
 

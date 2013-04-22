@@ -13,7 +13,6 @@ void moveiter_init(Moveiter *iter, Movelist *list, int mode, Move forced_first)
 {
 	iter->movelist = list;
 	iter->forced_first = forced_first;
-	iter->last_score = 100000;
 	iter->pos = 0;
 
 	switch (mode) {
@@ -49,31 +48,30 @@ static Move moveiter_next_nosort(Moveiter *iter)
 static Move moveiter_next_selection(Moveiter *iter)
 {
 	iter->pos++;
-	/*
 	if (iter->pos == 1 && iter->forced_first != MOVE_NULL)
-	{
-		iter->last_score = moveiter_score(iter->forced_first, iter->forced_first);
-		// XXX need to figure out how to deal with adding pos here
 		return iter->forced_first;
-	}
-	*/
 
 	Move best_move = MOVE_NULL;
+	int best_move_index = -1;
 	int best_move_score = -1;
 	for (int i = 0; i < iter->movelist->num; i++)
 	{
 		Move m = iter->movelist->moves[i];
-		int m_score = moveiter_score(m, iter->forced_first) + i;
+		if (m == MOVE_NULL || m == iter->forced_first)
+			continue;
 
-		if (m_score > best_move_score && m_score < iter->last_score)
+		int m_score = moveiter_score(m, iter->forced_first);
+		if (m_score > best_move_score)
 		{
 			best_move = m;
+			best_move_index = i;
 			best_move_score = m_score;
 		}
 	}
 
+	if (best_move_index < 0) abort();
 	if (best_move == MOVE_NULL) abort();
-	iter->last_score = best_move_score;
+	iter->movelist->moves[best_move_index] = MOVE_NULL;
 	return best_move;
 }
 
@@ -95,12 +93,12 @@ static int moveiter_score(Move m, Move best)
 	   less valuable capturing pieces first */
 
 	if (m == best)
-		return 10000;
+		return 1000;
 
 	if (!move_is_capture(m))
 		return 0;
 
-	return 1000 + 100*move_captured_piecetype(m) - 10*move_piecetype(m);
+	return 15 + 2*move_captured_piecetype(m) - move_piecetype(m);
 }
 
 #if __APPLE__
