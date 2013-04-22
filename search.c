@@ -234,7 +234,12 @@ static int search_alpha_beta(Bitboard *board,
 
 	// move ordering; order transposition move first
 	Moveiter iter;
-	moveiter_init(&iter, &moves, MOVEITER_SORT_FULL, transposition_move);
+	moveiter_init(
+		&iter,
+		&moves,
+		alpha == beta - 1 ? MOVEITER_SORT_ONDEMAND : MOVEITER_SORT_FULL,
+		transposition_move
+	);
 
 	/* since we generate only pseudolegal moves, we need to keep track if
 	   there actually are any legal moves at all */
