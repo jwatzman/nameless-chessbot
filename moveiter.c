@@ -58,9 +58,9 @@ static Move moveiter_next_selection(Moveiter *iter)
 	}
 	*/
 
-	Move best_move = iter->movelist->moves[0];
-	int best_move_score = moveiter_score(best_move, iter->forced_first);
-	for (int i = 1; i < iter->movelist->num; i++)
+	Move best_move = MOVE_NULL;
+	int best_move_score = -1;
+	for (int i = 0; i < iter->movelist->num; i++)
 	{
 		Move m = iter->movelist->moves[i];
 		int m_score = moveiter_score(m, iter->forced_first) + i;
@@ -72,7 +72,7 @@ static Move moveiter_next_selection(Moveiter *iter)
 		}
 	}
 
-	if (iter->last_score == best_move_score) abort();
+	if (best_move == MOVE_NULL) abort();
 	iter->last_score = best_move_score;
 	return best_move;
 }
