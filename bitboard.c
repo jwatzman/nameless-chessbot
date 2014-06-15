@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <time.h>
 #include <stdint.h>
 #include "bitboard.h"
 #include "move.h"
@@ -229,8 +228,6 @@ static inline uint64_t board_rand64()
 
 static void board_init_zobrist(Bitboard *board)
 {
-	srandom(time(0));
-
 	// initially start with a random zobrist
 	board->zobrist = board_rand64();
 

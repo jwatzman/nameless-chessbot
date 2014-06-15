@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
+#include <time.h>
 #include "types.h"
 #include "move.h"
 #include "bitboard.h"
@@ -43,6 +44,8 @@ int main(void)
 	freopen("/dev/tty", "w", stderr);
 	setbuf(stderr, NULL);
 	setbuf(stdout, NULL);
+
+	srandom(time(NULL));
 
 	while (1)
 	{

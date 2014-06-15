@@ -1,7 +1,9 @@
+*.swp
 move-generated.h
 evaluate-generated.h
 *.o
 perft
 stress
+search-perf
 test
 xboard

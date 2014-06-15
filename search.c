@@ -37,7 +37,7 @@ static TranspositionNode transposition_table[max_transposition_table_size];
 
 static int generation = 0;
 
-#define max_depth 30
+static int max_depth = 30;
 #define max_quiescent_depth 50
 #define aspiration_window 30
 
@@ -63,6 +63,11 @@ static void search_transposition_put(uint64_t zobrist,
 
 // try and opportunistically print the pv out of the transposition table
 static void search_transposition_print_pv(Bitboard *board, Move move, int depth);
+
+void search_force_max_depth(const int depth)
+{
+	max_depth = depth;
+}
 
 Move search_find_move(Bitboard *board)
 {

@@ -7,7 +7,8 @@ echo
 
 for i in *.c
 do
-	${CC} ${CFLAGS} -I../../ -o gen $i
+	${CC} ${CFLAGS} -c -I../../ -o gen.o $i
+	${CC} ${LDFLAGS} -I../../ -o gen gen.o
 	./gen
 	echo
 done

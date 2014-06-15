@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include "bitboard.h"
 #include "move.h"
 #include "moveiter.h"
@@ -12,6 +13,8 @@ void perft(int depth);
 
 int main(int argc, char** argv)
 {
+	srandom(time(NULL));
+
 	if (argc < 2 || argc > 3)
 	{
 		printf("Usage: ./perft depth [sortmode]\n");

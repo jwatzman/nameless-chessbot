@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "bitboard.h"
 #include "move.h"
 #include "evaluate.h"
@@ -11,6 +12,8 @@ static Move get_computer_move(Bitboard *board);
 
 int main(void)
 {
+	srandom(time(NULL));
+
 	Bitboard *test = malloc(sizeof(Bitboard));
 	board_init(test);
 	
