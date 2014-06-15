@@ -3,6 +3,7 @@
 #include <time.h>
 #include "bitboard.h"
 #include "move.h"
+#include "moveiter.h"
 #include "search.h"
 #include "timer.h"
 
@@ -31,7 +32,23 @@ int main(int argc, char** argv)
 	for (int pass = 0; pass < max_pass; pass++)
 	{
 		printf("-- PASS %d\n", pass + 1);
-		Move best = search_find_move(board);
+		Move best;
+
+		if (pass % 2 == 0)
+		{
+			best = search_find_move(board);
+		}
+		else
+		{
+			Movelist moves;
+			move_generate_movelist(board, &moves);
+
+			// Make a vaugely reasonable move.
+			Moveiter iter;
+			moveiter_init(&iter, &moves, MOVEITER_SORT_ONDEMAND, MOVE_NULL);
+			best = moveiter_next(&iter);
+		}
+
 		board_do_move(board, best);
 
 		char move_srcdest[6];
