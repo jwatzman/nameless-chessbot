@@ -40,4 +40,4 @@ evaluate.o: evaluate-generated.h
 	$(CC) $(CFLAGS) -c $*.c -o $*.o
 
 clean:
-	-rm -f perft stress test xboard move-generated.h evaluate-generated.h *.o
+	-rm -f perft stress search-perf test xboard move-generated.h evaluate-generated.h *.o
