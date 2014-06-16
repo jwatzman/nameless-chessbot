@@ -154,6 +154,7 @@ Move search_find_move(Bitboard *board)
 
 	timer_end();
 
+	board->generation++;
 	return best_move;
 }
 

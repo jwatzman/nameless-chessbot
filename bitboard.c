@@ -298,7 +298,6 @@ void board_do_move(Bitboard *board, Move move)
 	undo_data |= (board->halfmove_count & 0x3F) << 10;
 	undo_data |= ((uint64_t)move) << 32;
 	board->undo_ring_buffer[board->undo_index++] = undo_data;
-	board->generation++;
 
 	if (move != MOVE_NULL)
 	{
@@ -374,7 +373,6 @@ void board_undo_move(Bitboard *board)
 
 	// restore old zobrist
 	board->zobrist = board->history[--board->history_index];
-	board->generation--;
 }
 
 static void board_doundo_move_common(Bitboard *board, Move move)
