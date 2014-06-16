@@ -65,6 +65,8 @@ typedef struct
 	// previous zobrist hashes of this game
 	uint8_t history_index;
 	uint64_t history[256];
+
+	uint16_t generation;
 }
 Bitboard;
 

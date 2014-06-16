@@ -218,6 +218,7 @@ void board_init_with_fen(Bitboard *board, char *fen)
 	board->history_index = 0;
 	board->history[0] = board->zobrist;
 	board->in_check[0] = board->in_check[1] = IN_CHECK_UNKNOWN;
+	board->generation = 0;
 }
 
 static inline uint64_t board_rand64()
@@ -297,6 +298,7 @@ void board_do_move(Bitboard *board, Move move)
 	undo_data |= (board->halfmove_count & 0x3F) << 10;
 	undo_data |= ((uint64_t)move) << 32;
 	board->undo_ring_buffer[board->undo_index++] = undo_data;
+	board->generation++;
 
 	if (move != MOVE_NULL)
 	{
@@ -372,6 +374,7 @@ void board_undo_move(Bitboard *board)
 
 	// restore old zobrist
 	board->zobrist = board->history[--board->history_index];
+	board->generation--;
 }
 
 static void board_doundo_move_common(Bitboard *board, Move move)

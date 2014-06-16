@@ -16,18 +16,18 @@ typedef enum
 	TRANSPOSITION_ALPHA,
 	TRANSPOSITION_BETA,
 	TRANSPOSITION_INVALIDATED
-}
+} __attribute__ ((__packed__))
 TranspositionType;
 
 typedef struct
 {
 	uint64_t zobrist;
-	int depth;
-	int generation;
+	int8_t depth;
+	uint16_t generation;
 	int value;
 	Move best_move;
 	TranspositionType type;
-}
+} __attribute__ ((__packed__))
 TranspositionNode;
 
 /* the transposition table. It's kept over the lifetime of the program, but the
@@ -35,9 +35,7 @@ TranspositionNode;
 #define max_transposition_table_size 16777216
 static TranspositionNode transposition_table[max_transposition_table_size];
 
-static int generation = 0;
-
-static int max_depth = 30;
+static int8_t max_depth = 30;
 #define max_quiescent_depth 50
 #define aspiration_window 30
 
@@ -46,25 +44,26 @@ static uint64_t nodes_searched;
 
 // main search workhorse
 static int search_alpha_beta(Bitboard *board,
-	int alpha, int beta, int depth, int ply, Move *pv);
+	int alpha, int beta, int8_t depth, int8_t ply, Move *pv);
 
 /* asks the transposition table if we already know a good value for this
    position. If we do, return it. Otherwise, return INFINITY but adjust
    *alpha and *beta if we know better bounds for them */
 static int search_transposition_get_value(uint64_t zobrist,
-		int alpha, int beta, int depth);
+		int alpha, int beta, int8_t depth);
 
 // if we have a previous best move for this zobrist, return it; 0 otherwise
 static Move search_transposition_get_best_move(uint64_t zobrist);
 
 // add to transposition table
 static void search_transposition_put(uint64_t zobrist,
-	int value, Move best_move, TranspositionType type, int depth);
+	int value, Move best_move, TranspositionType type, uint16_t generation,
+	int8_t depth);
 
 // try and opportunistically print the pv out of the transposition table
-static void search_transposition_print_pv(Bitboard *board, Move move, int depth);
+static void search_transposition_print_pv(Bitboard *board, Move move, int8_t depth);
 
-void search_force_max_depth(const int depth)
+void search_force_max_depth(const int8_t depth)
 {
 	max_depth = depth;
 }
@@ -91,7 +90,7 @@ Move search_find_move(Bitboard *board)
 	int beta = INFINITY;
 
 	// for each depth, call the main workhorse, search_alpha_beta
-	for (int depth = 1; depth <= max_depth; depth++)
+	for (int8_t depth = 1; depth <= max_depth; depth++)
 	{
 		// here we go...
 		int val = search_alpha_beta(board, alpha, beta, depth, 1, pv);
@@ -155,12 +154,11 @@ Move search_find_move(Bitboard *board)
 
 	timer_end();
 
-	generation++;
 	return best_move;
 }
 
 static int search_alpha_beta(Bitboard *board,
-	int alpha, int beta, int depth, int ply, Move *pv)
+	int alpha, int beta, int8_t depth, int8_t ply, Move *pv)
 {
 	if (timeup)
 		return 0;
@@ -323,7 +321,8 @@ static int search_alpha_beta(Bitboard *board,
 				   since it will be searched first next time, and will
 				   thus immediately cause a cutoff again */
 				search_transposition_put(board->zobrist,
-						recursive_value, move, TRANSPOSITION_BETA, depth);
+						recursive_value, move, TRANSPOSITION_BETA,
+						board->generation, depth);
 
 				return recursive_value;
 			}
@@ -357,13 +356,14 @@ static int search_alpha_beta(Bitboard *board,
 	}
 	else
 	{
-		search_transposition_put(board->zobrist, alpha, *pv, type, depth);
+		search_transposition_put(board->zobrist, alpha, *pv, type,
+				board->generation, depth);
 		return alpha;
 	}
 }
 
 static int search_transposition_get_value(uint64_t zobrist,
-	int alpha, int beta, int depth)
+	int alpha, int beta, int8_t depth)
 {
 	int index = zobrist % max_transposition_table_size;
 	TranspositionNode *node = &transposition_table[index];
@@ -406,7 +406,8 @@ static Move search_transposition_get_best_move(uint64_t zobrist)
 }
 
 static void search_transposition_put(uint64_t zobrist,
-	int value, Move best_move, TranspositionType type, int depth)
+	int value, Move best_move, TranspositionType type, uint16_t generation,
+	int8_t depth)
 {
 	/* we might not store in the transnposition table if:
 	    - time is up, thus we can't garuntee this was a full search
@@ -424,18 +425,18 @@ static void search_transposition_put(uint64_t zobrist,
 	if ((node->zobrist == zobrist) && (node->depth > depth))
 		return;
 
-	if (node->generation > generation + depth)
+	if (node->generation + node->depth > generation + depth)
 		return;
 
 	node->zobrist = zobrist;
 	node->depth = depth;
-	node->generation = generation + depth;
+	node->generation = generation;
 	node->value = value;
 	node->best_move = best_move;
 	node->type = type;
 }
 
-static void search_transposition_print_pv(Bitboard *board, Move move, int depth) {
+static void search_transposition_print_pv(Bitboard *board, Move move, int8_t depth) {
 	char buf[6];
 
 	if (!move || !depth)
@@ -452,4 +453,3 @@ static void search_transposition_print_pv(Bitboard *board, Move move, int depth)
 	);
 	board_undo_move(board);
 }
-
