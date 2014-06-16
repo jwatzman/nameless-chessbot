@@ -30,10 +30,10 @@ typedef struct
 } __attribute__ ((__packed__))
 TranspositionNode;
 
-/* the transposition table. It's kept over the lifetime of the program, but the
-   values (not moves) in it are invalidated each new search */
-#define max_transposition_table_size 16777216
-static TranspositionNode transposition_table[max_transposition_table_size];
+#define transposition_width 4
+#define transposition_entries 524288
+static TranspositionNode
+	transposition_table[transposition_entries][transposition_width];
 
 static int8_t max_depth = 30;
 #define max_quiescent_depth 50
@@ -366,28 +366,33 @@ static int search_alpha_beta(Bitboard *board,
 static int search_transposition_get_value(uint64_t zobrist,
 	int alpha, int beta, int8_t depth)
 {
-	int index = zobrist % max_transposition_table_size;
-	TranspositionNode *node = &transposition_table[index];
+	int index = zobrist % transposition_entries;
 
 	if (depth < 1)
 		return INFINITY;
 
-	/* since many zobrists may map to a single slot in the table, we want
-	   to make sure we got a match; also, we want to make sure that the
-	   entry was not made with a shallower depth than what we're currently
-	   using */
-	if (node->zobrist == zobrist)
+	for (int i = 0; i < transposition_width; i++)
 	{
-		if (node->depth >= depth)
+		/* Since many zobrists may map to a single slot in the table, we
+		want to make sure we got a match; also, we want to make sure that
+		the entry was not made with a shallower depth than what we're
+		currently using. */
+		TranspositionNode *node = &transposition_table[index][i];
+		if (node->zobrist == zobrist)
 		{
-			int val = node->value;
+			if (node->depth >= depth)
+			{
+				int val = node->value;
 
-			if (node->type == TRANSPOSITION_EXACT)
-				return val;
-			else if ((node->type == TRANSPOSITION_ALPHA) && (val <= alpha))
-				return val;
-			else if ((node->type == TRANSPOSITION_BETA) && (val >= beta))
-				return val;
+				if (node->type == TRANSPOSITION_EXACT)
+					return val;
+				else if ((node->type == TRANSPOSITION_ALPHA) &&
+						(val <= alpha))
+					return val;
+				else if ((node->type == TRANSPOSITION_BETA) &&
+						(val >= beta))
+					return val;
+			}
 		}
 	}
 
@@ -397,11 +402,15 @@ static int search_transposition_get_value(uint64_t zobrist,
 static Move search_transposition_get_best_move(uint64_t zobrist)
 {
 	Move result = 0;
-	int index = zobrist % max_transposition_table_size;
-	TranspositionNode *node = &transposition_table[index];
+	int index = zobrist % transposition_entries;
 
-	if (node->zobrist == zobrist)
-		result = node->best_move;
+	for (int i = 0; i < transposition_width; i++)
+	{
+		TranspositionNode *node = &transposition_table[index][i];
+
+		if (node->zobrist == zobrist)
+			result = node->best_move;
+	}
 
 	return result;
 }
@@ -420,21 +429,56 @@ static void search_transposition_put(uint64_t zobrist,
 	if (timeup || (depth < 1) || (value >= MATE) || (value <= -MATE))
 		return;
 
-	int index = zobrist % max_transposition_table_size;
-	TranspositionNode *node = &transposition_table[index];
+	int index = zobrist % transposition_entries;
+	TranspositionNode *target = NULL;
 
-	if ((node->zobrist == zobrist) && (node->depth > depth))
-		return;
+	for (int i = 0; i < transposition_width; i++)
+	{
+		if (transposition_table[index][i].zobrist == zobrist)
+		{
+			target = &transposition_table[index][i];
+			break;
+		}
+	}
 
-	if (node->generation + node->depth > generation + depth)
-		return;
+	if (!target)
+	{
+		int replace_depth = 999;
+		for (int i = 0; i < transposition_width; i++)
+		{
+			TranspositionNode *node = &transposition_table[index][i];
+			if (node->generation != generation &&
+					replace_depth > node->depth)
+			{
+				replace_depth = node->depth;
+				target = node;
+			}
+		}
+	}
 
-	node->zobrist = zobrist;
-	node->depth = depth;
-	node->generation = generation;
-	node->value = value;
-	node->best_move = best_move;
-	node->type = type;
+	if (!target)
+	{
+		int replace_depth = 999;
+		for (int i = 0; i < transposition_width; i++)
+		{
+			TranspositionNode *node = &transposition_table[index][i];
+			if (replace_depth > node->depth)
+			{
+				replace_depth = node->depth;
+				target = node;
+			}
+		}
+	}
+
+	if (target)
+	{
+		target->zobrist = zobrist;
+		target->depth = depth;
+		target->generation = generation;
+		target->value = value;
+		target->best_move = best_move;
+		target->type = type;
+	}
 }
 
 static void search_transposition_print_pv(Bitboard *board, Move move, int8_t depth) {
