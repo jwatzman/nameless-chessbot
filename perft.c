@@ -7,7 +7,7 @@
 
 Bitboard *board;
 unsigned long int nodes;
-int sort_mode = 0;
+int sort_mode = MOVEITER_SORT_NONE;
 
 void perft(int depth);
 
@@ -49,8 +49,12 @@ void perft(int depth)
 	Movelist moves;
 	move_generate_movelist(board, &moves);
 
+	Move best = MOVE_NULL;
+	if (sort_mode != MOVEITER_SORT_NONE && moves.num_other > 2)
+		best = moves.moves_other[2];
+
 	Moveiter iter;
-	moveiter_init(&iter, &moves, sort_mode, MOVE_NULL);
+	moveiter_init(&iter, &moves, sort_mode, best);
 
 	while (moveiter_has_next(&iter))
 	{

@@ -4,6 +4,7 @@
 #include <time.h>
 #include "bitboard.h"
 #include "move.h"
+#include "moveiter.h"
 
 static const int max_tests = 1000000;
 static const int max_moves = 100;
@@ -14,6 +15,7 @@ int main(void)
 
 	Bitboard *stress = malloc(sizeof(Bitboard));
 	Movelist *moves = malloc(sizeof(Movelist));
+	Moveiter *it = malloc(sizeof(Moveiter));
 	board_init(stress);
 
 	printf("initial zobrist %.16llx\n", stress->zobrist);
@@ -24,7 +26,12 @@ int main(void)
 	{
 		move_generate_movelist(stress, moves);
 		
-		Move m = moves->moves[random() % moves->num];
+		moveiter_init(it, moves, MOVEITER_SORT_NONE, MOVE_NULL);
+		int n = random() % moves->num_total;
+
+		Move m;
+		for (int i = 0; i < n; i++)
+			m = moveiter_next(it);
 		board_do_move(stress, m);
 		cur_move++;
 
@@ -52,6 +59,7 @@ int main(void)
 
 	printf("final zobrist %.16llx\n", stress->zobrist);
 
+	free(it);
 	free(moves);
 	free(stress);
 

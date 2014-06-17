@@ -5,6 +5,7 @@
 #include <time.h>
 #include "types.h"
 #include "move.h"
+#include "moveiter.h"
 #include "bitboard.h"
 #include "evaluate.h"
 #include "search.h"
@@ -19,9 +20,11 @@ static Move parse_move(Bitboard *board, char* possible_move)
 	move_generate_movelist(board, &moves);
 	char test[6];
 
-	for (int i = 0; i < moves.num; i++)
+	Moveiter it;
+	moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL);
+	while (moveiter_has_next(&it))
 	{
-		Move m = moves.moves[i];
+		Move m = moveiter_next(&it);
 		move_srcdest_form(m, test);
 		if (!move_is_promotion(m) && !strncmp(test, possible_move, 4))
 			return m;
@@ -96,11 +99,16 @@ int main(void)
 			puts("Pseudolegal moves: ");
 
 			Movelist all_moves;
-			char srcdest_form[6];
 			move_generate_movelist(board, &all_moves);
-			for (int i = 0; i < all_moves.num; i++)
+
+			Moveiter it;
+			moveiter_init(&it, &all_moves, MOVEITER_SORT_NONE, MOVE_NULL);
+
+			char srcdest_form[6];
+			while (moveiter_has_next(&it))
 			{
-				move_srcdest_form(all_moves.moves[i], srcdest_form);
+				Move m = moveiter_next(&it);
+				move_srcdest_form(m, srcdest_form);
 				printf("%s ", srcdest_form);
 			}
 			puts("\n");

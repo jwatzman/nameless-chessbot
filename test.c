@@ -4,10 +4,11 @@
 #include <time.h>
 #include "bitboard.h"
 #include "move.h"
+#include "moveiter.h"
 #include "evaluate.h"
 #include "search.h"
 
-static Move get_human_move(Bitboard *board, Movelist legal_moves);
+static Move get_human_move(Bitboard *board, Movelist *orig_moves);
 static Move get_computer_move(Bitboard *board);
 
 int main(void)
@@ -17,39 +18,28 @@ int main(void)
 	Bitboard *test = malloc(sizeof(Bitboard));
 	board_init(test);
 	
-	/*
-	Move test_move = 0;
-	test_move |= board_index_of(1, 4);
-	test_move |= board_index_of(3, 4) << 6;
-	test_move |= PAWN << 12;
-	test_move |= WHITE << 15;
-
-	char* srcdest_form = malloc(5 * sizeof(char));
-	move_srcdest_form(test_move, srcdest_form);
-	printf("%s\n", srcdest_form);
-	free(srcdest_form);
-
-	board_do_move(test, test_move);
-	*/
-
 	while (1)
 	{
 		board_print(test);
 		printf("Evaluation: %i\n", evaluate_board(test));
 
-		Movelist all_moves, legal_moves;
-		legal_moves.num = 0;
-		move_generate_movelist(test, &all_moves);
-		for (int i = 0; i < all_moves.num; i++)
+		Movelist moves;
+		move_generate_movelist(test, &moves);
+
+		Moveiter it;
+		moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL);
+
+		int num_legal_moves = 0;
+		while (moveiter_has_next(&it))
 		{
-			Move move = all_moves.moves[i];
+			Move move = moveiter_next(&it);
 			board_do_move(test, move);
 			if (!board_in_check(test, 1-test->to_move))
-				legal_moves.moves[legal_moves.num++] = move;
+				num_legal_moves++;
 			board_undo_move(test);
 		}
 
-		if (legal_moves.num == 0)
+		if (num_legal_moves == 0)
 		{
 			if (board_in_check(test, test->to_move))
 				printf("CHECKMATE!\n");
@@ -67,7 +57,7 @@ int main(void)
 
 		Move next_move;
 		if (test->to_move == WHITE)
-			next_move = get_human_move(test, legal_moves);
+			next_move = get_human_move(test, &moves);
 		else
 			next_move = get_computer_move(test);
 
@@ -78,18 +68,29 @@ int main(void)
 	return 0;
 }
 
-static Move get_human_move(Bitboard *board, Movelist legal_moves)
+static Move get_human_move(Bitboard *board, Movelist *orig_moves)
 {
 	char* srcdest_form = malloc(6 * sizeof(char));
 	char* input_move = malloc(6 * sizeof(char));
 
 	Move result = 0;
 
-	for (int i = 0; i < legal_moves.num; i++)
+	Movelist moves;
+	Moveiter it;
+
+	memcpy(&moves, orig_moves, sizeof(Movelist));
+	moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL);
+
+	while (moveiter_has_next(&it))
 	{
-		Move move = legal_moves.moves[i];
-		move_srcdest_form(move, srcdest_form);
-		printf("%s ", srcdest_form);
+		Move move = moveiter_next(&it);
+		board_do_move(board, move);
+		if (!board_in_check(board, 1-board->to_move))
+		{
+			move_srcdest_form(move, srcdest_form);
+			printf("%s ", srcdest_form);
+		}
+		board_undo_move(board);
 	}
 	printf("\n");
 
@@ -97,9 +98,12 @@ static Move get_human_move(Bitboard *board, Movelist legal_moves)
 	{
 		scanf("%5s", input_move);
 
-		for (int i = 0; i < legal_moves.num; i++)
+		memcpy(&moves, orig_moves, sizeof(Movelist));
+		moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL);
+
+		while (moveiter_has_next(&it))
 		{
-			Move move = legal_moves.moves[i];
+			Move move = moveiter_next(&it);
 			move_srcdest_form(move, srcdest_form);
 			if (!strcmp(input_move, srcdest_form))
 			{

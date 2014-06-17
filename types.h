@@ -87,9 +87,14 @@ typedef uint32_t Move;
 
 typedef struct
 {
-	// according to Wikipedia, any given board has at most about 200 moves
-	Move moves[256];
-	uint8_t num;
+	Move moves_promo[32];
+	Move moves_capture[256];
+	Move moves_other[256];
+
+	uint8_t num_promo;
+	uint8_t num_capture;
+	uint8_t num_other;
+	uint8_t num_total;
 }
 Movelist;
 
