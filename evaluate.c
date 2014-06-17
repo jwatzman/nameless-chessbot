@@ -104,19 +104,19 @@ int evaluate_board(Bitboard *board)
 	for (Color color = 0; color < 2; color++)
 	{
 		// add values for the current player, and subtract them for the opponent
-		int modifier = (color == to_move ? 1 : -1);
+		int color_result = 0;
 
 		// 5 == 00000101
 		// iff white has castled, exactly one of those bits will be set
 		// iff black has castled, exactly one of the bits to the left of one of those bits will be set
 		// (see description of castle_status in types.h)
 		if (board->castle_status & (5 << color))
-			result += modifier * castle_bonus;
+			color_result += castle_bonus;
 
 		// doubled pawns
 		// 0x0101010101010101 masks a single column
 		for (int col = 0; col < 8; col++)
-			result += modifier * doubled_pawn_penalty *
+			color_result += doubled_pawn_penalty *
 				(popcnt(board->boards[color][PAWN] & (0x0101010101010101 << col)) - 1);
 
 		for (Piecetype piece = 0; piece < 6; piece++)
@@ -141,14 +141,14 @@ int evaluate_board(Bitboard *board)
 						loc = 63 - loc;
 
 					if (passed_pawn)
-						result += modifier * passed_pawn_bonus[loc];
+						color_result += passed_pawn_bonus[loc];
 				}
 
 				// add in piece intrinsic value, and bonus for its location
 				const int *table = endgame ? endgame_pos_tables[piece] : pos_tables[piece];
 				if (table)
-					result += modifier * table[loc];
-				result += modifier * (endgame ? endgame_values[piece] : values[piece]);
+					color_result += table[loc];
+				color_result += (endgame ? endgame_values[piece] : values[piece]);
 
 				// add in a bonus for every square that this piece can attack
 				// only do this for bishops and rooks; knights are sufficiently taken
@@ -156,10 +156,15 @@ int evaluate_board(Bitboard *board)
 				if (piece == BISHOP || piece == ROOK)
 				{
 					uint64_t attacks = move_generate_attacks(board, piece, color, loc);
-					result += modifier * popcnt(attacks);
+					color_result += popcnt(attacks);
 				}
 			}
 		}
+
+		if (color == to_move)
+			result += color_result;
+		else
+			result -= color_result;
 	}
 
 	return result;
