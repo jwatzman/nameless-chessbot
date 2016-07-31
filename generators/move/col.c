@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 
@@ -44,7 +45,7 @@ int main(void)
 			uint64_t attack_mask = up_attack(position_mask, row);
 			attack_mask |= down_attack(position_mask, row);
 
-			printf("0x%.16llx", attack_mask);
+			printf("0x%.16"PRIx64, attack_mask);
 			if (row < 7) printf(", ");
 		}
 

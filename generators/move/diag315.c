@@ -1,5 +1,7 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
+
 #include "bitboard.h"
 
 uint64_t up_right_attack(int position_mask, int pos)
@@ -45,7 +47,7 @@ int main(void)
 			uint64_t attack_mask = up_right_attack(position_mask, pos);
 			attack_mask |= down_left_attack(position_mask, pos);
 
-			printf("0x%.16llx", attack_mask);
+			printf("0x%.16"PRIx64, attack_mask);
 			if (pos < 7) printf(", ");
 		}
 

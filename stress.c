@@ -1,7 +1,8 @@
-#define _GNU_SOURCE
-#include <stdlib.h>
+#include <inttypes.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
+
 #include "bitboard.h"
 #include "move.h"
 #include "moveiter.h"
@@ -18,7 +19,7 @@ int main(void)
 	Moveiter *it = malloc(sizeof(Moveiter));
 	board_init(stress);
 
-	printf("initial zobrist %.16llx\n", stress->zobrist);
+	printf("initial zobrist %.16"PRIx64"\n", stress->zobrist);
 
 	int cur_move = 0;
 
@@ -57,7 +58,7 @@ int main(void)
 		cur_move--;
 	}
 
-	printf("final zobrist %.16llx\n", stress->zobrist);
+	printf("final zobrist %.16"PRIx64"\n", stress->zobrist);
 
 	free(it);
 	free(moves);

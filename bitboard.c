@@ -1,12 +1,14 @@
-#define _GNU_SOURCE
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdint.h>
 #include "bitboard.h"
-#include "move.h"
+
+#include <ctype.h>
+#include <inttypes.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "bitscan.h"
+#include "move.h"
 
 #define IN_CHECK_UNKNOWN -1
 #define IN_CHECK_FALSE 0
@@ -533,6 +535,6 @@ void board_print(Bitboard *board)
 	printf("Enpassant index: %x\tHalfmove count: %x\tCastle status: %x\n",
 			board->enpassant_index, board->halfmove_count,
 			board->castle_status);
-	printf("Zobrist: %.16llx\n", board->zobrist);
+	printf("Zobrist: %.16"PRIx64"\n", board->zobrist);
 	printf("To move: %i\n", board->to_move);
 }

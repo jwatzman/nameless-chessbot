@@ -1,6 +1,8 @@
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+
 #include "bitboard.h"
 #include "move.h"
 #include "moveiter.h"
@@ -29,11 +31,11 @@ int main(int argc, char** argv)
 		sort_mode = atoi(argv[2]);
 	
 	board_init(board);
-	printf("initial zobrist %.16llx\n", board->zobrist);
+	printf("initial zobrist %.16"PRIx64"\n", board->zobrist);
 
 	perft(max_depth);
 
-	printf("final zobrist %.16llx\n%lu nodes\n", board->zobrist, nodes);
+	printf("final zobrist %.16"PRIx64"\n%lu nodes\n", board->zobrist, nodes);
 	free(board);
 	return 0;
 }

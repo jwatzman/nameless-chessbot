@@ -1,10 +1,12 @@
-#define _GNU_SOURCE
+#include "search.h"
+
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #include <sys/time.h>
-#include "search.h"
+#include <unistd.h>
+
 #include "evaluate.h"
 #include "move.h"
 #include "moveiter.h"
@@ -105,7 +107,7 @@ Move search_find_move(Bitboard *board)
 		{
 			// aspiration window failure
 			printf(
-				"%i\t%i\t%lu\t%llu\taspiration failure\n",
+				"%i\t%i\t%lu\t%"PRIu64"\taspiration failure\n",
 				depth, val, centiseconds_taken, nodes_searched
 			);
 			alpha = -INFINITY;
@@ -126,7 +128,7 @@ Move search_find_move(Bitboard *board)
 			best_move = pv[0];
 
 			printf(
-				"%i\t%i\t%lu\t%llu\t",
+				"%i\t%i\t%lu\t%"PRIu64"\t",
 				depth, val, centiseconds_taken, nodes_searched
 			);
 			search_transposition_print_pv(board, best_move, depth);
@@ -145,7 +147,7 @@ Move search_find_move(Bitboard *board)
 		else
 		{
 			printf(
-				"%i\t%i\t%lu\t%llu\ttimeup\n",
+				"%i\t%i\t%lu\t%"PRIu64"\ttimeup\n",
 				depth, 0, centiseconds_taken, nodes_searched
 			);
 			break;

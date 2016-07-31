@@ -1,5 +1,7 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
+
 #include "bitboard.h"
 
 uint64_t front_span_white(int pos)
@@ -47,7 +49,7 @@ int main(void)
 	for (int pos = 0; pos < 64; pos++)
 	{
 		uint64_t front_span = front_span_white(pos);
-		printf("0x%.16llx", front_span);
+		printf("0x%.16"PRIx64, front_span);
 
 		if (pos < 63)
 		{
@@ -65,7 +67,7 @@ int main(void)
 	for (int pos = 0; pos < 64; pos++)
 	{
 		uint64_t front_span = front_span_black(pos);
-		printf("0x%.16llx", front_span);
+		printf("0x%.16"PRIx64, front_span);
 
 		if (pos < 63)
 		{

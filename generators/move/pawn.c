@@ -1,7 +1,9 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "types.h"
+
 #include "bitboard.h"
+#include "types.h"
 
 int main(void)
 {
@@ -27,7 +29,7 @@ int main(void)
 					attack_mask |= bit << board_index_of(new_row, col + 1);
 			}
 
-			printf("0x%.16llx", attack_mask);
+			printf("0x%.16"PRIx64, attack_mask);
 			if (position < 63) printf(", ");
 		}
 
