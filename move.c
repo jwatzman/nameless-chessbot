@@ -30,7 +30,7 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 		while (pieces)
 		{
 			uint8_t src = bitscan(pieces);
-			pieces ^= 1ULL << src;
+			pieces &= pieces - 1;
 
 			uint64_t dests = move_generate_attacks(board, piece, to_move, src);
 			dests &= ~(board->composite_boards[to_move]); // can't capture your own piece
@@ -41,7 +41,7 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 			while (captures)
 			{
 				uint8_t dest = bitscan(captures);
-				captures ^= 1ULL << dest;
+				captures &= captures - 1;
 
 				Move move = 0;
 				move |= src << move_source_index_offset;
@@ -72,7 +72,7 @@ void move_generate_movelist(Bitboard *board, Movelist *movelist)
 			while (non_captures)
 			{
 				uint8_t dest = bitscan(non_captures);
-				non_captures ^= 1ULL << dest;
+				non_captures &= non_captures - 1;
 
 				Move move = 0;
 				move |= src << move_source_index_offset;
@@ -192,7 +192,7 @@ static void move_generate_movelist_pawn_push(Bitboard *board, Movelist *movelist
 	while (pawns)
 	{
 		uint8_t src = bitscan(pawns);
-		pawns ^= 1ULL << src;
+		pawns &= pawns - 1;
 
 		uint8_t row = board_row_of(src);
 		uint8_t col = board_col_of(src);

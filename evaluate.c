@@ -125,7 +125,7 @@ int evaluate_board(Bitboard *board)
 			while (pieces)
 			{
 				uint8_t loc = bitscan(pieces);
-				pieces ^= 1ULL << loc;
+				pieces &= pieces - 1;
 
 				// pawns have some special stuff done to them
 				if (piece == PAWN)
