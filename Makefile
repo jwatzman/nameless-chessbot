@@ -2,8 +2,8 @@ ifeq ($(origin CC), default)
 	export CC=clang
 endif
 
-export LDFLAGS=-O3 -Wall -Wextra
-export CFLAGS=$(LDFLAGS) -emit-llvm -std=c99
+export LDFLAGS=-O3 -Wall -Wextra -ggdb
+export CFLAGS=$(LDFLAGS) -std=gnu99
 #export CFLAGS+=-O0 -ftrapv -fcatch-undefined-behavior -g
 
 SOURCES_CORE=bitboard.o move.o moveiter.o
