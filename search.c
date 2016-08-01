@@ -233,10 +233,13 @@ static int search_alpha_beta(Bitboard *board,
 	Movelist moves;
 	move_generate_movelist(board, &moves);
 
-	// grab move from transposition table, but only allow captures if quiescent
-	Move transposition_move = search_transposition_get_best_move(board->zobrist);
-	if (quiescent && !move_is_capture(transposition_move))
-		transposition_move = MOVE_NULL;
+	// grab move from transposition table for move ordering -- but don't bother
+	// for quiescent searches, since we don't write to the table for those and
+	// have a reduced search space anyway, the memory lookup isn't worth it
+	Move transposition_move = MOVE_NULL;
+	if (!quiescent) {
+		transposition_move = search_transposition_get_best_move(board->zobrist);
+	}
 
 	// move ordering; order transposition move first
 	Moveiter iter;
@@ -403,7 +406,6 @@ static int search_transposition_get_value(uint64_t zobrist,
 
 static Move search_transposition_get_best_move(uint64_t zobrist)
 {
-	Move result = 0;
 	int index = zobrist % transposition_entries;
 
 	for (int i = 0; i < transposition_width; i++)
@@ -411,10 +413,10 @@ static Move search_transposition_get_best_move(uint64_t zobrist)
 		TranspositionNode *node = &transposition_table[index][i];
 
 		if (node->zobrist == zobrist)
-			result = node->best_move;
+			return node->best_move;
 	}
 
-	return result;
+	return MOVE_NULL;
 }
 
 static void search_transposition_put(uint64_t zobrist,
