@@ -245,7 +245,7 @@ static void board_init_zobrist(Bitboard *board)
 		board->zobrist_castle[i] = board_rand64();
 
 	// ... and enpassant index ...
-	for (int i = 0; i < 64; i++)
+	for (int i = 0; i < 8; i++)
 		board->zobrist_enpassant[i] = board_rand64();
 
 	// ... and to move
@@ -336,13 +336,19 @@ void board_do_move(Bitboard *board, Move move)
 		/* if src and dest are 16 or -16 units apart (two rows) on a pawn move,
 		   update the enpassant index with the destination square. If this
 		   didn't happen, clear the enpassant index */
-		board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
+		if (board->enpassant_index) {
+			board->zobrist ^=
+				board->zobrist_enpassant[board_col_of(board->enpassant_index)];
+		}
 		int delta = src - dest;
 		if (move_piecetype(move) == PAWN && (delta == 16 || delta == -16))
 			board->enpassant_index = dest;
 		else
 			board->enpassant_index = 0;
-		board->zobrist ^= board->zobrist_enpassant[board->enpassant_index];
+		if (board->enpassant_index) {
+			board->zobrist ^=
+				board->zobrist_enpassant[board_col_of(board->enpassant_index)];
+		}
 
 		// common bits of doing and undoing moves (bulk of the logic in here)
 		board_doundo_move_common(board, move);
