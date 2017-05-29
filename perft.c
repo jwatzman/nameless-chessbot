@@ -17,9 +17,9 @@ int main(int argc, char** argv)
 {
 	srandom(time(NULL));
 
-	if (argc < 2 || argc > 3)
+	if (argc < 2 || argc > 4)
 	{
-		printf("Usage: ./perft depth [sortmode]\n");
+		printf("Usage: ./perft depth [sortmode [fen]]\n");
 		return 1;
 	}
 
@@ -27,10 +27,14 @@ int main(int argc, char** argv)
 	nodes = 0;
 	int max_depth = atoi(argv[1]);
 
-	if (argc == 3)
+	if (argc >= 3)
 		sort_mode = atoi(argv[2]);
-	
-	board_init(board);
+
+	if (argc >=4)
+		board_init_with_fen(board, argv[3]);
+	else
+		board_init(board);
+
 	printf("initial zobrist %.16"PRIx64"\n", board->zobrist);
 
 	perft(max_depth);
