@@ -3,9 +3,8 @@ ifeq ($(origin CC), default)
 	#export CC=clang
 endif
 
-export LDFLAGS=-O3 -Wall -Wextra -ggdb
-export CFLAGS=$(LDFLAGS) -std=gnu99
-#export CFLAGS+=-O0 -ftrapv -fcatch-undefined-behavior -g
+export LDFLAGS=-O3 -Wall -Wextra -ggdb -flto
+export CFLAGS=$(LDFLAGS) -std=gnu99 #-fno-optimize-sibling-calls
 
 SOURCES_CORE=bitboard.o move.o moveiter.o
 SOURCES=$(SOURCES_CORE) evaluate.o search.o timer.o
