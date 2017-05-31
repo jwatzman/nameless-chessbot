@@ -18,6 +18,33 @@ typedef unsigned char Piecetype;
 #define INFINITY 1000000
 #define MATE 300000
 
+// moves are stored in 24 bits
+// from LSB to MSB:
+// source square (6)
+// destination square (6)
+// type (3)
+// color (1)
+// is castle (1)
+// is en passant (1)
+// is capture (1)
+// is promotion (1)
+// captured type (3)
+// promoted type (3)
+// which leaves the six MSB unused
+typedef uint32_t Move;
+
+struct Undo;
+typedef struct Undo
+{
+	struct Undo *prev;
+	uint64_t zobrist;
+	Move move;
+	uint8_t enpassant_index;
+	uint8_t castle_status_upper;
+	uint8_t halfmove_count;
+}
+Undo;
+
 typedef struct
 {
 	uint64_t boards[2][6];
@@ -45,45 +72,17 @@ typedef struct
 	// cache for board_in_check, do not access directly
 	int8_t in_check[2];
 
-	// undo information is stored in a ring buffer
-	// we let the index wrap around 255 <-> 0 since it's an unsigned int
-	// from LSB to MSB:
-	// old enpassant_index (6 bits)
-	// old castling rights [upper 4 bits of castle_status] (4 bits)
-	// old halfmove_count [max value 50] (6 bits)
-	// next 16 bits unused
-	// move to undo (32 bits)
-	uint8_t undo_index;
-	uint64_t undo_ring_buffer[256];
-
 	uint64_t zobrist;
 	uint64_t zobrist_pos[2][6][64];
 	uint64_t zobrist_castle[256];
 	uint64_t zobrist_enpassant[8];
 	uint64_t zobrist_black;
 
-	// previous zobrist hashes of this game
-	uint8_t history_index;
-	uint64_t history[256];
+	Undo *undo;
 
 	uint16_t generation;
 }
 Bitboard;
-
-// moves are stored in 24 bits
-// from LSB to MSB:
-// source square (6)
-// destination square (6)
-// type (3)
-// color (1)
-// is castle (1)
-// is en passant (1)
-// is capture (1)
-// is promotion (1)
-// captured type (3)
-// promoted type (3)
-// which leaves the six MSB unused
-typedef uint32_t Move;
 
 typedef struct
 {

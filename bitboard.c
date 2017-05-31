@@ -212,13 +212,10 @@ void board_init_with_fen(Bitboard *board, char *fen)
 	   history. So zero it out, which will hopefully not conencide
 	   with any used zobrist */
 	board->halfmove_count = strtol(fen, NULL, 10);
-	memset(board->history, 0, 256*sizeof(uint64_t));
 
 	// set up the mess of zobrist random numbers and the rest of the state
 	board_init_zobrist(board);
-	board->undo_index = 0;
-	board->history_index = 0;
-	board->history[0] = board->zobrist;
+	board->undo = NULL;
 	board->in_check[0] = board->in_check[1] = IN_CHECK_UNKNOWN;
 	board->generation = 0;
 }
@@ -287,19 +284,15 @@ static uint64_t board_rotate_internal(uint64_t board,
 	return result;
 }
 
-void board_do_move(Bitboard *board, Move move)
+void board_do_move(Bitboard *board, Move move, Undo *undo)
 {
-	// write old zobrist as a game state in the history
-	board->history[board->history_index++] = board->zobrist;
-
-	/* save data to undo ring buffer. 0x3F == 63. Max value for
-	   enpassant_index is 63, max value for halfmove_count is 50 */
-	uint64_t undo_data = 0;
-	undo_data |= board->enpassant_index & 0x3F;
-	undo_data |= (board->castle_status & 0xF0) << 2;
-	undo_data |= (board->halfmove_count & 0x3F) << 10;
-	undo_data |= ((uint64_t)move) << 32;
-	board->undo_ring_buffer[board->undo_index++] = undo_data;
+	undo->prev = board->undo;
+	undo->zobrist = board->zobrist;
+	undo->move = move;
+	undo->enpassant_index = board->enpassant_index;
+	undo->castle_status_upper = board->castle_status & 0xF0;
+	undo->halfmove_count = board->halfmove_count;
+	board->undo = undo;
 
 	if (move != MOVE_NULL)
 	{
@@ -362,16 +355,15 @@ void board_do_move(Bitboard *board, Move move)
 
 void board_undo_move(Bitboard *board)
 {
-	uint64_t undo_data = board->undo_ring_buffer[--(board->undo_index)];
-	Move move = undo_data >> 32;
+	Move move = board->undo->move;
 
 	if (move != MOVE_NULL)
 	{
 		// restore from undo ring buffer
-		board->enpassant_index = undo_data & 0x3F;
-		board->castle_status &= 0x0F;
-		board->castle_status |= ((undo_data >> 6) & 0x0F) << 4;
-		board->halfmove_count = (undo_data >> 10) & 0x3F;
+		board->enpassant_index = board->undo->enpassant_index;
+		board->castle_status = (board->castle_status & 0x0F)
+			| board->undo->castle_status_upper;
+		board->halfmove_count = board->undo->halfmove_count;
 
 		// common bits of doing and undoing moves (bulk of the logic in here)
 		board_doundo_move_common(board, move);
@@ -380,7 +372,8 @@ void board_undo_move(Bitboard *board)
 		board->to_move = (1 - board->to_move);
 
 	// restore old zobrist
-	board->zobrist = board->history[--board->history_index];
+	board->zobrist = board->undo->zobrist;
+	board->undo = board->undo->prev;
 }
 
 static void board_doundo_move_common(Bitboard *board, Move move)
@@ -473,7 +466,7 @@ int board_in_check(Bitboard *board, Color color)
 
 Move board_last_move(Bitboard *board)
 {
-	return board->undo_ring_buffer[board->undo_index - 1] >> 32;
+	return board->undo->move;
 }
 
 void board_print(Bitboard *board)

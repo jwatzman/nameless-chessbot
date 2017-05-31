@@ -17,6 +17,7 @@ int main(void)
 	Bitboard *stress = malloc(sizeof(Bitboard));
 	Movelist *moves = malloc(sizeof(Movelist));
 	Moveiter *it = malloc(sizeof(Moveiter));
+	Undo *undos = malloc(sizeof(Undo)*max_moves);
 	board_init(stress);
 
 	printf("initial zobrist %.16"PRIx64"\n", stress->zobrist);
@@ -33,7 +34,7 @@ int main(void)
 		Move m;
 		for (int i = 0; i < n; i++)
 			m = moveiter_next(it);
-		board_do_move(stress, m);
+		board_do_move(stress, m, undos + cur_move);
 		cur_move++;
 
 		if (board_in_check(stress, 1-stress->to_move))

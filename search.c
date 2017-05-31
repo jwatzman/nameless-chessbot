@@ -188,13 +188,19 @@ static int search_alpha_beta(Bitboard *board,
 	if (ply > 1)
 	{
 		// 3 repetition rule
-		// TODO test i += 2, start only if halfmove_count is >= 4, cut out on 1 rep
-		for (uint8_t i = board->history_index - board->halfmove_count;
-			i != board->history_index;
-			i++)
+		int back = board->halfmove_count - 2;
+		if (back >= 0)
 		{
-			if (board->history[i] == board->zobrist)
+			Undo *u = board->undo->prev;
+			if (u->zobrist == board->zobrist)
 				return 0;
+			back -= 2;
+			for (; back >= 0; back -= 2)
+			{
+				u = u->prev->prev;
+				if (u->zobrist == board->zobrist)
+					return 0;
+			}
 		}
 
 		// check transposition table for a useful value
@@ -264,7 +270,8 @@ static int search_alpha_beta(Bitboard *board,
 		if (quiescent && !in_check && !move_is_capture(move))
 			break;
 
-		board_do_move(board, move);
+		Undo u;
+		board_do_move(board, move, &u);
 
 		// make the final legality check
 		if (!board_in_check(board, 1-board->to_move))
@@ -494,7 +501,8 @@ static void search_transposition_print_pv(Bitboard *board, Move move, int8_t dep
 	move_srcdest_form(move, buf);
 	printf("%s ", buf);
 
-	board_do_move(board, move);
+	Undo u;
+	board_do_move(board, move, &u);
 	search_transposition_print_pv(
 		board,
 		search_transposition_get_best_move(board->zobrist),

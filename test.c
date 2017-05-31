@@ -17,6 +17,7 @@ int main(void)
 
 	Bitboard *test = malloc(sizeof(Bitboard));
 	board_init(test);
+	Undo *u = NULL;
 	
 	while (1)
 	{
@@ -33,7 +34,8 @@ int main(void)
 		while (moveiter_has_next(&it))
 		{
 			Move move = moveiter_next(&it);
-			board_do_move(test, move);
+			Undo u_tmp;
+			board_do_move(test, move, &u_tmp);
 			if (!board_in_check(test, 1-test->to_move))
 				num_legal_moves++;
 			board_undo_move(test);
@@ -61,10 +63,12 @@ int main(void)
 		else
 			next_move = get_computer_move(test);
 
-		board_do_move(test, next_move);
+		u = malloc(sizeof(Undo));
+		board_do_move(test, next_move, u);
 	}
 
 	free(test);
+	board_free_undos(u);
 	return 0;
 }
 
@@ -75,6 +79,7 @@ static Move get_human_move(Bitboard *board, Movelist *orig_moves)
 
 	Move result = 0;
 
+	Undo u;
 	Movelist moves;
 	Moveiter it;
 
@@ -84,7 +89,7 @@ static Move get_human_move(Bitboard *board, Movelist *orig_moves)
 	while (moveiter_has_next(&it))
 	{
 		Move move = moveiter_next(&it);
-		board_do_move(board, move);
+		board_do_move(board, move, &u);
 		if (!board_in_check(board, 1-board->to_move))
 		{
 			move_srcdest_form(move, srcdest_form);
@@ -107,7 +112,7 @@ static Move get_human_move(Bitboard *board, Movelist *orig_moves)
 			move_srcdest_form(move, srcdest_form);
 			if (!strcmp(input_move, srcdest_form))
 			{
-				board_do_move(board, move);
+				board_do_move(board, move, &u);
 				if (board_in_check(board, 1-board->to_move))
 					printf("Can't leave king in check\n");
 				else

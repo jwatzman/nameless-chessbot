@@ -28,6 +28,7 @@ int main(int argc, char** argv)
 	timer_init("level 0 1 9999");
 	search_force_max_depth(atoi(argv[1]));
 
+	Undo *u = NULL;
 	int max_pass = atoi(argv[2]);
 	for (int pass = 0; pass < max_pass; pass++)
 	{
@@ -49,7 +50,8 @@ int main(int argc, char** argv)
 			best = moveiter_next(&iter);
 		}
 
-		board_do_move(board, best);
+		u = malloc(sizeof(Undo));
+		board_do_move(board, best, u);
 
 		char move_srcdest[6];
 		move_srcdest_form(best, move_srcdest);
@@ -57,5 +59,6 @@ int main(int argc, char** argv)
 	}
 
 	free(board);
+	board_free_undos(u);
 	return 0;
 }

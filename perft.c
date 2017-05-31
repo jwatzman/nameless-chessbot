@@ -65,7 +65,8 @@ void perft(int depth)
 	while (moveiter_has_next(&iter))
 	{
 		Move m = moveiter_next(&iter);
-		board_do_move(board, m);
+		Undo u;
+		board_do_move(board, m, &u);
 
 		if (!board_in_check(board, 1-board->to_move))
 			perft(depth - 1);

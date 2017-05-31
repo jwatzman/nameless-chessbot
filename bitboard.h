@@ -2,6 +2,7 @@
 #define _BITBOARD_H
 
 #include <stdint.h>
+#include <stdlib.h>
 #include "types.h"
 
 // writes initial state to a board
@@ -11,7 +12,7 @@ void board_init(Bitboard *board);
 void board_init_with_fen(Bitboard *board, char *fen);
 
 // make and reverse moves on a board
-void board_do_move(Bitboard *board, Move move);
+void board_do_move(Bitboard *board, Move move, Undo *undo);
 void board_undo_move(Bitboard *board);
 
 // last move to be applied to this board
@@ -47,6 +48,16 @@ static inline Piecetype board_piecetype_at_index(Bitboard *board,
 	}
 
 	return -1; // should not get here...
+}
+
+static inline void board_free_undos(Undo *u)
+{
+	while (u)
+	{
+		Undo *prev = u->prev;
+		free(u);
+		u = prev;
+	}
 }
 
 #endif
