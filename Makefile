@@ -1,5 +1,6 @@
 ifeq ($(origin CC), default)
-	export CC=clang
+	export CC=gcc
+	#export CC=clang
 endif
 
 export LDFLAGS=-O3 -Wall -Wextra -ggdb
