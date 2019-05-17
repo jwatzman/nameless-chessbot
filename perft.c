@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "bitboard.h"
 #include "move.h"
@@ -9,18 +10,45 @@
 
 uint64_t perft(Bitboard *board, int depth);
 
+void usage(void)
+{
+	printf("Usage: ./perft -d depth\n");
+	exit(1);
+}
+
 int main(int argc, char** argv)
 {
-	srandom(time(NULL));
-
-	if (argc != 2)
+	int max_depth = -1;
+	int opt;
+	while ((opt = getopt(argc, argv, ":d:")) != -1)
 	{
-		printf("Usage: ./perft depth\n");
-		return 1;
+		switch (opt)
+		{
+			case 'd':
+				max_depth = atoi(optarg);
+				break;
+			case '?':
+				printf("Unknown option: %c\n", optopt);
+				usage();
+				break;
+			case ':':
+				printf("Missing value: %c\n", optopt);
+				usage();
+				break;
+			default:
+				usage();
+				break;
+		}
 	}
 
+	if (max_depth < 1)
+	{
+		printf("Invalid/missing depth\n");
+		usage();
+	}
+
+	srandom(time(NULL));
 	Bitboard *board = malloc(sizeof(Bitboard));
-	int max_depth = atoi(argv[1]);
 
 	board_init(board);
 
