@@ -7,61 +7,46 @@
 #include "move.h"
 #include "moveiter.h"
 
-Bitboard *board;
-unsigned long int nodes;
-int sort_mode = MOVEITER_SORT_NONE;
-
-void perft(int depth);
+uint64_t perft(Bitboard *board, int depth);
 
 int main(int argc, char** argv)
 {
 	srandom(time(NULL));
 
-	if (argc < 2 || argc > 4)
+	if (argc != 2)
 	{
-		printf("Usage: ./perft depth [sortmode [fen]]\n");
+		printf("Usage: ./perft depth\n");
 		return 1;
 	}
 
-	board = malloc(sizeof(Bitboard));
-	nodes = 0;
+	Bitboard *board = malloc(sizeof(Bitboard));
 	int max_depth = atoi(argv[1]);
 
-	if (argc >= 3)
-		sort_mode = atoi(argv[2]);
-
-	if (argc >=4)
-		board_init_with_fen(board, argv[3]);
-	else
-		board_init(board);
+	board_init(board);
 
 	printf("initial zobrist %.16"PRIx64"\n", board->zobrist);
 
-	perft(max_depth);
+	uint64_t nodes = perft(board, max_depth);
 
-	printf("final zobrist %.16"PRIx64"\n%lu nodes\n", board->zobrist, nodes);
+	printf("final zobrist %.16"PRIx64"\n%"PRIu64" nodes\n", board->zobrist, nodes);
 	free(board);
 	return 0;
 }
 
-void perft(int depth)
+uint64_t perft(Bitboard *board, int depth)
 {
 	if (depth == 0)
 	{
-		nodes++;
-		return;
+		return 1;
 	}
 
 	Movelist moves;
 	move_generate_movelist(board, &moves);
 
-	Move best = MOVE_NULL;
-	if (sort_mode != MOVEITER_SORT_NONE && moves.num_other > 2)
-		best = moves.moves_other[2];
-
 	Moveiter iter;
-	moveiter_init(&iter, &moves, sort_mode, best);
+	moveiter_init(&iter, &moves, MOVEITER_SORT_NONE, MOVE_NULL);
 
+	uint64_t nodes = 0;
 	while (moveiter_has_next(&iter))
 	{
 		Move m = moveiter_next(&iter);
@@ -69,8 +54,10 @@ void perft(int depth)
 		board_do_move(board, m, &u);
 
 		if (!board_in_check(board, 1-board->to_move))
-			perft(depth - 1);
+			nodes += perft(board, depth - 1);
 
 		board_undo_move(board);
 	}
+
+	return nodes;
 }
