@@ -12,20 +12,24 @@ uint64_t perft(Bitboard *board, int depth);
 
 void usage(void)
 {
-	printf("Usage: ./perft -d depth\n");
+	printf("Usage: ./perft [-f fen] -d depth\n");
 	exit(1);
 }
 
 int main(int argc, char** argv)
 {
 	int max_depth = -1;
+	char *fen = NULL;
 	int opt;
-	while ((opt = getopt(argc, argv, ":d:")) != -1)
+	while ((opt = getopt(argc, argv, ":d:f:")) != -1)
 	{
 		switch (opt)
 		{
 			case 'd':
 				max_depth = atoi(optarg);
+				break;
+			case 'f':
+				fen = optarg;
 				break;
 			case '?':
 				printf("Unknown option: %c\n", optopt);
@@ -50,7 +54,10 @@ int main(int argc, char** argv)
 	srandom(time(NULL));
 	Bitboard *board = malloc(sizeof(Bitboard));
 
-	board_init(board);
+	if (fen)
+		board_init_with_fen(board, fen);
+	else
+		board_init(board);
 
 	printf("initial zobrist %.16"PRIx64"\n", board->zobrist);
 
