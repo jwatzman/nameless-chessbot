@@ -9,7 +9,7 @@
 void board_init(Bitboard *board);
 
 // writes board state from the fen to the board. Assumes a valid fen
-void board_init_with_fen(Bitboard *board, char *fen);
+void board_init_with_fen(Bitboard *board, const char *fen);
 
 // make and reverse moves on a board
 void board_do_move(Bitboard *board, Move move, Undo *undo);

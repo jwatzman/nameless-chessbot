@@ -76,7 +76,7 @@ void board_init(Bitboard *board)
 			"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
-void board_init_with_fen(Bitboard *board, char *fen)
+void board_init_with_fen(Bitboard *board, const char *fen)
 {
 	memset(board->boards, 0, 2*6*sizeof(uint64_t)); // clear out boards
 
