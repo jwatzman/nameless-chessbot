@@ -1,1 +1,1 @@
-redo-ifchange perft stress search-perf test xboard
+redo-ifchange bin/perft bin/stress bin/search-perf bin/test bin/xboard

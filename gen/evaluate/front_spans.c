@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "../../bitboard.h"
+#include "bitboard.h"
 
 uint64_t front_span_white(int pos)
 {

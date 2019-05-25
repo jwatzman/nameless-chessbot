@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "../../bitboard.h"
-#include "../../types.h"
+#include "bitboard.h"
+#include "types.h"
 
 int main(void)
 {

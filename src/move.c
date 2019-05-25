@@ -3,7 +3,7 @@
 #include <string.h>
 #include "types.h"
 #include "move.h"
-#include "gen/move.h"
+#include "../gen/move.h"
 #include "bitboard.h"
 #include "bitscan.h"
 
