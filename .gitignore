@@ -1,6 +1,7 @@
 *.swp
-move-generated.h
-evaluate-generated.h
+.redo
+gen/*.h
+gen/*/*.gen
 *.o
 perft
 stress

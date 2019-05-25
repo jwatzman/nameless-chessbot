@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "bitboard.h"
+#include "../../bitboard.h"
 
 int main(void)
 {

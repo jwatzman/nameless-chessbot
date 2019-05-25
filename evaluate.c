@@ -1,7 +1,7 @@
 #define _GNU_SOURCE
 #include <string.h>
 #include "evaluate.h"
-#include "evaluate-generated.h"
+#include "gen/evaluate.h"
 #include "bitboard.h"
 #include "move.h"
 #include "bitscan.h"

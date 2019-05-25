@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "bitboard.h"
+#include "../../bitboard.h"
 
 uint64_t up_right_attack(int position_mask, int pos)
 {
