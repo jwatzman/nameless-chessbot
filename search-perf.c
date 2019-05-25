@@ -35,23 +35,14 @@ int main(int argc, char** argv)
 		printf("-- PASS %d\n", pass + 1);
 		Move best;
 
-		if (pass % 2 == 0)
-		{
-			best = search_find_move(board);
-		}
-		else
-		{
-			Movelist moves;
-			move_generate_movelist(board, &moves);
-
-			// Make a vaugely reasonable move.
-			Moveiter iter;
-			moveiter_init(&iter, &moves, MOVEITER_SORT_ONDEMAND, MOVE_NULL);
-			best = moveiter_next(&iter);
-		}
-
+		best = search_find_move(board);
 		u = malloc(sizeof(Undo));
 		board_do_move(board, best, u);
+
+		// Invalidate the transposition table, so that we are perft-testing
+		// a more complete search every time. Not doing this is fine for
+		// corectness, but means the first N-1 ply are probably already cached.
+		board->zobrist = random();
 
 		char move_srcdest[6];
 		move_srcdest_form(best, move_srcdest);
