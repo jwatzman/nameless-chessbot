@@ -3,6 +3,7 @@
 gen/*.h
 gen/*/*.gen
 *.o
+*.dSYM
 perft
 stress
 search-perf
