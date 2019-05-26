@@ -53,6 +53,7 @@ int main(void)
 	setbuf(stdout, NULL);
 
 	srandom(time(NULL));
+	move_init();
 
 	while (1)
 	{

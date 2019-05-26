@@ -14,6 +14,7 @@ static Move get_computer_move(Bitboard *board);
 int main(void)
 {
 	srandom(time(NULL));
+	move_init();
 
 	Bitboard *test = malloc(sizeof(Bitboard));
 	board_init(test);

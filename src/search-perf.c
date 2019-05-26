@@ -12,6 +12,7 @@ Bitboard *board;
 int main(int argc, char** argv)
 {
 	srandom(0);
+	move_init();
 
 	if (argc != 3)
 	{

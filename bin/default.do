@@ -1,4 +1,4 @@
-CORE="bitboard.o move.o moveiter.o"
+CORE="bitboard.o move.o moveiter.o movemagic.o"
 ALL="$CORE evaluate.o search.o timer.o"
 
 redo-ifchange CC FLAGS

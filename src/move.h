@@ -7,6 +7,9 @@
 
 #define MOVE_NULL ((Move)0)
 
+// Must be called at program startup.
+void move_init(void);
+
 // generates *psdueomoves* -- taking one of these moves could leave the king in check
 void move_generate_movelist(Bitboard *board, Movelist *movelist);
 

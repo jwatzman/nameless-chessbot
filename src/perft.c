@@ -66,6 +66,8 @@ int run_tests(void)
 
 int main(int argc, char** argv)
 {
+	move_init();
+
 	int max_depth = -1;
 	char *fen = NULL;
 	int test_mode = 0;

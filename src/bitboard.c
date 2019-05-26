@@ -14,56 +14,11 @@
 #define IN_CHECK_FALSE 0
 #define IN_CHECK_TRUE 1
 
-/* to get the rotated index of the unrotated index 0 <= n < 64, you would
-   say board_index_90[n] for example. Also, remember that these are
-   upside-down, since a1/LSB must come first */
-static const uint8_t board_rotation_index_90[64] = {
-0, 8,  16, 24, 32, 40, 48, 56,
-1, 9,  17, 25, 33, 41, 49, 57,
-2, 10, 18, 26, 34, 42, 50, 58,
-3, 11, 19, 27, 35, 43, 51, 59,
-4, 12, 20, 28, 36, 44, 52, 60,
-5, 13, 21, 29, 37, 45, 53, 61,
-6, 14, 22, 30, 38, 46, 54, 62,
-7, 15, 23, 31, 39, 47, 55, 63
-};
-
-static const uint8_t board_rotation_index_45[64] = {
-0,  2,  5,  9,  14, 20, 27, 35, 
-1,  4,  8,  13, 19, 26, 34, 42,
-3,  7,  12, 18, 25, 33, 41, 48,
-6,  11, 17, 24, 32, 40, 47, 53,
-10, 16, 23, 31, 39, 46, 52, 57,
-15, 22, 30, 38, 45, 51, 56, 60,
-21, 29, 37, 44, 50, 55, 59, 62,
-28, 36, 43, 49, 54, 58, 61, 63
-};
-
-static const uint8_t board_rotation_index_315[64] = {
-28, 21, 15, 10, 6,  3,  1,  0,
-36, 29, 22, 16, 11, 7,  4,  2,
-43, 37, 30, 23, 17, 12, 8,  5,
-49, 44, 38, 31, 24, 18, 13, 9,
-54, 50, 45, 39, 32, 25, 19, 14,
-58, 55, 51, 46, 40, 33, 26, 20,
-61, 59, 56, 52, 47, 41, 34, 27,
-63, 62, 60, 57, 53, 48, 42, 35
-};
-
 // generate a 64-bit random number
 static inline uint64_t board_rand64(void);
 
 // generate a bunch of random numbers to put in for zobrists
 static void board_init_zobrist(Bitboard *board);
-
-/* for rotating board states when creating the board. The rotated versions
-   are normally mutated along with the normal state, so this should not
-   need to be used when making and undoing moved */
-static uint64_t board_rotate_90(uint64_t board);
-static uint64_t board_rotate_45(uint64_t board);
-static uint64_t board_rotate_315(uint64_t board);
-static uint64_t board_rotate_internal(uint64_t board,
-		const uint8_t rotation_index[64]);
 
 // common bits of making and undoing moves that can be easily factored out
 static void board_doundo_move_common(Bitboard *board, Move move);
@@ -146,9 +101,6 @@ void board_init_with_fen(Bitboard *board, const char *fen)
 
 	board->full_composite =
 		board->composite_boards[WHITE] | board->composite_boards[BLACK];
-	board->full_composite_45 = board_rotate_45(board->full_composite);
-	board->full_composite_90 = board_rotate_90(board->full_composite);
-	board->full_composite_315 = board_rotate_315(board->full_composite);
 
 	// w or b to move
 	board->to_move = (*fen == 'w' ? WHITE : BLACK);
@@ -246,41 +198,6 @@ static void board_init_zobrist(Bitboard *board)
 
 	// ... and to move
 	board->zobrist_black = board_rand64();
-}
-
-static uint64_t board_rotate_90(uint64_t board)
-{
-	return board_rotate_internal(board, board_rotation_index_90);
-}
-
-static uint64_t board_rotate_45(uint64_t board)
-{
-	return board_rotate_internal(board, board_rotation_index_45);
-}
-
-static uint64_t board_rotate_315(uint64_t board)
-{
-	return board_rotate_internal(board, board_rotation_index_315);
-}
-
-static uint64_t board_rotate_internal(uint64_t board,
-		const uint8_t rotation_index[64])
-{
-	uint64_t result = 0;
-	static const uint64_t bit = 1;
-	uint8_t current_index = 0;
-
-	// scan down each bit, flipping the right bit in the rotated result
-	while (board)
-	{
-		if (board & bit)
-			result |= bit << rotation_index[current_index];
-
-		board >>= 1;
-		current_index++;
-	}
-
-	return result;
 }
 
 void board_do_move(Bitboard *board, Move move, Undo *undo)
@@ -444,9 +361,6 @@ static void board_toggle_piece(Bitboard *board, Piecetype piece,
 	board->boards[color][piece] ^= 1ULL << loc;
 	board->composite_boards[color] ^= 1ULL << loc;
 	board->full_composite ^= 1ULL << loc;
-	board->full_composite_45 ^= 1ULL << board_rotation_index_45[loc];
-	board->full_composite_90 ^= 1ULL << board_rotation_index_90[loc];
-	board->full_composite_315 ^= 1ULL << board_rotation_index_315[loc];
 	board->zobrist ^= board->zobrist_pos[color][piece][loc];
 }
 

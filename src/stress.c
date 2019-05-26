@@ -13,6 +13,7 @@ static const int max_moves = 100;
 int main(void)
 {
 	srandom(time(NULL));
+	move_init();
 
 	Bitboard *stress = malloc(sizeof(Bitboard));
 	Movelist *moves = malloc(sizeof(Movelist));

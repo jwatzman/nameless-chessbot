@@ -51,9 +51,6 @@ typedef struct
 
 	uint64_t composite_boards[2];
 	uint64_t full_composite;
-	uint64_t full_composite_45;
-	uint64_t full_composite_90;
-	uint64_t full_composite_315;
 
 	// from LSB to MSB:
 	// white castled KS,
