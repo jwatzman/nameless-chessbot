@@ -31,7 +31,7 @@ int main(void)
 		moveiter_init(it, moves, MOVEITER_SORT_NONE, MOVE_NULL);
 		int n = random() % moves->num_total;
 
-		Move m;
+		Move m = MOVE_NULL;
 		for (int i = 0; i < n; i++)
 			m = moveiter_next(it);
 		board_do_move(stress, m, undos + cur_move);

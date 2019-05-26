@@ -59,9 +59,15 @@ int main(void)
 
 		Move next_move;
 		if (test->to_move == WHITE)
+		{
 			next_move = get_human_move(test, &moves);
+			if (next_move == MOVE_NULL)
+				break;
+		}
 		else
+		{
 			next_move = get_computer_move(test);
+		}
 
 		u = malloc(sizeof(Undo));
 		board_do_move(test, next_move, u);
@@ -101,7 +107,8 @@ static Move get_human_move(Bitboard *board, Movelist *orig_moves)
 
 	while (!result)
 	{
-		scanf("%5s", input_move);
+		if (scanf("%5s", input_move) == EOF)
+			return MOVE_NULL;
 
 		memcpy(&moves, orig_moves, sizeof(Movelist));
 		moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL);

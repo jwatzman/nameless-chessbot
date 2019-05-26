@@ -99,23 +99,22 @@ void board_init_with_fen(Bitboard *board, const char *fen)
 
 				switch (*fen)
 				{
-					// fall through on the black ones
-					case 'p': color = BLACK;
+					case 'p': color = BLACK; // FALLTHROUGH
 					case 'P': piece = PAWN; break;
 
-					case 'n': color = BLACK;
+					case 'n': color = BLACK; // FALLTHROUGH
 					case 'N': piece = KNIGHT; break;
 
-					case 'b': color = BLACK;
+					case 'b': color = BLACK; // FALLTHROUGH
 					case 'B': piece = BISHOP; break;
 
-					case 'r': color = BLACK;
+					case 'r': color = BLACK; // FALLTHROUGH
 					case 'R': piece = ROOK; break;
 
-					case 'q': color = BLACK;
+					case 'q': color = BLACK; // FALLTHROUGH
 					case 'Q': piece = QUEEN; break;
 
-					case 'k': color = BLACK;
+					case 'k': color = BLACK; // FALLTHROUGH
 					case 'K': piece = KING; break;
 
 					default: piece = KING; break; // bad fen
@@ -167,9 +166,9 @@ void board_init_with_fen(Bitboard *board, const char *fen)
 			int index = 4;
 			switch (*fen)
 			{
-				case 'q': index++;
-				case 'Q': index++;
-				case 'k': index++;
+				case 'q': index++; // FALLTHROUGH
+				case 'Q': index++; // FALLTHROUGH
+				case 'k': index++; // FALLTHROUGH
 				case 'K': break;
 				default: break; // bad fen
 			}

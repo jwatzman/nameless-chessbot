@@ -45,7 +45,10 @@ int main(void)
 	Move last_move = 0;
 	int got_move = 0;
 
-	freopen("/dev/tty", "w", stderr);
+	// Try to force output to console. Not sure if this is a good idea?
+	FILE *reopen = freopen("/dev/tty", "w", stderr);
+	(void)reopen;
+
 	setbuf(stderr, NULL);
 	setbuf(stdout, NULL);
 
@@ -69,7 +72,9 @@ int main(void)
 			board_do_move(board, last_move, u);
 		}
 
-		fgets(input, max_input_length, stdin);
+		if (fgets(input, max_input_length, stdin) == NULL)
+			break;
+
 		fprintf(stderr, "%s", input);
 
 		if (!strcmp("xboard\n", input))
