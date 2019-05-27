@@ -88,7 +88,7 @@ void movemagic_init(void)
 		{
 			uint64_t occ = movemagic_init_nth_subset(n, setbits, numsetbits);
 			uint64_t attacks = movemagic_init_rook_attacks(pos, occ);
-			rookdb[pos][occ*r_magic[pos] >> r_shift[pos]] = attacks;
+			rookdb[pos][occ*r_magic[pos] >> MIN_R_SHIFT] = attacks;
 		}
 	}
 
@@ -99,7 +99,7 @@ void movemagic_init(void)
 		{
 			uint64_t occ = movemagic_init_nth_subset(n, setbits, numsetbits);
 			uint64_t attacks = movemagic_init_bishop_attacks(pos, occ);
-			bishopdb[pos][occ*b_magic[pos] >> b_shift[pos]] = attacks;
+			bishopdb[pos][occ*b_magic[pos] >> MIN_B_SHIFT] = attacks;
 		}
 	}
 }
@@ -107,11 +107,11 @@ void movemagic_init(void)
 uint64_t movemagic_rook(uint8_t pos, uint64_t occ)
 {
 	occ = occ & r_mask[pos];
-	return rookdb[pos][occ*r_magic[pos] >> r_shift[pos]];
+	return rookdb[pos][occ*r_magic[pos] >> MIN_R_SHIFT];
 }
 
 uint64_t movemagic_bishop(uint8_t pos, uint64_t occ)
 {
 	occ = occ & b_mask[pos];
-	return bishopdb[pos][occ*b_magic[pos] >> b_shift[pos]];
+	return bishopdb[pos][occ*b_magic[pos] >> MIN_B_SHIFT];
 }
