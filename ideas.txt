@@ -1,0 +1,18 @@
+- do I need to if (target) -- should be redundant
+- is the table zeroed?
+- split out "best move" table from "header" table etc?
+- eviction policy -- "used" count?
+- compare against http://mediocrechess.blogspot.com/2007/01/guide-perft-scores.html
+
+- why is perft so slow???
+	- explicitly setting/unsetting bits, instead of xor, might help;
+	  will prob require splitting do/undo common
+		- nope: https://gist.github.com/jwatzman/e6853976d46eb9eb35e4440f737c9508
+	- stockfish: undo data is kept in a separate struct, instead of in the
+	  board -- saves undo ring buffer
+	- stockfish: undo move is simple, why is mine complicated
+	- stockfish: how does it deal with 3 repitition, can i save that buffer
+	- can i remove/reduce zobrist_castle?
+	- improve branch prediction
+		- manual hints in movegen?
+		- pgo?
