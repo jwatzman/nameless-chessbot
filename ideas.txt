@@ -1,7 +1,8 @@
 - do I need to if (target) -- should be redundant
 - is the table zeroed?
-- split out "best move" table from "header" table etc?
-- eviction policy -- "used" count?
+- transposition: split out "best move" table from "header" table etc?
+- transposition: eviction policy -- "used" count?
+- movegen/moveiter: can generate only captures at all, if beta cutoff don't generate other moves?
 - compare against http://mediocrechess.blogspot.com/2007/01/guide-perft-scores.html
 
 - why is perft so slow???
