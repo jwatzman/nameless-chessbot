@@ -6,7 +6,7 @@ static Move moveiter_nth(Moveiter *iter, int n);
 static Move moveiter_next_nosort(Moveiter *iter);
 static Move moveiter_next_selection(Moveiter *iter);
 
-static int moveiter_comparator(void *tm, const void *m1, const void *m2);
+static int moveiter_comparator(const void *m1, const void *m2);
 static int moveiter_score(Move m);
 static void moveiter_qsort(Movelist *moves);
 
@@ -146,9 +146,8 @@ static Move moveiter_next_selection(Moveiter *iter)
 	return result;
 }
 
-static int moveiter_comparator(void *tm, const void *m1, const void *m2)
+static int moveiter_comparator(const void *m1, const void *m2)
 {
-	(void)tm;
 	Move dm1 = *(const Move*)m1;
 	Move dm2 = *(const Move*)m2;
 
@@ -169,33 +168,10 @@ static int moveiter_score(Move m)
 	return 15 + 2*move_captured_piecetype(m) - move_piecetype(m);
 }
 
-#if __APPLE__
-
 static void moveiter_qsort(Movelist *moves)
 {
-	qsort_r(&(moves->moves_capture),
+	qsort(&(moves->moves_capture),
 		moves->num_capture,
 		sizeof(Move),
-		NULL,
 		moveiter_comparator);
 }
-
-#elif __GLIBC__
-
-static int moveiter_comparator_glibc(const void *m1, const void *m2, void *tm)
-{
-	return moveiter_comparator(tm, m1, m2);
-}
-
-static void moveiter_qsort(Movelist *moves)
-{
-	qsort_r(&(moves->moves_capture),
-		moves->num_capture,
-		sizeof(Move),
-		moveiter_comparator_glibc,
-		NULL);
-}
-
-#else
-#error Unknown how to call qsort_r with your libc.
-#endif
