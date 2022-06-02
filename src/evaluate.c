@@ -6,8 +6,6 @@
 #include "move.h"
 #include "bitscan.h"
 
-#define fancy_popcnt 1
-
 // position bonuses; remember that
 // since a1 is the first number, it is in the upper left
 static const int rook_pos[] = {
@@ -172,14 +170,5 @@ int evaluate_board(Bitboard *board)
 
 static int popcnt(uint64_t x)
 {
-#if fancy_popcnt
-	uint64_t r;
-	__asm__ __volatile__ ("popcnt %1, %0;" : "=r"(r) : "r"(x));
-	return r;
-#else
-	x -= (x >> 1) & 0x5555555555555555;
-	x = (x & 0x3333333333333333) + ((x >> 2) & 0x3333333333333333);
-	x = (x + (x >> 4)) & 0x0f0f0f0f0f0f0f0f;
-	return (x * 0x0101010101010101)>>56;
-#endif
+	return __builtin_popcountll(x);
 }

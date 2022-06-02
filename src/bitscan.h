@@ -3,14 +3,9 @@
 
 #include <stdint.h>
 
-// amd64 only
 static inline uint8_t bitscan(uint64_t x)
 {
-	uint64_t r;
-	__asm__ __volatile__ ("bsfq %1, %0;" : "=r"(r) : "r"(x));
-	return r;
+	return __builtin_ctzll(x);
 }
-
-// for other architectures, try "return ffsll(x) - 1"
 
 #endif
