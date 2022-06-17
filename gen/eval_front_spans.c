@@ -4,7 +4,7 @@
 
 #include "bitboard.h"
 
-uint64_t front_span_white(int pos)
+static uint64_t front_span_white(int pos)
 {
 	uint64_t result = 0;
 
@@ -22,7 +22,7 @@ uint64_t front_span_white(int pos)
 	return result;
 }
 
-uint64_t front_span_black(int pos)
+static uint64_t front_span_black(int pos)
 {
 	uint64_t result = 0;
 
@@ -40,7 +40,7 @@ uint64_t front_span_black(int pos)
 	return result;
 }
 
-int main(void)
+void gen_eval_front_spans(void)
 {
 	printf("uint64_t front_spans[2][64] = {\n");
 

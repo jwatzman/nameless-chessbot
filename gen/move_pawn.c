@@ -5,7 +5,7 @@
 #include "bitboard.h"
 #include "types.h"
 
-int main(void)
+void gen_move_pawn(void)
 {
 	printf("uint64_t pawn_attacks[2][64] = {\n\t{");
 

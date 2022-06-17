@@ -1,11 +1,1 @@
 *.swp
-.redo
-gen/*.h
-gen/*/*.gen
-*.o
-*.dSYM
-perft
-stress
-search-perf
-test
-xboard

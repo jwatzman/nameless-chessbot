@@ -4,7 +4,7 @@
 
 #include "bitboard.h"
 
-int main(void)
+void gen_move_king(void)
 {
 	printf("uint64_t king_attacks[64] = {\n");
 
