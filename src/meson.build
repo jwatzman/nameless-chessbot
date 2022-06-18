@@ -3,7 +3,12 @@ all = core + ['evaluate.c', 'search.c', 'timer.c', evaluate_h]
 
 executable(
 	'perft',
-	core + 'perft.c',
+	core + 'perftfn.c' + 'perft.c',
+)
+
+executable(
+	'test-perft',
+	core + 'perftfn.c' + 'test-perft.c',
 )
 
 executable(
