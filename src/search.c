@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "evaluate.h"
@@ -82,8 +82,8 @@ Move search_find_move(Bitboard *board)
 	   is the top level layer -- it's only siblings that ruin things :)) */
 	Move pv[max_depth + max_quiescent_depth + 1];
 
-	struct timeval start_time;
-	gettimeofday(&start_time, NULL);
+	struct timespec start_time;
+	clock_gettime(CLOCK_MONOTONIC, &start_time);
 
 	timeup = 0;
 	timer_begin(&timeup);
@@ -97,11 +97,11 @@ Move search_find_move(Bitboard *board)
 		// here we go...
 		int val = search_alpha_beta(board, alpha, beta, depth, 1, pv);
 
-		struct timeval end_time;
-		gettimeofday(&end_time, NULL);
+		struct timespec end_time;
+		clock_gettime(CLOCK_MONOTONIC, &end_time);
 		unsigned long int centiseconds_taken =
 			100*(end_time.tv_sec - start_time.tv_sec) +
-			(end_time.tv_usec - start_time.tv_usec)/10000;
+			(end_time.tv_nsec - start_time.tv_nsec)/10000000;
 
 		if (((val <= alpha) || (val >= beta)) && !timeup)
 		{

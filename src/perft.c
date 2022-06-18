@@ -1,6 +1,8 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/resource.h>
+#include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -43,6 +45,12 @@ int main(int argc, char** argv)
 	uint64_t nodes = perft(board, max_depth);
 
 	printf("final zobrist %.16"PRIx64"\n%"PRIu64" nodes\n", board->zobrist, nodes);
+
+	struct rusage usage;
+	getrusage(RUSAGE_SELF, &usage);
+	double elapsed_time = (double)(usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) + (1.0e-6)*(usage.ru_utime.tv_usec + usage.ru_stime.tv_usec);
+	printf("Completed in %0.2f seconds\n", elapsed_time);
+
 	free(board);
 	return 0;
 }

@@ -1,6 +1,8 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/resource.h>
+#include <sys/time.h>
 
 #include "bitboard.h"
 #include "move.h"
@@ -78,6 +80,11 @@ int main(void)
 
 		printf("PASS\n");
 	}
+
+	struct rusage usage;
+	getrusage(RUSAGE_SELF, &usage);
+	double elapsed_time = (double)(usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) + (1.0e-6)*(usage.ru_utime.tv_usec + usage.ru_stime.tv_usec);
+	printf("Completed in %0.2f seconds\n", elapsed_time);
 
 	return 0;
 }
