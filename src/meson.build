@@ -17,6 +17,11 @@ executable(
 )
 
 executable(
+	'test-search',
+	all + 'test-search.c',
+)
+
+executable(
 	'search-perf',
 	all + 'search-perf.c',
 )
