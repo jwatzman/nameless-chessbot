@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 		"r2q3k/pn2bprp/4pNp1/2p1PbQ1/3p1P2/5NR1/PPP3PP/2B2RK1 b - - 0 1"
 	);
 
-	timer_init("level 0 1 9999");
+	timer_init_secs(180);
 	search_force_max_depth(atoi(argv[1]));
 
 	Undo *u = NULL;

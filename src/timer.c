@@ -7,6 +7,7 @@ static int secs = 0;
 static volatile int *timeup;
 
 static void timer_timeup(int unused);
+static void timer_install_handler();
 
 static void timer_timeup(int unused)
 {
@@ -14,7 +15,7 @@ static void timer_timeup(int unused)
 	*timeup = 1;
 }
 
-void timer_init(char *level)
+void timer_init_xboard(char *level)
 {
 	int moves, base, inc;
 	int ret = sscanf(level, "level %d %d %d", &moves, &base, &inc);
@@ -24,6 +25,17 @@ void timer_init(char *level)
 	else
 		secs = 5;
 
+	timer_install_handler();
+}
+
+void timer_init_secs(int n)
+{
+	secs = n;
+	timer_install_handler();
+}
+
+static void timer_install_handler()
+{
 	struct sigaction sigalarm_action;
 	sigalarm_action.sa_handler = timer_timeup;
 	sigemptyset(&sigalarm_action.sa_mask);
@@ -34,7 +46,7 @@ void timer_init(char *level)
 void timer_begin(volatile int *i)
 {
 	if (secs < 1)
-		timer_init("");
+		timer_init_secs(5);
 
 	timeup = i;
 	alarm(secs);

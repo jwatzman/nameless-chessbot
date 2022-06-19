@@ -30,7 +30,7 @@ int main(void)
 	int ret = 0;
 
 	move_init();
-	timer_init("level 0 1 30");
+	timer_init_secs(30);
 	srandom(0);
 
 	int num_tests = 0;

@@ -97,7 +97,7 @@ int main(void)
 			game_on = 0;
 		}
 		else if (!strncmp("level ", input, 6))
-			timer_init(input);
+			timer_init_xboard(input);
 		else if (!strcmp("_print\n", input))
 		{
 			board_print(board);
