@@ -138,7 +138,7 @@ Move search_find_move(Bitboard *board)
 
 			if ((val >= MATE) || (val <= -MATE))
 			{
-				printf("mate\n");
+				printf("-> mate\n");
 				break;
 			}
 
@@ -285,6 +285,7 @@ static int search_alpha_beta(Bitboard *board,
 			int move_causes_check = board_in_check(board, board->to_move);
 			int extensions = move_causes_check;
 
+			/*
 			if (type == TRANSPOSITION_EXACT)
 			{
 				// PV search
@@ -315,6 +316,7 @@ static int search_alpha_beta(Bitboard *board,
 					search_completed = 0;
 				}
 			}
+			*/
 
 			if (!search_completed)
 			{
@@ -358,9 +360,11 @@ static int search_alpha_beta(Bitboard *board,
 
 	if (legal_moves == 0 && !quiescent)
 	{
-		// there are no legal moves for this game state -- check why
-		int val = in_check ? -(MATE + depth) : 0;
-		return val;
+		// No legal moves. Either we are in stalemate or checkmate.
+		// Prefer checkmates which are closer to the current game state.
+		// Use ply not depth for that because depth is affected by extensions/reductions.
+		// Offset by max_depth so a toplevel result >= MATE check still works.
+		return in_check ? -(MATE + max_depth - ply) : 0;
 	}
 	else if (legal_moves == 0 && quiescent)
 	{
