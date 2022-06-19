@@ -54,37 +54,38 @@ static const TestCase cases[] =
 
 int main(void)
 {
+	int ret = 0;
+
 	move_init();
 	srandom(0);
 
+	int num_tests = 0;
 	Bitboard board;
 	for (const TestCase *tcase = cases; tcase->fen != NULL; tcase++)
 	{
-		printf("CASE: \"%s\" depth %d tot %"PRIu64"\n", tcase->fen, tcase->depth, tcase->nodes);
-		board_init_with_fen(&board, tcase->fen);
+		num_tests++;
 
+		board_init_with_fen(&board, tcase->fen);
 		uint64_t zobrist = board.zobrist;
 		uint64_t nodes = perft(&board, tcase->depth);
 
 		if (nodes != tcase->nodes)
 		{
-			printf("FAIL: nodes: expected %"PRIu64" got %"PRIu64"\n", tcase->nodes, nodes);
-			return 1;
-		}
-
-		if (zobrist != board.zobrist)
+			printf("not ok %d - %s depth %d expected %"PRIu64" got %"PRIu64"\n", num_tests, tcase->fen, tcase->depth, tcase->nodes, nodes);
+			ret = 1;
+		} else if (zobrist != board.zobrist)
 		{
-			printf("FAIL: zobrist: expected %"PRIx64" got %"PRIx64"\n", zobrist, board.zobrist);
-			return 1;
+			printf("not ok %d - %s depth %d zobrist mismatch\n", num_tests, tcase->fen, tcase->depth);
+			ret = 1;
+		} else {
+			printf("ok - %s depth %d\n", tcase->fen, tcase->depth);
 		}
-
-		printf("PASS\n");
 	}
 
 	struct rusage usage;
 	getrusage(RUSAGE_SELF, &usage);
 	double elapsed_time = (double)(usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) + (1.0e-6)*(usage.ru_utime.tv_usec + usage.ru_stime.tv_usec);
-	printf("Completed in %0.2f seconds\n", elapsed_time);
+	fprintf(stderr, "Completed in %0.2f seconds\n", elapsed_time);
 
-	return 0;
+	return ret;
 }

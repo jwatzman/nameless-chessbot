@@ -106,7 +106,8 @@ Move search_find_move(Bitboard *board)
 		if (((val <= alpha) || (val >= beta)) && !timeup)
 		{
 			// aspiration window failure
-			printf(
+			fprintf(
+				stderr,
 				"%i\t%i\t%lu\t%"PRIu64"\taspiration failure\n",
 				depth, val, centiseconds_taken, nodes_searched
 			);
@@ -127,7 +128,8 @@ Move search_find_move(Bitboard *board)
 		{
 			best_move = pv[0];
 
-			printf(
+			fprintf(
+				stderr,
 				"%i\t%i\t%lu\t%"PRIu64"\t",
 				depth, val, centiseconds_taken, nodes_searched
 			);
@@ -138,15 +140,16 @@ Move search_find_move(Bitboard *board)
 
 			if ((val >= MATE) || (val <= -MATE))
 			{
-				printf("-> mate\n");
+				fprintf(stderr, "-> mate\n");
 				break;
 			}
 
-			printf("\n");
+			fprintf(stderr, "\n");
 		}
 		else
 		{
-			printf(
+			fprintf(
+				stderr,
 				"%i\t%i\t%lu\t%"PRIu64"\ttimeup\n",
 				depth, 0, centiseconds_taken, nodes_searched
 			);
@@ -503,7 +506,7 @@ static void search_transposition_print_pv(Bitboard *board, Move move, int8_t dep
 		return;
 
 	move_srcdest_form(move, buf);
-	printf("%s ", buf);
+	fprintf(stderr, "%s ", buf);
 
 	Undo u;
 	board_do_move(board, move, &u);

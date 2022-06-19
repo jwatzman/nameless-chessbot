@@ -45,10 +45,6 @@ int main(void)
 	Move last_move = 0;
 	int got_move = 0;
 
-	// Try to force output to console. Not sure if this is a good idea?
-	FILE *reopen = freopen("/dev/tty", "w", stderr);
-	(void)reopen;
-
 	setbuf(stderr, NULL);
 	setbuf(stdout, NULL);
 

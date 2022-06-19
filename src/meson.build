@@ -12,7 +12,8 @@ test(
 		'test-perft',
 		core + 'perftfn.c' + 'test-perft.c',
 	),
-	timeout: 120
+	protocol: 'tap',
+	timeout: 120,
 )
 
 executable(
@@ -25,7 +26,8 @@ test(
 	executable(
 		'test-search',
 		all + 'test-search.c',
-	)
+	),
+	protocol: 'tap',
 )
 
 executable(
