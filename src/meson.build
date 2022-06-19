@@ -6,9 +6,13 @@ executable(
 	core + 'perftfn.c' + 'perft.c',
 )
 
-executable(
-	'test-perft',
-	core + 'perftfn.c' + 'test-perft.c',
+test(
+	'perft',
+	executable(
+		'test-perft',
+		core + 'perftfn.c' + 'test-perft.c',
+	),
+	timeout: 120
 )
 
 executable(
@@ -16,9 +20,12 @@ executable(
 	core + 'stress.c',
 )
 
-executable(
-	'test-search',
-	all + 'test-search.c',
+test(
+	'search',
+	executable(
+		'test-search',
+		all + 'test-search.c',
+	)
 )
 
 executable(
