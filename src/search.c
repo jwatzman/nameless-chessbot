@@ -288,7 +288,6 @@ static int search_alpha_beta(Bitboard *board,
 			int move_causes_check = board_in_check(board, board->to_move);
 			int extensions = move_causes_check;
 
-			/*
 			if (type == TRANSPOSITION_EXACT)
 			{
 				// PV search
@@ -303,8 +302,9 @@ static int search_alpha_beta(Bitboard *board,
 					search_completed = 0;
 				}
 			}
+			/* LMR disabled -- move ordering not smart enough?
 			else if (legal_moves > 4 && depth > 2 && extensions == 0 &&
-				!move_is_capture(move) && move_piecetype(move) != PAWN &&
+				!move_is_promotion(move) && !move_is_capture(move) && move_piecetype(move) != PAWN &&
 				!in_check && !move_causes_check && !quiescent)
 			{
 				// LMR
