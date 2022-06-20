@@ -148,25 +148,8 @@ int move_square_is_attacked(Bitboard *board, Color attacker, uint8_t square)
 	if (bishop_attacks & board->boards[attacker][QUEEN])
 		return 1;
 
-
-	uint8_t row = board_row_of(square);
-	uint8_t col = board_col_of(square);
-
-	if (attacker == WHITE && row > 1)
-	{
-		if (col > 0 && (board->boards[attacker][PAWN] & (1ULL << (square - 9))))
-			return 1;
-		if (col < 7 && (board->boards[attacker][PAWN] & (1ULL << (square - 7))))
-			return 1;
-	}
-
-	if (attacker == BLACK && row < 6)
-	{
-		if (col > 0 && (board->boards[attacker][PAWN] & (1ULL << (square + 7))))
-			return 1;
-		if (col < 7 && (board->boards[attacker][PAWN] & (1ULL << (square + 9))))
-			return 1;
-	}
+	if (pawn_attacks[1-attacker][square] & board->boards[attacker][PAWN])
+		return 1;
 
 	return 0;
 }

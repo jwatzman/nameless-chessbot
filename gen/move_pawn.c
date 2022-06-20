@@ -18,7 +18,7 @@ void gen_move_pawn(void)
 			uint8_t row = board_row_of(position);
 			uint8_t col = board_col_of(position);
 
-			if (row != 0 && row != 7)
+			if (!(color == WHITE && row == 7) && !(color == BLACK && row == 0))
 			{
 				uint8_t new_row = color == WHITE ? row + 1 : row - 1;
 
