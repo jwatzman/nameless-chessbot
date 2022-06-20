@@ -10,6 +10,7 @@
 #include "evaluate.h"
 #include "search.h"
 #include "timer.h"
+#include "perftfn.h"
 
 static const int max_input_length = 1024;
 
@@ -98,8 +99,11 @@ int main(void)
 		}
 		else if (!strncmp("level ", input, 6))
 			timer_init_xboard(input);
-		else if (!strcmp("_print\n", input))
+		else if (!strcmp("_print\n", input) || !strncmp("_perft ", input, 7))
 		{
+			int perft_depth = input[2] == 'e' ? strtol(input+7, NULL, 10) - 1 : 0;
+			uint64_t perft_tot = 0;
+
 			board_print(board);
 			printf("Evaluation: %i\n", evaluate_board(board));
 			puts("Pseudolegal moves: ");
@@ -116,8 +120,27 @@ int main(void)
 				Move m = moveiter_next(&it);
 				move_srcdest_form(m, srcdest_form);
 				printf("%s ", srcdest_form);
+
+				if (perft_depth > 0)
+				{
+					Undo u;
+					board_do_move(board, m, &u);
+					if (board_in_check(board, 1-board->to_move))
+						printf("(illegal)\n");
+					else
+					{
+						uint64_t p = perft(board, perft_depth);
+						printf("%"PRIu64"\n", p);
+						perft_tot += p;
+					}
+					board_undo_move(board);
+				}
 			}
-			puts("\n");
+
+			if (perft_depth > 0)
+				printf("Total: %"PRIu64"\n", perft_tot);
+			else
+				printf("\n");
 		}
 		else if (input[0] >= 'a' && input[0] <= 'h'
 				&& input[1] >= '1' && input[1] <= '8'

@@ -42,5 +42,5 @@ executable(
 
 executable(
 	'xboard',
-	all + 'xboard.c',
+	all + 'perftfn.c' + 'xboard.c',
 )
