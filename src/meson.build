@@ -28,6 +28,7 @@ test(
 		all + 'test-search.c',
 	),
 	protocol: 'tap',
+	timeout: 120,
 )
 
 executable(
