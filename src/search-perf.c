@@ -27,7 +27,8 @@ int main(int argc, char** argv)
 	);
 
 	timer_init_secs(180);
-	search_force_max_depth(atoi(argv[1]));
+	SearchDebug debug = {0};
+	debug.maxDepth = atoi(argv[1]);
 
 	Undo *u = NULL;
 	int max_pass = atoi(argv[2]);
@@ -36,7 +37,7 @@ int main(int argc, char** argv)
 		printf("-- PASS %d\n", pass + 1);
 		Move best;
 
-		best = search_find_move(board);
+		best = search_find_move(board, &debug);
 		u = malloc(sizeof(Undo));
 		board_do_move(board, best, u);
 

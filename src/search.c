@@ -37,7 +37,7 @@ TranspositionNode;
 static TranspositionNode
 	transposition_table[transposition_entries][transposition_width];
 
-static int8_t max_depth = 30;
+#define max_possible_depth 30
 #define max_quiescent_depth 50
 #define aspiration_window 30
 
@@ -65,12 +65,12 @@ static void search_transposition_put(uint64_t zobrist,
 // try and opportunistically print the pv out of the transposition table
 static void search_transposition_print_pv(Bitboard *board, Move move, int8_t depth);
 
-void search_force_max_depth(const int8_t depth)
+static inline uint8_t min(uint8_t a, uint8_t b)
 {
-	max_depth = depth;
+	return a < b ? a : b;
 }
 
-Move search_find_move(Bitboard *board)
+Move search_find_move(Bitboard *board, const SearchDebug *debug)
 {
 	Move best_move = 0;
 	nodes_searched = 0;
@@ -80,7 +80,7 @@ Move search_find_move(Bitboard *board)
 	   we get all the way back up here (the other slots are used for scratch
 	   space, and are actually valid when the recursion layer using them
 	   is the top level layer -- it's only siblings that ruin things :)) */
-	Move pv[max_depth + max_quiescent_depth + 1];
+	Move pv[max_possible_depth + max_quiescent_depth + 1];
 
 	struct timespec start_time;
 	clock_gettime(CLOCK_MONOTONIC, &start_time);
@@ -92,6 +92,7 @@ Move search_find_move(Bitboard *board)
 	int beta = INFINITY;
 
 	// for each depth, call the main workhorse, search_alpha_beta
+	uint8_t max_depth = debug && debug->maxDepth > 0 ? min(debug->maxDepth, max_possible_depth) : max_possible_depth;
 	for (int8_t depth = 1; depth <= max_depth; depth++)
 	{
 		// here we go...
@@ -367,7 +368,7 @@ static int search_alpha_beta(Bitboard *board,
 		// Prefer checkmates which are closer to the current game state.
 		// Use ply not depth for that because depth is affected by extensions/reductions.
 		// Offset by max_depth so a toplevel result >= MATE check still works.
-		return in_check ? -(MATE + max_depth - ply) : 0;
+		return in_check ? -(MATE + max_possible_depth - ply) : 0;
 	}
 	else if (legal_moves == 0 && quiescent)
 	{

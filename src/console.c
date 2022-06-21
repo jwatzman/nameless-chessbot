@@ -139,5 +139,5 @@ static Move get_human_move(Bitboard *board, Movelist *orig_moves)
 
 static Move get_computer_move(Bitboard *board)
 {
-	return search_find_move(board);
+	return search_find_move(board, NULL);
 }

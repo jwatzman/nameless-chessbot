@@ -63,7 +63,7 @@ int main(void)
 
 		if (game_on && computer_player == board->to_move)
 		{
-			last_move = search_find_move(board);
+			last_move = search_find_move(board, NULL);
 			move_srcdest_form(last_move, input);
 			printf("move %s\n", input);
 			u = malloc(sizeof(Undo));

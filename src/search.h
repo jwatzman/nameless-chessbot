@@ -3,7 +3,10 @@
 
 #include "types.h"
 
-void search_force_max_depth(const int8_t depth);
-Move search_find_move(Bitboard *board);
+typedef struct {
+	uint8_t maxDepth;
+} SearchDebug;
+
+Move search_find_move(Bitboard *board, const SearchDebug *debug);
 
 #endif
