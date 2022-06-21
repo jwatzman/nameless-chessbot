@@ -15,6 +15,11 @@ typedef unsigned char Piecetype;
 #define QUEEN 4
 #define KING 5
 
+#define CASTLE_R_KS (1 << 0)
+#define CASTLE_R_QS (1 << 2)
+#define CASTLE_R_BOTH (CASTLE_R_KS|CASTLE_R_QS)
+#define CASTLE_R(side, color) ((side) << (color))
+
 #define INFINITY 1000000
 #define MATE 300000
 
@@ -40,7 +45,7 @@ typedef struct Undo
 	uint64_t zobrist;
 	Move move;
 	uint8_t enpassant_index;
-	uint8_t castle_status_upper;
+	uint8_t castle_rights;
 	uint8_t halfmove_count;
 }
 Undo;
@@ -52,13 +57,8 @@ typedef struct
 	uint64_t composite_boards[2];
 	uint64_t full_composite;
 
-	// from LSB to MSB:
-	// white castled KS,
-	// black castled KS,
-	// white castled QS,
-	// black castled QS,
-	// white can castle KS, [...]
-	uint8_t castle_status;
+	// Use CASTLE_R to access, e.g., CASTLE_R(CASTLE_R_KS, BLACK)
+	uint8_t castle_rights;
 
 	// destination square of a pawn moving up two squares
 	uint8_t enpassant_index;

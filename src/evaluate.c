@@ -88,7 +88,6 @@ static const int* endgame_pos_tables[] = { pawn_pos, bishop_pos, knight_pos, roo
 static const int values[] = { 100, 300, 300, 500, 900, 0 };
 static const int endgame_values[] = { 175, 300, 300, 500, 1000, 0 };
 
-#define castle_bonus 10
 #define doubled_pawn_penalty -10
 
 static int popcnt(uint64_t x);
@@ -104,12 +103,7 @@ int evaluate_board(Bitboard *board)
 		// add values for the current player, and subtract them for the opponent
 		int color_result = 0;
 
-		// 5 == 00000101
-		// iff white has castled, exactly one of those bits will be set
-		// iff black has castled, exactly one of the bits to the left of one of those bits will be set
-		// (see description of castle_status in types.h)
-		if (board->castle_status & (5 << color))
-			color_result += castle_bonus;
+		// XXX bring back has-castled bonus? (10)
 
 		// doubled pawns
 		// 0x0101010101010101 masks a single column

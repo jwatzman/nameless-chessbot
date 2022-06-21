@@ -106,26 +106,19 @@ void board_init_with_fen(Bitboard *board, const char *fen)
 	board->to_move = (*fen == 'w' ? WHITE : BLACK);
 	fen += 2; // skip the w or b and then the space
 
-	/* castling rights. Assume no one has castled, since we can't know
-	   otherwise */
-	board->castle_status = 0;
+	board->castle_rights = 0;
 	if (*fen != '-')
 	{
 		while (*fen != ' ')
 		{
-			/* the offset into castle_status is 4 for white KS. It
-			   increases from that as below */
-			int index = 4;
 			switch (*fen)
 			{
-				case 'q': index++; // FALLTHROUGH
-				case 'Q': index++; // FALLTHROUGH
-				case 'k': index++; // FALLTHROUGH
-				case 'K': break;
+				case 'q': board->castle_rights |= CASTLE_R(CASTLE_R_QS, BLACK); break;
+				case 'Q': board->castle_rights |= CASTLE_R(CASTLE_R_QS, WHITE); break;
+				case 'k': board->castle_rights |= CASTLE_R(CASTLE_R_KS, BLACK); break;
+				case 'K': board->castle_rights |= CASTLE_R(CASTLE_R_KS, WHITE); break;
 				default: break; // bad fen
 			}
-
-			board->castle_status |= (1ULL << index);
 
 			fen++; // next castling bit
 		}
@@ -206,7 +199,7 @@ void board_do_move(Bitboard *board, Move move, Undo *undo)
 	undo->zobrist = board->zobrist;
 	undo->move = move;
 	undo->enpassant_index = board->enpassant_index;
-	undo->castle_status_upper = board->castle_status & 0xF0;
+	undo->castle_rights = board->castle_rights;
 	undo->halfmove_count = board->halfmove_count;
 	board->undo = undo;
 
@@ -223,24 +216,24 @@ void board_do_move(Bitboard *board, Move move, Undo *undo)
 		uint8_t src = move_source_index(move);
 		uint8_t dest = move_destination_index(move);
 
-		board->zobrist ^= board->zobrist_castle[board->castle_status];
+		board->zobrist ^= board->zobrist_castle[board->castle_rights];
 
 		if (src == 0 || dest == 0)
-			board->castle_status &= ~(1 << 6); // white can no longer castle QS
+			board->castle_rights &= ~(CASTLE_R(CASTLE_R_QS, WHITE));
 		if (src == 7 || dest == 7)
-			board->castle_status &= ~(1 << 4); // white can no longer castle KS
+			board->castle_rights &= ~(CASTLE_R(CASTLE_R_KS, WHITE));
 		if (src == 56 || dest == 56)
-			board->castle_status &= ~(1 << 7); // black can no longer castle QS
+			board->castle_rights &= ~(CASTLE_R(CASTLE_R_QS, BLACK));
 		if (src == 63 || dest == 63)
-			board->castle_status &= ~(1 << 5); // black can no longer castle KS
+			board->castle_rights &= ~(CASTLE_R(CASTLE_R_KS, BLACK));
 
 		/* moving your king at all means you can no longer castle on either
 		   side. Castling also means you can no longer castle (again) on either
 		   side */
 		if (move_is_castle(move) || move_piecetype(move) == KING)
-			board->castle_status &= ~((5 << 4) << move_color(move));
+			board->castle_rights &= ~(CASTLE_R(CASTLE_R_BOTH, move_color(move)));
 
-		board->zobrist ^= board->zobrist_castle[board->castle_status];
+		board->zobrist ^= board->zobrist_castle[board->castle_rights];
 
 		/* if src and dest are 16 or -16 units apart (two rows) on a pawn move,
 		   update the enpassant index with the destination square. If this
@@ -277,8 +270,7 @@ void board_undo_move(Bitboard *board)
 	{
 		// restore from undo ring buffer
 		board->enpassant_index = board->undo->enpassant_index;
-		board->castle_status = (board->castle_status & 0x0F)
-			| board->undo->castle_status_upper;
+		board->castle_rights = board->undo->castle_rights;
 		board->halfmove_count = board->undo->halfmove_count;
 
 		// common bits of doing and undoing moves (bulk of the logic in here)
@@ -315,27 +307,19 @@ static void board_doundo_move_common(Bitboard *board, Move move)
 		board_toggle_piece(board, move_captured_piecetype(move),
 				1 - color, dest);
 
-	/* put the rook in the proper place for a castle and set the right
-	   bits in the castle info */
+	// Put the rook in the right place for a castle. The king is dealt with
+	// as the main "piece" of the move.
 	if (move_is_castle(move))
 	{
 		if (board_col_of(dest) == 2) // queenside castle
 		{
 			board_toggle_piece(board, ROOK, color, dest - 2);
 			board_toggle_piece(board, ROOK, color, dest + 1);
-
-			board->zobrist ^= board->zobrist_castle[board->castle_status];
-			board->castle_status ^= (4 << color);
-			board->zobrist ^= board->zobrist_castle[board->castle_status];
 		}
 		else // kingside castle
 		{
 			board_toggle_piece(board, ROOK, color, dest + 1);
 			board_toggle_piece(board, ROOK, color, dest - 1);
-
-			board->zobrist ^= board->zobrist_castle[board->castle_status];
-			board->castle_status ^= (1 << color);
-			board->zobrist ^= board->zobrist_castle[board->castle_status];
 		}
 	}
 
@@ -444,9 +428,9 @@ void board_print(Bitboard *board)
 
 	free(this_line);
 
-	printf("Enpassant index: %x\tHalfmove count: %x\tCastle status: %x\n",
+	printf("Enpassant index: %x\tHalfmove count: %x\tCastle rights: %x\n",
 			board->enpassant_index, board->halfmove_count,
-			board->castle_status);
+			board->castle_rights);
 	printf("Zobrist: %.16"PRIx64"\n", board->zobrist);
 	printf("To move: %i\n", board->to_move);
 }
