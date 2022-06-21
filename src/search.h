@@ -5,7 +5,7 @@
 
 typedef struct {
 	uint8_t maxDepth;
-	char *stopMove;
+	const char *stopMove;
 } SearchDebug;
 
 Move search_find_move(Bitboard *board, const SearchDebug *debug);
