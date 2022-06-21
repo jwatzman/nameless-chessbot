@@ -146,6 +146,19 @@ Move search_find_move(Bitboard *board, const SearchDebug *debug)
 			}
 
 			fprintf(stderr, "\n");
+
+			if (debug && debug->stopMove)
+			{
+				char buf[6];
+				move_srcdest_form(best_move, buf);
+
+				int eval = evaluate_board(board);
+				if (val > eval + 50 && !strcmp(buf, debug->stopMove))
+				{
+					fprintf(stderr, "Found stop-move.\n");
+					break;
+				}
+			}
 		}
 		else
 		{

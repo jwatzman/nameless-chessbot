@@ -44,8 +44,10 @@ int main(void)
 	{
 		num_tests++;
 
+		SearchDebug debug = {0};
+		debug.stopMove = tcase->move;
 		board_init_with_fen(&board, tcase->fen);
-		Move m = search_find_move(&board, NULL);
+		Move m = search_find_move(&board, &debug);
 
 		char buf[6];
 		move_srcdest_form(m, buf);
