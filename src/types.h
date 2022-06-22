@@ -38,46 +38,55 @@ typedef unsigned char Piecetype;
 // which leaves the six MSB unused
 typedef uint32_t Move;
 
-struct Undo;
-typedef struct Undo
+/**
+ * State represents the portion of the board state which is either impossible or
+ * expensive to recompute when doing/undoing a move. (e.g., it is impossible to
+ * recompute the castle rights or halfmove count when undoing a move.)
+ *
+ * A State is passed into several bitboard functions. That state must remain
+ * valid until the move associated with it (if any) is undone, or the board is
+ * reinitalized.
+ *
+ * There are two different ways to allocate a State:
+ * - On the stack. Used for search functions which will undo all their moves;
+ *   the State on the stack will trivially remain in scope until the move is
+ *   undone.
+ * - With the statelist functions. Used for moves which are "permanent".
+ */
+struct State;
+typedef struct State
 {
-	struct Undo *prev;
-	uint64_t zobrist;
-	Move move;
-	uint8_t enpassant_index;
-	uint8_t castle_rights;
-	uint8_t halfmove_count;
-}
-Undo;
-
-typedef struct
-{
-	uint64_t boards[2][6];
-
-	uint64_t composite_boards[2];
-	uint64_t full_composite;
-
-	// Use CASTLE_R to access, e.g., CASTLE_R(CASTLE_R_KS, BLACK)
-	uint8_t castle_rights;
+	struct State *prev;
+	uint64_t zobrist_copy;
 
 	// destination square of a pawn moving up two squares
 	uint8_t enpassant_index;
 
+	// Use CASTLE_R to access, e.g., CASTLE_R(CASTLE_R_KS, BLACK)
+	uint8_t castle_rights;
 	uint8_t halfmove_count;
-	Color to_move;
 
 	// cache for board_in_check, do not access directly
 	int8_t in_check[2];
+}
+State;
+
+typedef struct
+{
+	uint64_t boards[2][6];
+	uint64_t composite_boards[2];
+	uint64_t full_composite;
+
+	State *state;
+
+	Color to_move;
+	uint16_t generation;
 
 	uint64_t zobrist;
 	uint64_t zobrist_pos[2][6][64];
 	uint64_t zobrist_castle[256];
 	uint64_t zobrist_enpassant[8];
 	uint64_t zobrist_black;
-
-	Undo *undo;
-
-	uint16_t generation;
 }
 Bitboard;
 

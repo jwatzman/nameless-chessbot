@@ -23,13 +23,13 @@ uint64_t perft(Bitboard *board, int depth)
 	while (moveiter_has_next(&iter))
 	{
 		Move m = moveiter_next(&iter);
-		Undo u;
-		board_do_move(board, m, &u);
+		State s;
+		board_do_move(board, m, &s);
 
 		if (!board_in_check(board, 1-board->to_move))
 			nodes += perft(board, depth - 1);
 
-		board_undo_move(board);
+		board_undo_move(board, m);
 	}
 
 	return nodes;

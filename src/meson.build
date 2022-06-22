@@ -16,11 +16,6 @@ test(
 	timeout: 120,
 )
 
-executable(
-	'stress',
-	core + 'stress.c',
-)
-
 test(
 	'search',
 	executable(

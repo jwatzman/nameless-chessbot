@@ -238,7 +238,7 @@ static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 		return;
 
 	// white queenside
-	if ((color == WHITE) && (board->castle_rights & CASTLE_R(CASTLE_R_QS, WHITE)))
+	if ((color == WHITE) && (board->state->castle_rights & CASTLE_R(CASTLE_R_QS, WHITE)))
 	{
 		uint64_t clear = (1ULL << 1) | (1ULL << 2) | (1ULL << 3);
 		if (!(board->full_composite & clear))
@@ -258,7 +258,7 @@ static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 	}
 
 	// white kingside
-	if ((color == WHITE) && (board->castle_rights & CASTLE_R(CASTLE_R_KS, WHITE)))
+	if ((color == WHITE) && (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, WHITE)))
 	{
 		uint64_t clear = (1ULL << 5) | (1ULL << 6);
 		if (!(board->full_composite & clear))
@@ -278,7 +278,7 @@ static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 	}
 
 	// black queenside
-	if ((color == BLACK) && (board->castle_rights & CASTLE_R(CASTLE_R_QS, BLACK)))
+	if ((color == BLACK) && (board->state->castle_rights & CASTLE_R(CASTLE_R_QS, BLACK)))
 	{
 		uint64_t clear = (1ULL << 57) | (1ULL << 58) | (1ULL << 59);
 		if (!(board->full_composite & clear))
@@ -298,7 +298,7 @@ static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 	}
 
 	// black kingside
-	if ((color == BLACK) && (board->castle_rights & CASTLE_R(CASTLE_R_KS, BLACK)))
+	if ((color == BLACK) && (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, BLACK)))
 	{
 		uint64_t clear = (1ULL << 61) | (1ULL << 62);
 		if (!(board->full_composite & clear))
@@ -320,7 +320,7 @@ static void move_generate_movelist_castle(Bitboard *board, Movelist *movelist)
 
 static void move_generate_movelist_enpassant(Bitboard *board, Movelist *movelist)
 {
-	uint8_t ep_index = board->enpassant_index;
+	uint8_t ep_index = board->state->enpassant_index;
 	Color color = board->to_move;
 	if (ep_index)
 	{

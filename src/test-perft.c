@@ -65,7 +65,8 @@ int main(void)
 	{
 		num_tests++;
 
-		board_init_with_fen(&board, tcase->fen);
+		State s;
+		board_init_with_fen(&board, &s, tcase->fen);
 		uint64_t zobrist = board.zobrist;
 		uint64_t nodes = perft(&board, tcase->depth);
 

@@ -41,7 +41,7 @@ int main(void)
 	Color computer_player = -1; // not WHITE or BLACK if we don't play either (e.g. -1)
 	int game_on = 0;
 	Bitboard *board = malloc(sizeof(Bitboard));
-	Undo *u = NULL;
+	State init_s; // XXX statelist
 	char* input = malloc(sizeof(char) * max_input_length);
 	Move last_move = 0;
 	int got_move = 0;
@@ -56,8 +56,7 @@ int main(void)
 	{
 		if (game_on && got_move)
 		{
-			u = malloc(sizeof(Undo));
-			board_do_move(board, last_move, u);
+			board_do_move(board, last_move, malloc(sizeof(State))); // XXX statelist
 			got_move = 0;
 		}
 
@@ -66,8 +65,7 @@ int main(void)
 			last_move = search_find_move(board, NULL);
 			move_srcdest_form(last_move, input);
 			printf("move %s\n", input);
-			u = malloc(sizeof(Undo));
-			board_do_move(board, last_move, u);
+			board_do_move(board, last_move, malloc(sizeof(State))); // XXX statelist
 		}
 
 		if (fgets(input, max_input_length, stdin) == NULL)
@@ -79,8 +77,7 @@ int main(void)
 			printf("feature colors=0 setboard=1 time=0 sigint=0 sigterm=0 variants=\"normal\" done=1\n");
 		else if (!strcmp("new\n", input))
 		{
-			board_free_undos(u);
-			board_init(board);
+			board_init(board, &init_s);
 			computer_player = BLACK;
 			game_on = 1;
 		}
@@ -91,7 +88,7 @@ int main(void)
 		else if (!strcmp("go\n", input))
 			computer_player = board->to_move;
 		else if (!strncmp("setboard ", input, 9))
-			board_init_with_fen(board, input + 9);
+			board_init_with_fen(board, &init_s, input + 9);
 		else if (!strncmp("result", input, 6))
 		{
 			computer_player = -1;
@@ -123,8 +120,8 @@ int main(void)
 
 				if (perft_depth > 0)
 				{
-					Undo u;
-					board_do_move(board, m, &u);
+					State s;
+					board_do_move(board, m, &s);
 					if (board_in_check(board, 1-board->to_move))
 						printf("(illegal)\n");
 					else
@@ -133,7 +130,7 @@ int main(void)
 						printf("%"PRIu64"\n", p);
 						perft_tot += p;
 					}
-					board_undo_move(board);
+					board_undo_move(board, m);
 				}
 			}
 

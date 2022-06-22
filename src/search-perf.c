@@ -20,9 +20,11 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
+	State init_s; // XXX statelist
 	board = malloc(sizeof(Bitboard));
 	board_init_with_fen(
 		board,
+		&init_s,
 		"r2q3k/pn2bprp/4pNp1/2p1PbQ1/3p1P2/5NR1/PPP3PP/2B2RK1 b - - 0 1"
 	);
 
@@ -30,7 +32,6 @@ int main(int argc, char** argv)
 	SearchDebug debug = {0};
 	debug.maxDepth = atoi(argv[1]);
 
-	Undo *u = NULL;
 	int max_pass = atoi(argv[2]);
 	for (int pass = 0; pass < max_pass; pass++)
 	{
@@ -38,8 +39,7 @@ int main(int argc, char** argv)
 		Move best;
 
 		best = search_find_move(board, &debug);
-		u = malloc(sizeof(Undo));
-		board_do_move(board, best, u);
+		board_do_move(board, best, malloc(sizeof(State))); // XXX statelist
 
 		// Invalidate the transposition table, so that we are perft-testing
 		// a more complete search every time. Not doing this is fine for
@@ -52,6 +52,5 @@ int main(int argc, char** argv)
 	}
 
 	free(board);
-	board_free_undos(u);
 	return 0;
 }

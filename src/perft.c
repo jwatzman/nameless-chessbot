@@ -35,10 +35,11 @@ int main(int argc, char** argv)
 	srandom(time(NULL));
 	Bitboard *board = malloc(sizeof(Bitboard));
 
+	State s;
 	if (fen)
-		board_init_with_fen(board, fen);
+		board_init_with_fen(board, &s, fen);
 	else
-		board_init(board);
+		board_init(board, &s);
 
 	printf("initial zobrist %.16"PRIx64"\n", board->zobrist);
 

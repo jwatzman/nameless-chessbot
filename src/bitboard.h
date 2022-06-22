@@ -6,17 +6,14 @@
 #include "types.h"
 
 // writes initial state to a board
-void board_init(Bitboard *board);
+void board_init(Bitboard *board, State *state);
 
 // writes board state from the fen to the board. Assumes a valid fen
-void board_init_with_fen(Bitboard *board, const char *fen);
+void board_init_with_fen(Bitboard *board, State *state, const char *fen);
 
 // make and reverse moves on a board
-void board_do_move(Bitboard *board, Move move, Undo *undo);
-void board_undo_move(Bitboard *board);
-
-// last move to be applied to this board
-Move board_last_move(Bitboard *board);
+void board_do_move(Bitboard *board, Move move, State *state);
+void board_undo_move(Bitboard *board, Move move);
 
 // returns 1 if color's king is in check, 0 otherwise
 int board_in_check(Bitboard *board, Color color);
@@ -48,16 +45,6 @@ static inline Piecetype board_piecetype_at_index(Bitboard *board,
 	}
 
 	return -1; // should not get here...
-}
-
-static inline void board_free_undos(Undo *u)
-{
-	while (u)
-	{
-		Undo *prev = u->prev;
-		free(u);
-		u = prev;
-	}
 }
 
 #endif

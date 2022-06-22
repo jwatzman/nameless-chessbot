@@ -196,7 +196,7 @@ static int search_alpha_beta(Bitboard *board,
 	*pv = MOVE_NULL;
 
 	// 50-move rule
-	if (board->halfmove_count == 100)
+	if (board->state->halfmove_count == 100)
 		return 0;
 
 	/* only check for repetitions down at least 1 ply, since it results in a
@@ -205,19 +205,13 @@ static int search_alpha_beta(Bitboard *board,
 	if (ply > 1)
 	{
 		// 3 repetition rule
-		int back = board->halfmove_count - 2;
-		if (back >= 0)
+		// XXX is this right?
+		State *s = board->state;
+		for (int back = board->state->halfmove_count - 2; back >= 0; back -= 2)
 		{
-			Undo *u = board->undo->prev;
-			if (u->zobrist == board->zobrist)
+			s = s->prev->prev;
+			if (s->zobrist_copy == board->zobrist)
 				return 0;
-			back -= 2;
-			for (; back >= 0; back -= 2)
-			{
-				u = u->prev->prev;
-				if (u->zobrist == board->zobrist)
-					return 0;
-			}
 		}
 
 		// check transposition table for a useful value
@@ -287,8 +281,8 @@ static int search_alpha_beta(Bitboard *board,
 		if (quiescent && !in_check && !move_is_capture(move))
 			break;
 
-		Undo u;
-		board_do_move(board, move, &u);
+		State s;
+		board_do_move(board, move, &s);
 
 		// make the final legality check
 		if (!board_in_check(board, 1-board->to_move))
@@ -343,7 +337,7 @@ static int search_alpha_beta(Bitboard *board,
 					ply + 1, pv + 1);
 			}
 
-			board_undo_move(board);
+			board_undo_move(board, move);
 
 			if (recursive_value >= beta)
 			{
@@ -369,7 +363,7 @@ static int search_alpha_beta(Bitboard *board,
 			legal_moves++;
 		}
 		else
-			board_undo_move(board);
+			board_undo_move(board, move);
 	}
 
 	if (timeup)
@@ -522,12 +516,12 @@ static void search_transposition_print_pv(Bitboard *board, Move move, int8_t dep
 	move_srcdest_form(move, buf);
 	fprintf(stderr, "%s ", buf);
 
-	Undo u;
-	board_do_move(board, move, &u);
+	State s;
+	board_do_move(board, move, &s);
 	search_transposition_print_pv(
 		board,
 		search_transposition_get_best_move(board->zobrist),
 		depth - 1
 	);
-	board_undo_move(board);
+	board_undo_move(board, move);
 }

@@ -25,15 +25,16 @@ static void board_doundo_move_common(Bitboard *board, Move move);
 static void board_toggle_piece(Bitboard *board, Piecetype piece,
 		Color color, uint8_t loc);
 
-void board_init(Bitboard *board)
+void board_init(Bitboard *board, State *state)
 {
-	board_init_with_fen(board,
+	board_init_with_fen(board, state,
 			"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
-void board_init_with_fen(Bitboard *board, const char *fen)
+void board_init_with_fen(Bitboard *board, State *state, const char *fen)
 {
 	memset(board->boards, 0, 2*6*sizeof(uint64_t)); // clear out boards
+	board->state = state;
 
 	int row = 7;
 	while (row >= 0)
@@ -106,17 +107,17 @@ void board_init_with_fen(Bitboard *board, const char *fen)
 	board->to_move = (*fen == 'w' ? WHITE : BLACK);
 	fen += 2; // skip the w or b and then the space
 
-	board->castle_rights = 0;
+	board->state->castle_rights = 0;
 	if (*fen != '-')
 	{
 		while (*fen != ' ')
 		{
 			switch (*fen)
 			{
-				case 'q': board->castle_rights |= CASTLE_R(CASTLE_R_QS, BLACK); break;
-				case 'Q': board->castle_rights |= CASTLE_R(CASTLE_R_QS, WHITE); break;
-				case 'k': board->castle_rights |= CASTLE_R(CASTLE_R_KS, BLACK); break;
-				case 'K': board->castle_rights |= CASTLE_R(CASTLE_R_KS, WHITE); break;
+				case 'q': board->state->castle_rights |= CASTLE_R(CASTLE_R_QS, BLACK); break;
+				case 'Q': board->state->castle_rights |= CASTLE_R(CASTLE_R_QS, WHITE); break;
+				case 'k': board->state->castle_rights |= CASTLE_R(CASTLE_R_KS, BLACK); break;
+				case 'K': board->state->castle_rights |= CASTLE_R(CASTLE_R_KS, WHITE); break;
 				default: break; // bad fen
 			}
 
@@ -142,11 +143,11 @@ void board_init_with_fen(Bitboard *board, const char *fen)
 		else if (row == 5)
 			row = 4;
 
-		board->enpassant_index = board_index_of(row, col);
+		board->state->enpassant_index = board_index_of(row, col);
 	}
 	else
 	{
-		board->enpassant_index = 0;
+		board->state->enpassant_index = 0;
 		fen++; // skip the dash
 	}
 
@@ -155,12 +156,12 @@ void board_init_with_fen(Bitboard *board, const char *fen)
 	   but the halfmove count says how far back we need to check the
 	   history. So zero it out, which will hopefully not conencide
 	   with any used zobrist */
-	board->halfmove_count = strtol(fen, NULL, 10);
+	board->state->halfmove_count = strtol(fen, NULL, 10);
 
 	// set up the mess of zobrist random numbers and the rest of the state
 	board_init_zobrist(board);
-	board->undo = NULL;
-	board->in_check[0] = board->in_check[1] = IN_CHECK_UNKNOWN;
+	board->state->prev = NULL;
+	board->state->in_check[0] = board->state->in_check[1] = IN_CHECK_UNKNOWN;
 	board->generation = 0;
 }
 
@@ -173,7 +174,7 @@ static inline uint64_t board_rand64()
 static void board_init_zobrist(Bitboard *board)
 {
 	// initially start with a random zobrist
-	board->zobrist = board_rand64();
+	board->zobrist = board->state->zobrist_copy = board_rand64();
 
 	// fill in each color/piece/position combination with a random mask
 	for (int i = 0; i < 2; i++)
@@ -193,63 +194,60 @@ static void board_init_zobrist(Bitboard *board)
 	board->zobrist_black = board_rand64();
 }
 
-void board_do_move(Bitboard *board, Move move, Undo *undo)
+void board_do_move(Bitboard *board, Move move, State *state)
 {
-	undo->prev = board->undo;
-	undo->zobrist = board->zobrist;
-	undo->move = move;
-	undo->enpassant_index = board->enpassant_index;
-	undo->castle_rights = board->castle_rights;
-	undo->halfmove_count = board->halfmove_count;
-	board->undo = undo;
+	memcpy(state, board->state, sizeof(State));
+	state->in_check[0] = state->in_check[1] = IN_CHECK_UNKNOWN;
+	state->prev = board->state;
+	board->state = state;
 
 	if (move != MOVE_NULL)
 	{
 		// halfmove_count is reset on pawn moves or captures
 		if (move_piecetype(move) == PAWN || move_is_capture(move))
-			board->halfmove_count = 0;
+			board->state->halfmove_count = 0;
 		else
-			board->halfmove_count++;
+			board->state->halfmove_count++;
 
 		/* moving to or from a rook square means you can no longer castle on
 		   that side */
 		uint8_t src = move_source_index(move);
 		uint8_t dest = move_destination_index(move);
 
-		board->zobrist ^= board->zobrist_castle[board->castle_rights];
+		board->zobrist ^= board->zobrist_castle[board->state->castle_rights];
 
 		if (src == 0 || dest == 0)
-			board->castle_rights &= ~(CASTLE_R(CASTLE_R_QS, WHITE));
+			board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_QS, WHITE));
 		if (src == 7 || dest == 7)
-			board->castle_rights &= ~(CASTLE_R(CASTLE_R_KS, WHITE));
+			board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_KS, WHITE));
 		if (src == 56 || dest == 56)
-			board->castle_rights &= ~(CASTLE_R(CASTLE_R_QS, BLACK));
+			board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_QS, BLACK));
 		if (src == 63 || dest == 63)
-			board->castle_rights &= ~(CASTLE_R(CASTLE_R_KS, BLACK));
+			board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_KS, BLACK));
 
 		/* moving your king at all means you can no longer castle on either
 		   side. Castling also means you can no longer castle (again) on either
 		   side */
 		if (move_is_castle(move) || move_piecetype(move) == KING)
-			board->castle_rights &= ~(CASTLE_R(CASTLE_R_BOTH, move_color(move)));
+			board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_BOTH, move_color(move)));
 
-		board->zobrist ^= board->zobrist_castle[board->castle_rights];
+		board->zobrist ^= board->zobrist_castle[board->state->castle_rights];
 
 		/* if src and dest are 16 or -16 units apart (two rows) on a pawn move,
 		   update the enpassant index with the destination square. If this
 		   didn't happen, clear the enpassant index */
-		if (board->enpassant_index) {
+		if (board->state->enpassant_index) {
 			board->zobrist ^=
-				board->zobrist_enpassant[board_col_of(board->enpassant_index)];
+				board->zobrist_enpassant[board_col_of(board->state->enpassant_index)];
 		}
 		int delta = src - dest;
 		if (move_piecetype(move) == PAWN && (delta == 16 || delta == -16))
-			board->enpassant_index = dest;
+			board->state->enpassant_index = dest;
 		else
-			board->enpassant_index = 0;
-		if (board->enpassant_index) {
+			board->state->enpassant_index = 0;
+		if (board->state->enpassant_index) {
 			board->zobrist ^=
-				board->zobrist_enpassant[board_col_of(board->enpassant_index)];
+				board->zobrist_enpassant[board_col_of(board->state->enpassant_index)];
 		}
 
 		// common bits of doing and undoing moves (bulk of the logic in here)
@@ -260,28 +258,18 @@ void board_do_move(Bitboard *board, Move move, Undo *undo)
 		board->to_move = (1 - board->to_move);
 		board->zobrist ^= board->zobrist_black;
 	}
+
+	board->state->zobrist_copy = board->zobrist;
 }
 
-void board_undo_move(Bitboard *board)
+void board_undo_move(Bitboard *board, Move move)
 {
-	Move move = board->undo->move;
-
+	board->state = board->state->prev;
 	if (move != MOVE_NULL)
-	{
-		// restore from undo ring buffer
-		board->enpassant_index = board->undo->enpassant_index;
-		board->castle_rights = board->undo->castle_rights;
-		board->halfmove_count = board->undo->halfmove_count;
-
-		// common bits of doing and undoing moves (bulk of the logic in here)
 		board_doundo_move_common(board, move);
-	}
 	else
 		board->to_move = (1 - board->to_move);
-
-	// restore old zobrist
-	board->zobrist = board->undo->zobrist;
-	board->undo = board->undo->prev;
+	board->zobrist = board->state->zobrist_copy;
 }
 
 static void board_doundo_move_common(Bitboard *board, Move move)
@@ -333,8 +321,6 @@ static void board_doundo_move_common(Bitboard *board, Move move)
 
 	board->to_move = (1 - board->to_move);
 	board->zobrist ^= board->zobrist_black;
-
-	board->in_check[0] = board->in_check[1] = IN_CHECK_UNKNOWN;
 }
 
 static void board_toggle_piece(Bitboard *board, Piecetype piece,
@@ -350,20 +336,13 @@ static void board_toggle_piece(Bitboard *board, Piecetype piece,
 
 int board_in_check(Bitboard *board, Color color)
 {
-	// TODO: is this worth it? try caching in unused undo_data bits
-	// said color is in check iff its king is being attacked
-	if (board->in_check[color] == IN_CHECK_UNKNOWN)
+	if (board->state->in_check[color] == IN_CHECK_UNKNOWN)
 	{
-		board->in_check[color] = move_square_is_attacked(board, 1-color,
+		board->state->in_check[color] = move_square_is_attacked(board, 1-color,
 			bitscan(board->boards[color][KING]));
 	}
 
-	return board->in_check[color];
-}
-
-Move board_last_move(Bitboard *board)
-{
-	return board->undo->move;
+	return board->state->in_check[color];
 }
 
 void board_print(Bitboard *board)
@@ -429,8 +408,8 @@ void board_print(Bitboard *board)
 	free(this_line);
 
 	printf("Enpassant index: %x\tHalfmove count: %x\tCastle rights: %x\n",
-			board->enpassant_index, board->halfmove_count,
-			board->castle_rights);
+			board->state->enpassant_index, board->state->halfmove_count,
+			board->state->castle_rights);
 	printf("Zobrist: %.16"PRIx64"\n", board->zobrist);
 	printf("To move: %i\n", board->to_move);
 }
