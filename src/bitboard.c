@@ -214,24 +214,29 @@ void board_do_move(Bitboard *board, Move move, State *state)
 		uint8_t src = move_source_index(move);
 		uint8_t dest = move_destination_index(move);
 
-		board->zobrist ^= board->zobrist_castle[board->state->castle_rights];
+		// Once castling rights are gone, you can't get them back, so no need to
+		// compute.
+		if (board->state->castle_rights)
+		{
+			board->zobrist ^= board->zobrist_castle[board->state->castle_rights];
 
-		if (src == 0 || dest == 0)
-			board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_QS, WHITE));
-		if (src == 7 || dest == 7)
-			board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_KS, WHITE));
-		if (src == 56 || dest == 56)
-			board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_QS, BLACK));
-		if (src == 63 || dest == 63)
-			board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_KS, BLACK));
+			if (src == 0 || dest == 0)
+				board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_QS, WHITE));
+			if (src == 7 || dest == 7)
+				board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_KS, WHITE));
+			if (src == 56 || dest == 56)
+				board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_QS, BLACK));
+			if (src == 63 || dest == 63)
+				board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_KS, BLACK));
 
-		/* moving your king at all means you can no longer castle on either
-		   side. Castling also means you can no longer castle (again) on either
-		   side */
-		if (move_is_castle(move) || move_piecetype(move) == KING)
-			board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_BOTH, move_color(move)));
+			/* moving your king at all means you can no longer castle on either
+				side. Castling also means you can no longer castle (again) on either
+				side */
+			if (move_is_castle(move) || move_piecetype(move) == KING)
+				board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_BOTH, move_color(move)));
 
-		board->zobrist ^= board->zobrist_castle[board->state->castle_rights];
+			board->zobrist ^= board->zobrist_castle[board->state->castle_rights];
+		}
 
 		/* if src and dest are 16 or -16 units apart (two rows) on a pawn move,
 		   update the enpassant index with the destination square. If this
