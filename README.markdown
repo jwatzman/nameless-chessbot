@@ -6,3 +6,8 @@ This progam should be considered neither a good example of how to write a
 decent chess bot, nor a good example of C style. It is neither. I am
 (slowly) cleaning up the code and fixing bugs, but there are still plenty
 of issues on both fronts.
+
+---
+
+Most of the code is licensed under the 3-clause BSD as in the LICENSE file.
+Other files may be under other licenses as indicated at the top of the file.
