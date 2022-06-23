@@ -174,7 +174,7 @@ static inline uint64_t board_rand64()
 static void board_init_zobrist(Bitboard *board)
 {
 	// initially start with a random zobrist
-	board->zobrist = board->state->zobrist_copy = board_rand64();
+	board->state->zobrist = board_rand64();
 
 	// fill in each color/piece/position combination with a random mask
 	for (int i = 0; i < 2; i++)
@@ -218,7 +218,7 @@ void board_do_move(Bitboard *board, Move move, State *state)
 		// compute.
 		if (board->state->castle_rights)
 		{
-			board->zobrist ^= board->zobrist_castle[board->state->castle_rights];
+			board->state->zobrist ^= board->zobrist_castle[board->state->castle_rights];
 
 			if (src == 0 || dest == 0)
 				board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_QS, WHITE));
@@ -235,14 +235,14 @@ void board_do_move(Bitboard *board, Move move, State *state)
 			if (move_is_castle(move) || move_piecetype(move) == KING)
 				board->state->castle_rights &= ~(CASTLE_R(CASTLE_R_BOTH, move_color(move)));
 
-			board->zobrist ^= board->zobrist_castle[board->state->castle_rights];
+			board->state->zobrist ^= board->zobrist_castle[board->state->castle_rights];
 		}
 
 		/* if src and dest are 16 or -16 units apart (two rows) on a pawn move,
 		   update the enpassant index with the destination square. If this
 		   didn't happen, clear the enpassant index */
 		if (board->state->enpassant_index) {
-			board->zobrist ^=
+			board->state->zobrist ^=
 				board->zobrist_enpassant[board_col_of(board->state->enpassant_index)];
 		}
 		int delta = src - dest;
@@ -251,7 +251,7 @@ void board_do_move(Bitboard *board, Move move, State *state)
 		else
 			board->state->enpassant_index = 0;
 		if (board->state->enpassant_index) {
-			board->zobrist ^=
+			board->state->zobrist ^=
 				board->zobrist_enpassant[board_col_of(board->state->enpassant_index)];
 		}
 
@@ -261,20 +261,24 @@ void board_do_move(Bitboard *board, Move move, State *state)
 	else
 	{
 		board->to_move = (1 - board->to_move);
-		board->zobrist ^= board->zobrist_black;
+		board->state->zobrist ^= board->zobrist_black;
 	}
-
-	board->state->zobrist_copy = board->zobrist;
 }
 
 void board_undo_move(Bitboard *board, Move move)
 {
 	board->state = board->state->prev;
+	uint64_t tmp_zobrist = board->state->zobrist;
+
 	if (move != MOVE_NULL)
 		board_doundo_move_common(board, move);
 	else
 		board->to_move = (1 - board->to_move);
-	board->zobrist = board->state->zobrist_copy;
+
+	// By resetting state to prev, we have already restored the zobrist, but
+	// board_doundo_move_common still changes it. So save and restore. (TODO:
+	// should probably fix that for perf!)
+	board->state->zobrist = tmp_zobrist;
 }
 
 static void board_doundo_move_common(Bitboard *board, Move move)
@@ -325,7 +329,7 @@ static void board_doundo_move_common(Bitboard *board, Move move)
 	}
 
 	board->to_move = (1 - board->to_move);
-	board->zobrist ^= board->zobrist_black;
+	board->state->zobrist ^= board->zobrist_black;
 }
 
 static void board_toggle_piece(Bitboard *board, Piecetype piece,
@@ -336,7 +340,7 @@ static void board_toggle_piece(Bitboard *board, Piecetype piece,
 	board->boards[color][piece] ^= 1ULL << loc;
 	board->composite_boards[color] ^= 1ULL << loc;
 	board->full_composite ^= 1ULL << loc;
-	board->zobrist ^= board->zobrist_pos[color][piece][loc];
+	board->state->zobrist ^= board->zobrist_pos[color][piece][loc];
 }
 
 int board_in_check(Bitboard *board, Color color)
@@ -415,6 +419,6 @@ void board_print(Bitboard *board)
 	printf("Enpassant index: %x\tHalfmove count: %x\tCastle rights: %x\n",
 			board->state->enpassant_index, board->state->halfmove_count,
 			board->state->castle_rights);
-	printf("Zobrist: %.16"PRIx64"\n", board->zobrist);
+	printf("Zobrist: %.16"PRIx64"\n", board->state->zobrist);
 	printf("To move: %i\n", board->to_move);
 }

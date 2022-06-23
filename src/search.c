@@ -210,12 +210,12 @@ static int search_alpha_beta(Bitboard *board,
 		for (int back = board->state->halfmove_count - 2; back >= 0; back -= 2)
 		{
 			s = s->prev->prev;
-			if (s->zobrist_copy == board->zobrist)
+			if (s->zobrist == board->state->zobrist)
 				return 0;
 		}
 
 		// check transposition table for a useful value
-		int table_val = search_transposition_get_value(board->zobrist,
+		int table_val = search_transposition_get_value(board->state->zobrist,
 		                                               alpha,
 		                                               beta,
 		                                               depth);
@@ -255,7 +255,7 @@ static int search_alpha_beta(Bitboard *board,
 	// have a reduced search space anyway, the memory lookup isn't worth it
 	Move transposition_move = MOVE_NULL;
 	if (!quiescent) {
-		transposition_move = search_transposition_get_best_move(board->zobrist);
+		transposition_move = search_transposition_get_best_move(board->state->zobrist);
 	}
 
 	// move ordering; order transposition move first
@@ -346,7 +346,7 @@ static int search_alpha_beta(Bitboard *board,
 				   definitely want to put it in the transposition table,
 				   since it will be searched first next time, and will
 				   thus immediately cause a cutoff again */
-				search_transposition_put(board->zobrist,
+				search_transposition_put(board->state->zobrist,
 						recursive_value, move, TRANSPOSITION_BETA,
 						board->generation, depth);
 
@@ -384,7 +384,7 @@ static int search_alpha_beta(Bitboard *board,
 	}
 	else
 	{
-		search_transposition_put(board->zobrist, alpha, *pv, type,
+		search_transposition_put(board->state->zobrist, alpha, *pv, type,
 				board->generation, depth);
 		return alpha;
 	}
@@ -520,7 +520,7 @@ static void search_transposition_print_pv(Bitboard *board, Move move, int8_t dep
 	board_do_move(board, move, &s);
 	search_transposition_print_pv(
 		board,
-		search_transposition_get_best_move(board->zobrist),
+		search_transposition_get_best_move(board->state->zobrist),
 		depth - 1
 	);
 	board_undo_move(board, move);

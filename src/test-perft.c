@@ -67,14 +67,14 @@ int main(void)
 
 		State s;
 		board_init_with_fen(&board, &s, tcase->fen);
-		uint64_t zobrist = board.zobrist;
+		uint64_t zobrist = board.state->zobrist;
 		uint64_t nodes = perft(&board, tcase->depth);
 
 		if (nodes != tcase->nodes)
 		{
 			printf("not ok %d - %s depth %d expected %"PRIu64" got %"PRIu64"\n", num_tests, tcase->fen, tcase->depth, tcase->nodes, nodes);
 			ret = 1;
-		} else if (zobrist != board.zobrist)
+		} else if (zobrist != board.state->zobrist)
 		{
 			printf("not ok %d - %s depth %d zobrist mismatch\n", num_tests, tcase->fen, tcase->depth);
 			ret = 1;

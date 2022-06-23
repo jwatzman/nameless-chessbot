@@ -41,11 +41,11 @@ int main(int argc, char** argv)
 	else
 		board_init(board, &s);
 
-	printf("initial zobrist %.16"PRIx64"\n", board->zobrist);
+	printf("initial zobrist %.16"PRIx64"\n", board->state->zobrist);
 
 	uint64_t nodes = perft(board, max_depth);
 
-	printf("final zobrist %.16"PRIx64"\n%"PRIu64" nodes\n", board->zobrist, nodes);
+	printf("final zobrist %.16"PRIx64"\n%"PRIu64" nodes\n", board->state->zobrist, nodes);
 
 	struct rusage usage;
 	getrusage(RUSAGE_SELF, &usage);

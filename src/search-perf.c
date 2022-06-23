@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 		// Invalidate the transposition table, so that we are perft-testing
 		// a more complete search every time. Not doing this is fine for
 		// corectness, but means the first N-1 ply are probably already cached.
-		board->zobrist = board->state->zobrist_copy = random();
+		board->state->zobrist = random();
 
 		char move_srcdest[6];
 		move_srcdest_form(best, move_srcdest);

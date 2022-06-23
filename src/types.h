@@ -57,7 +57,7 @@ struct State;
 typedef struct State
 {
 	struct State *prev;
-	uint64_t zobrist_copy;
+	uint64_t zobrist;
 
 	// destination square of a pawn moving up two squares
 	uint8_t enpassant_index;
@@ -82,7 +82,6 @@ typedef struct
 	Color to_move;
 	uint16_t generation;
 
-	uint64_t zobrist;
 	uint64_t zobrist_pos[2][6][64];
 	uint64_t zobrist_castle[256];
 	uint64_t zobrist_enpassant[8];
