@@ -1,5 +1,5 @@
 #ifndef _STATELIST_H
-#define _STATE_LIST_H
+#define _STATELIST_H
 
 #include "types.h"
 
