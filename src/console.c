@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+
+#include "types.h"
+#include "statelist.h"
 #include "bitboard.h"
 #include "move.h"
 #include "moveiter.h"
@@ -16,9 +19,9 @@ int main(void)
 	srandom(time(NULL));
 	move_init();
 
-	State init_s; // XXX statelist
+	Statelist *sl = statelist_alloc();
 	Bitboard *test = malloc(sizeof(Bitboard));
-	board_init(test, &init_s);
+	board_init(test, statelist_new_state(sl));
 	
 	while (1)
 	{
@@ -70,17 +73,18 @@ int main(void)
 			next_move = get_computer_move(test);
 		}
 
-		board_do_move(test, next_move, malloc(sizeof(State))); // XXX statelist
+		board_do_move(test, next_move, statelist_new_state(sl));
 	}
 
+	statelist_free(sl);
 	free(test);
 	return 0;
 }
 
 static Move get_human_move(Bitboard *board, Movelist *orig_moves)
 {
-	char* srcdest_form = malloc(6 * sizeof(char));
-	char* input_move = malloc(6 * sizeof(char));
+	char srcdest_form[6];
+	char input_move[6];
 
 	Move result = 0;
 
@@ -130,8 +134,6 @@ static Move get_human_move(Bitboard *board, Movelist *orig_moves)
 		}
 	}
 
-	free(srcdest_form);
-	free(input_move);
 	return result;
 }
 

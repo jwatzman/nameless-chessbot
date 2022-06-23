@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+
+#include "statelist.h"
 #include "bitboard.h"
 #include "move.h"
 #include "moveiter.h"
@@ -20,11 +22,11 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	State init_s; // XXX statelist
+	Statelist *sl = statelist_alloc();
 	board = malloc(sizeof(Bitboard));
 	board_init_with_fen(
 		board,
-		&init_s,
+		statelist_new_state(sl),
 		"r2q3k/pn2bprp/4pNp1/2p1PbQ1/3p1P2/5NR1/PPP3PP/2B2RK1 b - - 0 1"
 	);
 
@@ -39,7 +41,7 @@ int main(int argc, char** argv)
 		Move best;
 
 		best = search_find_move(board, &debug);
-		board_do_move(board, best, malloc(sizeof(State))); // XXX statelist
+		board_do_move(board, best, statelist_new_state(sl));
 
 		// Invalidate the transposition table, so that we are perft-testing
 		// a more complete search every time. Not doing this is fine for
@@ -51,6 +53,7 @@ int main(int argc, char** argv)
 		printf("-- MOVE %s\n", move_srcdest);
 	}
 
+	statelist_free(sl);
 	free(board);
 	return 0;
 }

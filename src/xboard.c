@@ -3,7 +3,9 @@
 #include <string.h>
 #include <signal.h>
 #include <time.h>
+
 #include "types.h"
+#include "statelist.h"
 #include "move.h"
 #include "moveiter.h"
 #include "bitboard.h"
@@ -40,8 +42,8 @@ int main(void)
 {
 	Color computer_player = -1; // not WHITE or BLACK if we don't play either (e.g. -1)
 	int game_on = 0;
+	Statelist *sl = statelist_alloc();
 	Bitboard *board = malloc(sizeof(Bitboard));
-	State init_s; // XXX statelist
 	char* input = malloc(sizeof(char) * max_input_length);
 	Move last_move = 0;
 	int got_move = 0;
@@ -56,7 +58,7 @@ int main(void)
 	{
 		if (game_on && got_move)
 		{
-			board_do_move(board, last_move, malloc(sizeof(State))); // XXX statelist
+			board_do_move(board, last_move, statelist_new_state(sl));
 			got_move = 0;
 		}
 
@@ -65,7 +67,7 @@ int main(void)
 			last_move = search_find_move(board, NULL);
 			move_srcdest_form(last_move, input);
 			printf("move %s\n", input);
-			board_do_move(board, last_move, malloc(sizeof(State))); // XXX statelist
+			board_do_move(board, last_move, statelist_new_state(sl));
 		}
 
 		if (fgets(input, max_input_length, stdin) == NULL)
@@ -77,7 +79,8 @@ int main(void)
 			printf("feature colors=0 setboard=1 time=0 sigint=0 sigterm=0 variants=\"normal\" done=1\n");
 		else if (!strcmp("new\n", input))
 		{
-			board_init(board, &init_s);
+			statelist_clear(sl);
+			board_init(board, statelist_new_state(sl));
 			computer_player = BLACK;
 			game_on = 1;
 		}
@@ -88,7 +91,10 @@ int main(void)
 		else if (!strcmp("go\n", input))
 			computer_player = board->to_move;
 		else if (!strncmp("setboard ", input, 9))
-			board_init_with_fen(board, &init_s, input + 9);
+		{
+			statelist_clear(sl);
+			board_init_with_fen(board, statelist_new_state(sl), input + 9);
+		}
 		else if (!strncmp("result", input, 6))
 		{
 			computer_player = -1;
@@ -154,6 +160,7 @@ int main(void)
 			printf("Error (unknown command): %s", input);
 	}
 
+	statelist_free(sl);
 	free(board);
 	free(input);
 	return 0;
