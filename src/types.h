@@ -56,15 +56,19 @@ typedef uint32_t Move;
 struct State;
 typedef struct State
 {
-	struct State *prev;
-	uint64_t zobrist;
-
 	// destination square of a pawn moving up two squares
 	uint8_t enpassant_index;
 
 	// Use CASTLE_R to access, e.g., CASTLE_R(CASTLE_R_KS, BLACK)
 	uint8_t castle_rights;
 	uint8_t halfmove_count;
+
+	// TODO: search perf might be really sensitive to the exact layout of this struct?
+	uint64_t zobrist;
+
+	// ----- Everything above prev is copied into the new state when a move is made!
+	struct State *prev;
+	// ----- Everything below prev is not!
 
 	// cache for board_in_check, do not access directly
 	int8_t in_check[2];
