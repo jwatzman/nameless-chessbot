@@ -62,8 +62,7 @@ static void search_transposition_put(uint64_t zobrist,
 	int value, Move best_move, TranspositionType type, uint16_t generation,
 	int8_t depth);
 
-// try and opportunistically print the pv out of the transposition table
-static void search_transposition_print_pv(Bitboard *board, Move move, int8_t depth);
+static void search_print_pv(Move *pv, int8_t depth);
 
 static inline uint8_t min(uint8_t a, uint8_t b)
 {
@@ -75,12 +74,7 @@ Move search_find_move(Bitboard *board, const SearchDebug *debug)
 	Move best_move = 0;
 	nodes_searched = 0;
 
-	/* note that due to the way that this is maintained, sibling nodes will
-	   destroy each other's values. Only pv[0] is garunteed to be valid when
-	   we get all the way back up here (the other slots are used for scratch
-	   space, and are actually valid when the recursion layer using them
-	   is the top level layer -- it's only siblings that ruin things :)) */
-	Move pv[max_possible_depth + max_quiescent_depth + 1];
+	Move pv[max_possible_depth + 1];
 
 	struct timespec start_time;
 	clock_gettime(CLOCK_MONOTONIC, &start_time);
@@ -134,7 +128,7 @@ Move search_find_move(Bitboard *board, const SearchDebug *debug)
 				"%i\t%i\t%lu\t%"PRIu64"\t",
 				depth, val, centiseconds_taken, nodes_searched
 			);
-			search_transposition_print_pv(board, best_move, depth);
+			search_print_pv(pv, depth);
 
 			alpha = val - aspiration_window;
 			beta = val + aspiration_window;
@@ -180,6 +174,8 @@ Move search_find_move(Bitboard *board, const SearchDebug *debug)
 static int search_alpha_beta(Bitboard *board,
 	int alpha, int beta, int8_t depth, int8_t ply, Move *pv)
 {
+	Move localpv[max_possible_depth + 1];
+
 	if (timeup)
 		return 0;
 
@@ -190,10 +186,7 @@ static int search_alpha_beta(Bitboard *board,
 	int quiescent = depth <= 0;
 	int in_check = board_in_check(board, board->to_move);
 
-	/* *pv is used as the best move, but we have none yet if this gets
-	   stuck in the transposition table, make sure no one uses some random
-	   data */
-	*pv = MOVE_NULL;
+	Move best_move = MOVE_NULL;
 
 	// 50-move rule
 	if (board->state->halfmove_count == 100)
@@ -234,6 +227,8 @@ static int search_alpha_beta(Bitboard *board,
 	// null move pruning
 	if (quiescent)
 	{
+		pv = NULL;
+
 		// quiescent null-move; this is necessary for correctness
 		int null_move_value = evaluate_board(board);
 
@@ -302,7 +297,7 @@ static int search_alpha_beta(Bitboard *board,
 				search_completed = 1;
 				recursive_value = -search_alpha_beta(board,
 					-alpha - 1, -alpha,
-					depth - 1 + extensions, ply + 1, pv + 1);
+					depth - 1 + extensions, ply + 1, NULL);
 
 				if ((recursive_value > alpha) && (recursive_value < beta))
 				{
@@ -334,7 +329,7 @@ static int search_alpha_beta(Bitboard *board,
 				// normal search
 				recursive_value = -search_alpha_beta(board,
 					-beta, -alpha, depth - 1 + extensions,
-					ply + 1, pv + 1);
+					ply + 1, pv ? localpv : NULL);
 			}
 
 			board_undo_move(board, move);
@@ -357,7 +352,12 @@ static int search_alpha_beta(Bitboard *board,
 			{
 				alpha = recursive_value;
 				type = TRANSPOSITION_EXACT;
-				*pv = move;
+				best_move = move;
+				if (pv)
+				{
+					pv[0] = best_move;
+					memcpy(pv + 1, localpv, depth * sizeof(Move));
+				}
 			}
 
 			legal_moves++;
@@ -384,7 +384,7 @@ static int search_alpha_beta(Bitboard *board,
 	}
 	else
 	{
-		search_transposition_put(board->state->zobrist, alpha, *pv, type,
+		search_transposition_put(board->state->zobrist, alpha, best_move, type,
 				board->generation, depth);
 		return alpha;
 	}
@@ -507,21 +507,13 @@ static void search_transposition_put(uint64_t zobrist,
 	}
 }
 
-static void search_transposition_print_pv(Bitboard *board, Move move, int8_t depth) {
+static void search_print_pv(Move *pv, int8_t depth)
+{
 	char buf[6];
 
-	if (!move || !depth)
-		return;
-
-	move_srcdest_form(move, buf);
-	fprintf(stderr, "%s ", buf);
-
-	State s;
-	board_do_move(board, move, &s);
-	search_transposition_print_pv(
-		board,
-		search_transposition_get_best_move(board->state->zobrist),
-		depth - 1
-	);
-	board_undo_move(board, move);
+	for (int i = 0; i < depth; i++)
+	{
+		move_srcdest_form(pv[i], buf);
+		fprintf(stderr, "%s ", buf);
+	}
 }
