@@ -215,7 +215,14 @@ static int search_alpha_beta(Bitboard *board,
 		                                               depth);
 
 		if (table_val != INFINITY)
+		{
+			if (pv)
+			{
+				pv[0] = search_transposition_get_best_move(board->state->zobrist);
+				pv[1] = MOVE_NULL; // We don't store pv in the table.
+			}
 			return table_val;
+		}
 	}
 
 	// leaf node
@@ -512,7 +519,7 @@ static void search_print_pv(Move *pv, int8_t depth)
 {
 	char buf[6];
 
-	for (int i = 0; i < depth; i++)
+	for (int i = 0; i < depth && pv[i] != MOVE_NULL; i++)
 	{
 		move_srcdest_form(pv[i], buf);
 		fprintf(stderr, "%s ", buf);
