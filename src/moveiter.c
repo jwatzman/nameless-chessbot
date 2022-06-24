@@ -1,5 +1,5 @@
-#define _GNU_SOURCE
 #include <stdlib.h>
+
 #include "moveiter.h"
 
 static Move moveiter_nth(Moveiter *iter, int n);

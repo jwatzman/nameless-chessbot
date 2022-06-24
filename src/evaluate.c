@@ -1,5 +1,5 @@
-#define _GNU_SOURCE
 #include <string.h>
+
 #include "evaluate.h"
 #include "../gen/evaluate.h"
 #include "bitboard.h"

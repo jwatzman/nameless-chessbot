@@ -1,5 +1,5 @@
-#define _GNU_SOURCE
 #include <stdint.h>
+
 #include "bitboard.h"
 #include "bitscan.h"
 #include "movemagic.h"
