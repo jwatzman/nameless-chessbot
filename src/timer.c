@@ -4,7 +4,7 @@
 #include "timer.h"
 
 static int secs = 0;
-static volatile int *timeup;
+static volatile sig_atomic_t *timeup;
 
 static void timer_timeup(int unused);
 static void timer_install_handler();
@@ -43,7 +43,7 @@ static void timer_install_handler()
 	sigaction(SIGALRM, &sigalarm_action, 0);
 }
 
-void timer_begin(volatile int *i)
+void timer_begin(volatile sig_atomic_t *i)
 {
 	if (secs < 1)
 		timer_init_secs(5);

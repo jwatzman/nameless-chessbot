@@ -3,6 +3,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
@@ -41,7 +42,7 @@ static TranspositionNode
 #define max_quiescent_depth 50
 #define aspiration_window 30
 
-static volatile int timeup;
+static volatile sig_atomic_t timeup;
 static uint64_t nodes_searched;
 
 // main search workhorse
