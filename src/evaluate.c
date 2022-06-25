@@ -1,10 +1,13 @@
+#include <stdint.h>
 #include <string.h>
 
-#include "evaluate.h"
 #include "../gen/evaluate.h"
 #include "bitboard.h"
-#include "move.h"
 #include "bitscan.h"
+#include "evaluate.h"
+#include "move.h"
+
+// clang-format off
 
 // position bonuses; remember that
 // since a1 is the first number, it is in the upper left
@@ -77,92 +80,93 @@ static const int king_endgame_pos[] = {
 0,  0,  1,  3,  3,  1,  0,  0
 };
 
-// metatables
-static const int* pos_tables[] = { pawn_pos, bishop_pos, knight_pos, rook_pos, 0, 0 };
+// clang-format on
 
-static const int* endgame_pos_tables[] = { pawn_pos, bishop_pos, knight_pos, rook_pos, 0, king_endgame_pos };
+// metatables
+static const int* pos_tables[] = {pawn_pos, bishop_pos, knight_pos,
+                                  rook_pos, 0,          0};
+
+static const int* endgame_pos_tables[] = {
+    pawn_pos, bishop_pos, knight_pos, rook_pos, 0, king_endgame_pos};
 
 // piece intrinsic values, in order of:
 // pawn, bishop, knight, rook, queen, king
 // (as defined in types.h)
-static const int values[] = { 100, 300, 300, 500, 900, 0 };
-static const int endgame_values[] = { 175, 300, 300, 500, 1000, 0 };
+static const int values[] = {100, 300, 300, 500, 900, 0};
+static const int endgame_values[] = {175, 300, 300, 500, 1000, 0};
 
 #define doubled_pawn_penalty -10
 
 static int popcnt(uint64_t x);
 
-int evaluate_board(Bitboard *board)
-{
-	int result = 0;
-	int endgame = popcnt(board->full_composite ^ board->boards[WHITE][PAWN] ^ board->boards[BLACK][PAWN]) < 8;
-	Color to_move = board->to_move;
+int evaluate_board(Bitboard* board) {
+  int result = 0;
+  int endgame = popcnt(board->full_composite ^ board->boards[WHITE][PAWN] ^
+                       board->boards[BLACK][PAWN]) < 8;
+  Color to_move = board->to_move;
 
-	for (Color color = 0; color < 2; color++)
-	{
-		// add values for the current player, and subtract them for the opponent
-		int color_result = 0;
+  for (Color color = 0; color < 2; color++) {
+    // add values for the current player, and subtract them for the opponent
+    int color_result = 0;
 
-		// XXX bring back has-castled bonus? (10)
+    // XXX bring back has-castled bonus? (10)
 
-		// doubled pawns
-		// 0x0101010101010101 masks a single column
-		for (int col = 0; col < 8; col++)
-			color_result += doubled_pawn_penalty *
-				(popcnt(board->boards[color][PAWN] & (0x0101010101010101 << col)) - 1);
+    // doubled pawns
+    // 0x0101010101010101 masks a single column
+    for (int col = 0; col < 8; col++)
+      color_result +=
+          doubled_pawn_penalty *
+          (popcnt(board->boards[color][PAWN] & (0x0101010101010101 << col)) -
+           1);
 
-		for (Piecetype piece = 0; piece < 6; piece++)
-		{
-			uint64_t pieces = board->boards[color][piece];
-			while (pieces)
-			{
-				uint8_t loc = bitscan(pieces);
-				pieces &= pieces - 1;
+    for (Piecetype piece = 0; piece < 6; piece++) {
+      uint64_t pieces = board->boards[color][piece];
+      while (pieces) {
+        uint8_t loc = bitscan(pieces);
+        pieces &= pieces - 1;
 
-				// pawns have some special stuff done to them
-				if (piece == PAWN)
-				{
-					// passed pawn; do this before the location swap below
-					int passed_pawn = 0;
-					if ((front_spans[color][loc] & board->boards[1-color][PAWN]) == 0)
-						passed_pawn = 1;
+        // pawns have some special stuff done to them
+        if (piece == PAWN) {
+          // passed pawn; do this before the location swap below
+          int passed_pawn = 0;
+          if ((front_spans[color][loc] & board->boards[1 - color][PAWN]) == 0)
+            passed_pawn = 1;
 
-					// since the pawn table is not hoizontally symmetric,
-					// we need to flip it for black
-					if (color == BLACK)
-						loc = 63 - loc;
+          // since the pawn table is not hoizontally symmetric,
+          // we need to flip it for black
+          if (color == BLACK)
+            loc = 63 - loc;
 
-					if (passed_pawn)
-						color_result += passed_pawn_bonus[loc];
-				}
+          if (passed_pawn)
+            color_result += passed_pawn_bonus[loc];
+        }
 
-				// add in piece intrinsic value, and bonus for its location
-				const int *table = endgame ? endgame_pos_tables[piece] : pos_tables[piece];
-				if (table)
-					color_result += table[loc];
-				color_result += (endgame ? endgame_values[piece] : values[piece]);
+        // add in piece intrinsic value, and bonus for its location
+        const int* table =
+            endgame ? endgame_pos_tables[piece] : pos_tables[piece];
+        if (table)
+          color_result += table[loc];
+        color_result += (endgame ? endgame_values[piece] : values[piece]);
 
-				// add in a bonus for every square that this piece can attack
-				// only do this for bishops and rooks; knights are sufficiently taken
-				// care of by positional bonus, and this will emphasize queens too much
-				if (piece == BISHOP || piece == ROOK)
-				{
-					uint64_t attacks = move_generate_attacks(board, piece, color, loc);
-					color_result += popcnt(attacks);
-				}
-			}
-		}
+        // add in a bonus for every square that this piece can attack
+        // only do this for bishops and rooks; knights are sufficiently taken
+        // care of by positional bonus, and this will emphasize queens too much
+        if (piece == BISHOP || piece == ROOK) {
+          uint64_t attacks = move_generate_attacks(board, piece, color, loc);
+          color_result += popcnt(attacks);
+        }
+      }
+    }
 
-		if (color == to_move)
-			result += color_result;
-		else
-			result -= color_result;
-	}
+    if (color == to_move)
+      result += color_result;
+    else
+      result -= color_result;
+  }
 
-	return result;
+  return result;
 }
 
-static int popcnt(uint64_t x)
-{
-	return __builtin_popcountll(x);
+static int popcnt(uint64_t x) {
+  return __builtin_popcountll(x);
 }

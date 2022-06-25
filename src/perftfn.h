@@ -5,6 +5,6 @@
 
 #include "types.h"
 
-uint64_t perft(Bitboard *board, int depth);
+uint64_t perft(Bitboard* board, int depth);
 
 #endif

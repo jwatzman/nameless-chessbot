@@ -4,10 +4,10 @@
 #include "types.h"
 
 typedef struct {
-	uint8_t maxDepth;
-	const char *stopMove;
+  uint8_t maxDepth;
+  const char* stopMove;
 } SearchDebug;
 
-Move search_find_move(Bitboard *board, const SearchDebug *debug);
+Move search_find_move(Bitboard* board, const SearchDebug* debug);
 
 #endif

@@ -10,50 +10,43 @@
  * easy and it works. :)
  */
 
-struct StatelistNode
-{
-	struct StatelistNode *next;
-	State *s;
+struct StatelistNode {
+  struct StatelistNode* next;
+  State* s;
 };
 
-struct Statelist
-{
-	struct StatelistNode *head;
+struct Statelist {
+  struct StatelistNode* head;
 };
 
-Statelist* statelist_alloc(void)
-{
-	Statelist *s = malloc(sizeof(Statelist));
-	s->head = NULL;
-	return s;
+Statelist* statelist_alloc(void) {
+  Statelist* s = malloc(sizeof(Statelist));
+  s->head = NULL;
+  return s;
 }
 
-State* statelist_new_state(Statelist *s)
-{
-	struct StatelistNode *n = malloc(sizeof(struct StatelistNode));
-	n->s = malloc(sizeof(State));
-	n->next = s->head;
-	s->head = n;
+State* statelist_new_state(Statelist* s) {
+  struct StatelistNode* n = malloc(sizeof(struct StatelistNode));
+  n->s = malloc(sizeof(State));
+  n->next = s->head;
+  s->head = n;
 
-	return n->s;
+  return n->s;
 }
 
-void statelist_clear(Statelist *s)
-{
-	struct StatelistNode *n = s->head;
-	while (n)
-	{
-		struct StatelistNode *next = n->next;
-		free(n->s);
-		free(n);
-		n = next;
-	}
+void statelist_clear(Statelist* s) {
+  struct StatelistNode* n = s->head;
+  while (n) {
+    struct StatelistNode* next = n->next;
+    free(n->s);
+    free(n);
+    n = next;
+  }
 
-	s->head = NULL;
+  s->head = NULL;
 }
 
-void statelist_free(Statelist *s)
-{
-	statelist_clear(s);
-	free(s);
+void statelist_free(Statelist* s) {
+  statelist_clear(s);
+  free(s);
 }
