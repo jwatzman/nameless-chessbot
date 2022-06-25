@@ -9,6 +9,9 @@ static volatile sig_atomic_t *timeup;
 static void timer_timeup(int unused);
 static void timer_install_handler();
 
+#define MOVE_WIGGLE_ROOM 2
+#define SECS_PER_MIN 60
+
 static void timer_timeup(int unused)
 {
 	(void)unused;
@@ -20,10 +23,15 @@ void timer_init_xboard(char *level)
 	int moves, base, inc;
 	int ret = sscanf(level, "level %d %d %d", &moves, &base, &inc);
 
-	if (ret == 3 && moves == 0)
-		secs = inc;
-	else
+	if (ret == 3)
+	{
+		if (moves == 0 || base == 0)
+			secs = inc;
+		else
+			secs = inc + (base * SECS_PER_MIN)/(moves - MOVE_WIGGLE_ROOM);
+	} else {
 		secs = 5;
+	}
 
 	timer_install_handler();
 }
