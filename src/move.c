@@ -64,8 +64,9 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
               (move | (BISHOP << move_promoted_piecetype_offset));
           movelist->moves_promo[movelist->num_promo++] =
               (move | (KNIGHT << move_promoted_piecetype_offset));
-        } else
+        } else {
           movelist->moves_capture[movelist->num_capture++] = move;
+        }
       }
 
       while (non_captures) {

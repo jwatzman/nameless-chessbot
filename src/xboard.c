@@ -70,30 +70,30 @@ int main(void) {
 
     fprintf(stderr, "%s", input);
 
-    if (!strcmp("xboard\n", input))
+    if (!strcmp("xboard\n", input)) {
       printf(
           "feature colors=0 setboard=1 time=0 sigint=0 sigterm=0 "
           "variants=\"normal\" myname=\"nameless\" done=1\n");
-    else if (!strcmp("new\n", input)) {
+    } else if (!strcmp("new\n", input)) {
       statelist_clear(sl);
       board_init(board, statelist_new_state(sl));
       computer_player = BLACK;
       game_on = 1;
-    } else if (!strcmp("quit\n", input))
+    } else if (!strcmp("quit\n", input)) {
       break;
-    else if (!strcmp("force\n", input))
+    } else if (!strcmp("force\n", input)) {
       computer_player = -1;
-    else if (!strcmp("go\n", input))
+    } else if (!strcmp("go\n", input)) {
       computer_player = board->to_move;
-    else if (!strncmp("setboard ", input, 9)) {
+    } else if (!strncmp("setboard ", input, 9)) {
       statelist_clear(sl);
       board_init_with_fen(board, statelist_new_state(sl), input + 9);
     } else if (!strncmp("result", input, 6)) {
       computer_player = -1;
       game_on = 0;
-    } else if (!strncmp("level ", input, 6))
+    } else if (!strncmp("level ", input, 6)) {
       timer_init_xboard(input);
-    else if (!strcmp("_print\n", input) || !strncmp("_perft ", input, 7)) {
+    } else if (!strcmp("_print\n", input) || !strncmp("_perft ", input, 7)) {
       int perft_depth = input[2] == 'e' ? strtol(input + 7, NULL, 10) - 1 : 0;
       uint64_t perft_tot = 0;
 
@@ -139,8 +139,9 @@ int main(void) {
         printf("Illegal move: %s", input);
       else
         got_move = 1;
-    } else
+    } else {
       printf("Error (unknown command): %s", input);
+    }
   }
 
   statelist_free(sl);
