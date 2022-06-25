@@ -76,7 +76,7 @@ int main(void)
 		fprintf(stderr, "%s", input);
 
 		if (!strcmp("xboard\n", input))
-			printf("feature colors=0 setboard=1 time=0 sigint=0 sigterm=0 variants=\"normal\" done=1\n");
+			printf("feature colors=0 setboard=1 time=0 sigint=0 sigterm=0 variants=\"normal\" myname=\"nameless\" done=1\n");
 		else if (!strcmp("new\n", input))
 		{
 			statelist_clear(sl);
