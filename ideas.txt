@@ -9,11 +9,20 @@
 	- explicitly setting/unsetting bits, instead of xor, might help;
 	  will prob require splitting do/undo common
 		- nope: https://gist.github.com/jwatzman/e6853976d46eb9eb35e4440f737c9508
-	- stockfish: undo data is kept in a separate struct, instead of in the
-	  board -- saves undo ring buffer
-	- stockfish: undo move is simple, why is mine complicated
-	- stockfish: how does it deal with 3 repitition, can i save that buffer
 	- can i remove/reduce zobrist_castle?
 	- improve branch prediction
 		- manual hints in movegen?
 		- pgo?
+	- add pins and others to reduce/eliminate illegal moves
+		- can save expensive checks for a final is_legal check that happens before doing the move -- doing/undoing illegal moves is the expensive bit?
+
+- killer moves -- table of 2 moves per ply that were previous best for that depth; if legal sort after tt move or after captures?
+- improve timer
+	- move to setitimer(TIMER_REAL) [macOS does not have timer_create]
+	- track "expected end" and re-set timer if we haven't hit it yet
+	- allows time to be increased, e.g., if hit aspiration failure
+	- allows computing remaining time, e.g., if about to start another ply but there's very little time left
+- pondering
+	- maybe straightforward with pthreads and manually forcing a timeup?
+	- always move search into a thread so it can be interrupted?
+	- need to be careful of atomic access / memory barriers
