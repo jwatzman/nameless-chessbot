@@ -13,7 +13,9 @@ static void move_generate_movelist_pawn_push(Bitboard* board,
                                              uint64_t non_capture_mask);
 static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist);
 static void move_generate_movelist_enpassant(Bitboard* board,
-                                             Movelist* movelist);
+                                             Movelist* movelist,
+                                             int in_single_check,
+                                             uint64_t non_capture_mask);
 
 void move_init(void) {
   movemagic_init();
@@ -132,7 +134,8 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
     move_generate_movelist_pawn_push(board, movelist, non_capture_mask);
     if (!in_single_check)
       move_generate_movelist_castle(board, movelist);
-    move_generate_movelist_enpassant(board, movelist);
+    move_generate_movelist_enpassant(board, movelist, in_single_check,
+                                     non_capture_mask);
   }
 
   movelist->num_total =
@@ -361,32 +364,46 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
 }
 
 static void move_generate_movelist_enpassant(Bitboard* board,
-                                             Movelist* movelist) {
+                                             Movelist* movelist,
+                                             int in_single_check,
+                                             uint64_t non_capture_mask) {
   uint8_t ep_index = board->state->enpassant_index;
-  Color color = board->to_move;
-  if (ep_index) {
-    if (board_col_of(ep_index) > 0 &&
-        (board->boards[color][PAWN] & (1ULL << (ep_index - 1)))) {
-      Move move = 0;
-      move |= (ep_index - 1) << move_source_index_offset;
-      move |= (color == WHITE ? ep_index + 8 : ep_index - 8)
-              << move_destination_index_offset;
-      move |= PAWN << move_piecetype_offset;
-      move |= color << move_color_offset;
-      move |= 1 << move_is_enpassant_offset;
-      movelist->moves_other[movelist->num_other++] = move;
-    }
+  if (ep_index == 0)
+    return;
 
-    if (board_col_of(ep_index) < 7 &&
-        (board->boards[color][PAWN] & (1ULL << (ep_index + 1)))) {
-      Move move = 0;
-      move |= (ep_index + 1) << move_source_index_offset;
-      move |= (color == WHITE ? ep_index + 8 : ep_index - 8)
-              << move_destination_index_offset;
-      move |= PAWN << move_piecetype_offset;
-      move |= color << move_color_offset;
-      move |= 1 << move_is_enpassant_offset;
-      movelist->moves_other[movelist->num_other++] = move;
-    }
+  Color color = board->to_move;
+
+  uint8_t dest = color == WHITE ? ep_index + 8 : ep_index - 8;
+  if (in_single_check) {
+    uint64_t dest_mask = 1ULL << dest;
+    uint64_t captured_mask = 1ULL << ep_index;
+
+    // If we are in check, an enpassant move is invalid unless we either capture
+    // the checking piece or land somewhere to block the check.
+    if ((dest_mask & non_capture_mask) == 0 &&
+        (captured_mask & board->state->king_attackers) == 0)
+      return;
+  }
+
+  if (board_col_of(ep_index) > 0 &&
+      (board->boards[color][PAWN] & (1ULL << (ep_index - 1)))) {
+    Move move = 0;
+    move |= (ep_index - 1) << move_source_index_offset;
+    move |= dest << move_destination_index_offset;
+    move |= PAWN << move_piecetype_offset;
+    move |= color << move_color_offset;
+    move |= 1 << move_is_enpassant_offset;
+    movelist->moves_other[movelist->num_other++] = move;
+  }
+
+  if (board_col_of(ep_index) < 7 &&
+      (board->boards[color][PAWN] & (1ULL << (ep_index + 1)))) {
+    Move move = 0;
+    move |= (ep_index + 1) << move_source_index_offset;
+    move |= dest << move_destination_index_offset;
+    move |= PAWN << move_piecetype_offset;
+    move |= color << move_color_offset;
+    move |= 1 << move_is_enpassant_offset;
+    movelist->moves_other[movelist->num_other++] = move;
   }
 }
