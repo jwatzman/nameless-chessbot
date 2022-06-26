@@ -23,11 +23,38 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
 
   Color to_move = board->to_move;
 
-  // In double check, the king must move, so skip generating other moves.
   int in_double_check = popcnt(board->state->king_attackers) > 1;
-  int in_check = board->state->king_attackers > 0;
+  int in_single_check = !in_double_check && board->state->king_attackers > 0;
 
-  for (Piecetype piece = in_double_check ? KING : 0; piece < 6; piece++) {
+  uint64_t non_capture_mask = ~0;
+  if (in_single_check) {
+    // To block a check, need to move to one of the squares the attacking piece
+    // is attacking.
+    // TODO: specifically one in between the king and the piece.
+    uint8_t index = bitscan(board->state->king_attackers);
+    Piecetype checker = board_piecetype_at_index(board, index);
+    switch (checker) {
+      case QUEEN:
+        non_capture_mask = movemagic_bishop(index, board->full_composite) |
+                           movemagic_rook(index, board->full_composite);
+        break;
+      case ROOK:
+        non_capture_mask = movemagic_rook(index, board->full_composite);
+        break;
+      case BISHOP:
+        non_capture_mask = movemagic_bishop(index, board->full_composite);
+        break;
+      default:
+        non_capture_mask = 0;
+        break;
+    }
+  }
+
+  for (Piecetype piece = 0; piece < 6; piece++) {
+    // In double check, the king must move, so skip generating other moves.
+    if (in_double_check && piece != KING)
+      continue;
+
     uint64_t pieces = board->boards[to_move][piece];
 
     while (pieces) {
@@ -41,13 +68,16 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
         dests &= ~(board->state->king_danger);  // King can't move into check.
 
       uint64_t captures = dests & board->composite_boards[1 - to_move];
-      if (in_check && piece != KING)
+      if (in_single_check && piece != KING)
         // Other pieces can only get us out of check by capturing the checking
         // piece.
         captures &= board->state->king_attackers;
 
       uint64_t non_captures =
           piece == PAWN ? 0 : dests & ~(board->composite_boards[1 - to_move]);
+      if (in_single_check && piece != KING) {
+        non_captures &= non_capture_mask;
+      }
 
       while (captures) {
         uint8_t dest = bitscan(captures);
