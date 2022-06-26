@@ -356,12 +356,12 @@ static uint64_t board_gen_king_attackers(Bitboard* board, Color color) {
 
 int board_in_check(Bitboard* board, Color color) {
   if (color == board->to_move) {
-    return popcnt(board->state->king_attackers) > 0;
+    return board->state->king_attackers > 0;
   } else {
     // Board is not in a legal position if the person not to-move is in check.
     // We only do this as the final move legality check, so don't bother caching
     // it.
-    if (popcnt(board_gen_king_attackers(board, color)) == 0) {
+    if (board_gen_king_attackers(board, color) == 0) {
       // NASTY HACK: see comment in board_do_move.
       board->state->king_attackers =
           board_gen_king_attackers(board, board->to_move);
