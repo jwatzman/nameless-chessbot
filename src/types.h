@@ -73,6 +73,7 @@ typedef struct State {
 
   uint64_t king_attackers;
   uint64_t king_danger;
+  uint64_t pinned;
 } State;
 
 typedef struct {

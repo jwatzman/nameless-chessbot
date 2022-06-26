@@ -355,6 +355,7 @@ static void board_update_expensive_state(Bitboard* board) {
       board_gen_king_attackers(board, board->to_move);
   board->state->king_danger =
       move_generate_king_danger(board, 1 - board->to_move);
+  board->state->pinned = move_generate_pinned(board, board->to_move);
 }
 
 int board_in_check(Bitboard* board, Color color) {

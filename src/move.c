@@ -28,6 +28,7 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
 
   int in_double_check = popcnt(board->state->king_attackers) > 1;
   int in_single_check = !in_double_check && board->state->king_attackers > 0;
+  uint8_t king_loc = bitscan(board->boards[board->to_move][KING]);
 
   uint64_t non_capture_mask = ~0;
   if (in_single_check) {
@@ -51,7 +52,6 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
         break;
     }
 
-    uint8_t king_loc = bitscan(board->boards[board->to_move][KING]);
     uint64_t between = raycast[king_loc][index] & raycast[index][king_loc];
     non_capture_mask &= between;
   }
@@ -72,6 +72,8 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
           ~(board->composite_boards[to_move]);  // can't capture your own piece
       if (piece == KING)
         dests &= ~(board->state->king_danger);  // King can't move into check.
+      else if (board->state->pinned & (1ULL << src))
+        dests &= raycast[king_loc][src];  // Pinned movement restricted.
 
       uint64_t captures = dests & board->composite_boards[1 - to_move];
       if (in_single_check && piece != KING)
@@ -192,6 +194,57 @@ uint64_t move_generate_king_danger(Bitboard* board, Color color) {
   board->full_composite ^= board->boards[1 - color][KING];
 
   return all_attacks;
+}
+
+uint64_t move_generate_pinned(Bitboard* board, Color color) {
+  uint8_t king_loc = bitscan(board->boards[color][KING]);
+  uint64_t king_bishop = movemagic_bishop(king_loc, board->full_composite);
+  uint64_t king_rook = movemagic_rook(king_loc, board->full_composite);
+
+  uint64_t pinned = 0;
+  uint64_t pinners;
+
+  pinners = board->boards[1 - color][BISHOP];
+  while (pinners) {
+    uint8_t pinner_loc = bitscan(pinners);
+    pinners &= pinners - 1;
+
+    uint64_t cast = raycast[king_loc][pinner_loc];
+    if (cast == 0)
+      continue;
+
+    uint8_t bishop = movemagic_bishop(pinner_loc, board->full_composite);
+    pinned |= bishop & king_bishop & cast;
+  }
+
+  pinners = board->boards[1 - color][ROOK];
+  while (pinners) {
+    uint8_t pinner_loc = bitscan(pinners);
+    pinners &= pinners - 1;
+
+    uint64_t cast = raycast[king_loc][pinner_loc];
+    if (cast == 0)
+      continue;
+
+    uint8_t rook = movemagic_rook(pinner_loc, board->full_composite);
+    pinned |= rook & king_rook & cast;
+  }
+
+  pinners = board->boards[1 - color][QUEEN];
+  while (pinners) {
+    uint8_t pinner_loc = bitscan(pinners);
+    pinners &= pinners - 1;
+
+    uint64_t cast = raycast[king_loc][pinner_loc];
+    if (cast == 0)
+      continue;
+
+    uint8_t queen = movemagic_bishop(pinner_loc, board->full_composite) |
+                    movemagic_rook(pinner_loc, board->full_composite);
+    pinned |= queen & (king_bishop | king_rook) & cast;
+  }
+
+  return pinned;
 }
 
 uint64_t move_generate_attackers(Bitboard* board,
