@@ -51,8 +51,9 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
         break;
     }
 
-    non_capture_mask &=
-        between[bitscan(board->boards[board->to_move][KING])][index];
+    uint8_t king_loc = bitscan(board->boards[board->to_move][KING]);
+    uint64_t between = raycast[king_loc][index] & raycast[index][king_loc];
+    non_capture_mask &= between;
   }
 
   for (Piecetype piece = 0; piece < 6; piece++) {
