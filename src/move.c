@@ -36,6 +36,8 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
       uint64_t dests = move_generate_attacks(board, piece, to_move, src);
       dests &=
           ~(board->composite_boards[to_move]);  // can't capture your own piece
+      if (piece == KING)
+        dests &= ~(board->state->all_attacked);  // King can't move into check.
 
       uint64_t captures = dests & board->composite_boards[1 - to_move];
       uint64_t non_captures =
@@ -131,6 +133,30 @@ uint64_t move_generate_attacks(Bitboard* board,
       return 0;
       break;
   }
+}
+
+uint64_t move_generate_all_attacks(Bitboard* board, Color color) {
+  uint64_t all_attacks = 0;
+
+  // This is used to prevent 1 - color's king from moving into check. Moving
+  // away from a sliding piece is still in check, so temporarily mask out that
+  // king to extend the sliding's range.
+  board->full_composite ^= board->boards[1 - color][KING];
+  for (Piecetype piece = 0; piece < 6; piece++) {
+    uint64_t pieces = board->boards[color][piece];
+
+    while (pieces) {
+      uint8_t src = bitscan(pieces);
+      pieces &= pieces - 1;
+
+      all_attacks |= move_generate_attacks(board, piece, color, src);
+    }
+  }
+  board->full_composite ^= board->boards[1 - color][KING];
+
+  // TODO: enpassant
+
+  return all_attacks;
 }
 
 uint64_t move_generate_attackers(Bitboard* board,
@@ -229,18 +255,17 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
   // white queenside
   if ((color == WHITE) &&
       (board->state->castle_rights & CASTLE_R(CASTLE_R_QS, WHITE))) {
-    uint64_t clear = (1ULL << 1) | (1ULL << 2) | (1ULL << 3);
-    if (!(board->full_composite & clear)) {
-      if (move_generate_attackers(board, 1 - color, 2) == 0 &&
-          move_generate_attackers(board, 1 - color, 3) == 0) {
-        Move move = 0;
-        move |= 4 << move_source_index_offset;
-        move |= 2 << move_destination_index_offset;
-        move |= KING << move_piecetype_offset;
-        move |= color << move_color_offset;
-        move |= 1 << move_is_castle_offset;
-        movelist->moves_other[movelist->num_other++] = move;
-      }
+    uint64_t noattack = (1ULL << 2) | (1ULL << 3);
+    uint64_t clear = (1ULL << 1) | noattack;
+    if ((board->full_composite & clear) == 0 &&
+        (board->state->all_attacked & noattack) == 0) {
+      Move move = 0;
+      move |= 4 << move_source_index_offset;
+      move |= 2 << move_destination_index_offset;
+      move |= KING << move_piecetype_offset;
+      move |= color << move_color_offset;
+      move |= 1 << move_is_castle_offset;
+      movelist->moves_other[movelist->num_other++] = move;
     }
   }
 
@@ -248,35 +273,32 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
   if ((color == WHITE) &&
       (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, WHITE))) {
     uint64_t clear = (1ULL << 5) | (1ULL << 6);
-    if (!(board->full_composite & clear)) {
-      if (move_generate_attackers(board, 1 - color, 5) == 0 &&
-          move_generate_attackers(board, 1 - color, 6) == 0) {
-        Move move = 0;
-        move |= 4 << move_source_index_offset;
-        move |= 6 << move_destination_index_offset;
-        move |= KING << move_piecetype_offset;
-        move |= color << move_color_offset;
-        move |= 1 << move_is_castle_offset;
-        movelist->moves_other[movelist->num_other++] = move;
-      }
+    if ((board->full_composite & clear) == 0 &&
+        (board->state->all_attacked & clear) == 0) {
+      Move move = 0;
+      move |= 4 << move_source_index_offset;
+      move |= 6 << move_destination_index_offset;
+      move |= KING << move_piecetype_offset;
+      move |= color << move_color_offset;
+      move |= 1 << move_is_castle_offset;
+      movelist->moves_other[movelist->num_other++] = move;
     }
   }
 
   // black queenside
   if ((color == BLACK) &&
       (board->state->castle_rights & CASTLE_R(CASTLE_R_QS, BLACK))) {
-    uint64_t clear = (1ULL << 57) | (1ULL << 58) | (1ULL << 59);
-    if (!(board->full_composite & clear)) {
-      if (move_generate_attackers(board, 1 - color, 58) == 0 &&
-          move_generate_attackers(board, 1 - color, 59) == 0) {
-        Move move = 0;
-        move |= 60 << move_source_index_offset;
-        move |= 58 << move_destination_index_offset;
-        move |= KING << move_piecetype_offset;
-        move |= color << move_color_offset;
-        move |= 1 << move_is_castle_offset;
-        movelist->moves_other[movelist->num_other++] = move;
-      }
+    uint64_t noattack = (1ULL << 58) | (1ULL << 59);
+    uint64_t clear = (1ULL << 57) | noattack;
+    if ((board->full_composite & clear) == 0 &&
+        (board->state->all_attacked & noattack) == 0) {
+      Move move = 0;
+      move |= 60 << move_source_index_offset;
+      move |= 58 << move_destination_index_offset;
+      move |= KING << move_piecetype_offset;
+      move |= color << move_color_offset;
+      move |= 1 << move_is_castle_offset;
+      movelist->moves_other[movelist->num_other++] = move;
     }
   }
 
@@ -284,17 +306,15 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
   if ((color == BLACK) &&
       (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, BLACK))) {
     uint64_t clear = (1ULL << 61) | (1ULL << 62);
-    if (!(board->full_composite & clear)) {
-      if (move_generate_attackers(board, 1 - color, 61) == 0 &&
-          move_generate_attackers(board, 1 - color, 62) == 0) {
-        Move move = 0;
-        move |= 60 << move_source_index_offset;
-        move |= 62 << move_destination_index_offset;
-        move |= KING << move_piecetype_offset;
-        move |= color << move_color_offset;
-        move |= 1 << move_is_castle_offset;
-        movelist->moves_other[movelist->num_other++] = move;
-      }
+    if ((board->full_composite & clear) == 0 &&
+        (board->state->all_attacked & clear) == 0) {
+      Move move = 0;
+      move |= 60 << move_source_index_offset;
+      move |= 62 << move_destination_index_offset;
+      move |= KING << move_piecetype_offset;
+      move |= color << move_color_offset;
+      move |= 1 << move_is_castle_offset;
+      movelist->moves_other[movelist->num_other++] = move;
     }
   }
 }
