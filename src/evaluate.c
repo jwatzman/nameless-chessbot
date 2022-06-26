@@ -3,7 +3,7 @@
 
 #include "../gen/evaluate.h"
 #include "bitboard.h"
-#include "bitscan.h"
+#include "bitops.h"
 #include "evaluate.h"
 #include "move.h"
 
@@ -97,8 +97,6 @@ static const int endgame_values[] = {175, 300, 300, 500, 1000, 0};
 
 #define doubled_pawn_penalty -10
 
-static int popcnt(uint64_t x);
-
 int evaluate_board(Bitboard* board) {
   int result = 0;
   int endgame = popcnt(board->full_composite ^ board->boards[WHITE][PAWN] ^
@@ -165,8 +163,4 @@ int evaluate_board(Bitboard* board) {
   }
 
   return result;
-}
-
-static int popcnt(uint64_t x) {
-  return __builtin_popcountll(x);
 }

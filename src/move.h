@@ -16,7 +16,9 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist);
 
 // does not consider enpassant (this is basically for checking king move and
 // castling viability)
-int move_square_is_attacked(Bitboard* board, Color attacker, uint8_t square);
+uint64_t move_generate_attackers(Bitboard* board,
+                                 Color attacker,
+                                 uint8_t square);
 
 // assuming this piece were to be at this location, where could it attack?
 // note: does *not* generate pawn pushes or mask out friendly pieces

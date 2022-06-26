@@ -71,8 +71,7 @@ typedef struct State {
   struct State* prev;
   // ----- Everything below prev is not!
 
-  // cache for board_in_check, do not access directly
-  int8_t in_check[2];
+  uint64_t king_attackers;
 } State;
 
 typedef struct {

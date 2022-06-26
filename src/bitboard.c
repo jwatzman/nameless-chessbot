@@ -1,5 +1,3 @@
-#include "bitboard.h"
-
 #include <ctype.h>
 #include <inttypes.h>
 #include <stddef.h>
@@ -8,12 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bitscan.h"
+#include "bitboard.h"
+#include "bitops.h"
 #include "move.h"
-
-#define IN_CHECK_UNKNOWN -1
-#define IN_CHECK_FALSE 0
-#define IN_CHECK_TRUE 1
 
 // generate a 64-bit random number
 static inline uint64_t board_rand64(void);
@@ -27,6 +22,7 @@ static void board_toggle_piece(Bitboard* board,
                                Piecetype piece,
                                Color color,
                                uint8_t loc);
+static uint64_t board_gen_king_attackers(Bitboard* board, Color color);
 
 void board_init(Bitboard* board, State* state) {
   board_init_with_fen(
@@ -175,7 +171,8 @@ void board_init_with_fen(Bitboard* board, State* state, const char* fen) {
   // set up the mess of zobrist random numbers and the rest of the state
   board_init_zobrist(board);
   board->state->prev = NULL;
-  board->state->in_check[0] = board->state->in_check[1] = IN_CHECK_UNKNOWN;
+  board->state->king_attackers =
+      board_gen_king_attackers(board, board->to_move);
   board->generation = 0;
 }
 
@@ -208,7 +205,6 @@ static void board_init_zobrist(Bitboard* board) {
 
 void board_do_move(Bitboard* board, Move move, State* state) {
   memcpy(state, board->state, sizeof(State));
-  state->in_check[0] = state->in_check[1] = IN_CHECK_UNKNOWN;
   state->prev = board->state;
   board->state = state;
 
@@ -273,6 +269,9 @@ void board_do_move(Bitboard* board, Move move, State* state) {
     board->to_move = (1 - board->to_move);
     board->state->zobrist ^= board->zobrist_black;
   }
+
+  board->state->king_attackers =
+      board_gen_king_attackers(board, board->to_move);
 }
 
 void board_undo_move(Bitboard* board, Move move) {
@@ -347,13 +346,22 @@ static void board_toggle_piece(Bitboard* board,
   board->state->zobrist ^= board->zobrist_pos[color][piece][loc];
 }
 
-int board_in_check(Bitboard* board, Color color) {
-  if (board->state->in_check[color] == IN_CHECK_UNKNOWN) {
-    board->state->in_check[color] = move_square_is_attacked(
-        board, 1 - color, bitscan(board->boards[color][KING]));
-  }
+static uint64_t board_gen_king_attackers(Bitboard* board, Color color) {
+  return move_generate_attackers(board, 1 - color,
+                                 bitscan(board->boards[color][KING]));
+}
 
-  return board->state->in_check[color];
+int board_in_check(Bitboard* board, Color color) {
+  uint64_t king_attackers;
+  if (color == board->to_move)
+    king_attackers = board->state->king_attackers;
+  else
+    // Board is not in a legal position if the person not to-move is in check.
+    // We only do this as the final move legality check, so don't bother caching
+    // it.
+    king_attackers = board_gen_king_attackers(board, color);
+
+  return popcnt(king_attackers) > 0;
 }
 
 void board_print(Bitboard* board) {

@@ -1,7 +1,7 @@
 #include <stdint.h>
 
 #include "bitboard.h"
-#include "bitscan.h"
+#include "bitops.h"
 #include "movemagic-consts.h"
 #include "movemagic.h"
 

@@ -3,7 +3,7 @@
 
 #include "../gen/move.h"
 #include "bitboard.h"
-#include "bitscan.h"
+#include "bitops.h"
 #include "move.h"
 #include "movemagic.h"
 #include "types.h"
@@ -23,7 +23,10 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
 
   Color to_move = board->to_move;
 
-  for (Piecetype piece = 0; piece < 6; piece++) {
+  // In double check, the king must move, so skip generating other moves.
+  int in_double_check = popcnt(board->state->king_attackers) > 1;
+
+  for (Piecetype piece = in_double_check ? KING : 0; piece < 6; piece++) {
     uint64_t pieces = board->boards[to_move][piece];
 
     while (pieces) {
@@ -84,9 +87,11 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
     }
   }
 
-  move_generate_movelist_pawn_push(board, movelist);
-  move_generate_movelist_castle(board, movelist);
-  move_generate_movelist_enpassant(board, movelist);
+  if (!in_double_check) {
+    move_generate_movelist_pawn_push(board, movelist);
+    move_generate_movelist_castle(board, movelist);
+    move_generate_movelist_enpassant(board, movelist);
+  }
 
   movelist->num_total =
       movelist->num_promo + movelist->num_capture + movelist->num_other;
@@ -128,29 +133,19 @@ uint64_t move_generate_attacks(Bitboard* board,
   }
 }
 
-int move_square_is_attacked(Bitboard* board, Color attacker, uint8_t square) {
-  if (knight_attacks[square] & board->boards[attacker][KNIGHT])
-    return 1;
-
-  if (king_attacks[square] & board->boards[attacker][KING])
-    return 1;
-
+uint64_t move_generate_attackers(Bitboard* board,
+                                 Color attacker,
+                                 uint8_t square) {
   uint64_t rook_attacks = movemagic_rook(square, board->full_composite);
-  if (rook_attacks & board->boards[attacker][ROOK])
-    return 1;
-  if (rook_attacks & board->boards[attacker][QUEEN])
-    return 1;
-
   uint64_t bishop_attacks = movemagic_bishop(square, board->full_composite);
-  if (bishop_attacks & board->boards[attacker][BISHOP])
-    return 1;
-  if (bishop_attacks & board->boards[attacker][QUEEN])
-    return 1;
 
-  if (pawn_attacks[1 - attacker][square] & board->boards[attacker][PAWN])
-    return 1;
-
-  return 0;
+  return (knight_attacks[square] & board->boards[attacker][KNIGHT]) |
+         (king_attacks[square] & board->boards[attacker][KING]) |
+         (rook_attacks & board->boards[attacker][ROOK]) |
+         (rook_attacks & board->boards[attacker][QUEEN]) |
+         (bishop_attacks & board->boards[attacker][BISHOP]) |
+         (bishop_attacks & board->boards[attacker][QUEEN]) |
+         (pawn_attacks[1 - attacker][square] & board->boards[attacker][PAWN]);
 }
 
 static void move_generate_movelist_pawn_push(Bitboard* board,
@@ -236,8 +231,8 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
       (board->state->castle_rights & CASTLE_R(CASTLE_R_QS, WHITE))) {
     uint64_t clear = (1ULL << 1) | (1ULL << 2) | (1ULL << 3);
     if (!(board->full_composite & clear)) {
-      if (!move_square_is_attacked(board, 1 - color, 2) &&
-          !move_square_is_attacked(board, 1 - color, 3)) {
+      if (move_generate_attackers(board, 1 - color, 2) == 0 &&
+          move_generate_attackers(board, 1 - color, 3) == 0) {
         Move move = 0;
         move |= 4 << move_source_index_offset;
         move |= 2 << move_destination_index_offset;
@@ -254,8 +249,8 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
       (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, WHITE))) {
     uint64_t clear = (1ULL << 5) | (1ULL << 6);
     if (!(board->full_composite & clear)) {
-      if (!move_square_is_attacked(board, 1 - color, 5) &&
-          !move_square_is_attacked(board, 1 - color, 6)) {
+      if (move_generate_attackers(board, 1 - color, 5) == 0 &&
+          move_generate_attackers(board, 1 - color, 6) == 0) {
         Move move = 0;
         move |= 4 << move_source_index_offset;
         move |= 6 << move_destination_index_offset;
@@ -272,8 +267,8 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
       (board->state->castle_rights & CASTLE_R(CASTLE_R_QS, BLACK))) {
     uint64_t clear = (1ULL << 57) | (1ULL << 58) | (1ULL << 59);
     if (!(board->full_composite & clear)) {
-      if (!move_square_is_attacked(board, 1 - color, 58) &&
-          !move_square_is_attacked(board, 1 - color, 59)) {
+      if (move_generate_attackers(board, 1 - color, 58) == 0 &&
+          move_generate_attackers(board, 1 - color, 59) == 0) {
         Move move = 0;
         move |= 60 << move_source_index_offset;
         move |= 58 << move_destination_index_offset;
@@ -290,8 +285,8 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
       (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, BLACK))) {
     uint64_t clear = (1ULL << 61) | (1ULL << 62);
     if (!(board->full_composite & clear)) {
-      if (!move_square_is_attacked(board, 1 - color, 61) &&
-          !move_square_is_attacked(board, 1 - color, 62)) {
+      if (move_generate_attackers(board, 1 - color, 61) == 0 &&
+          move_generate_attackers(board, 1 - color, 62) == 0) {
         Move move = 0;
         move |= 60 << move_source_index_offset;
         move |= 62 << move_destination_index_offset;
