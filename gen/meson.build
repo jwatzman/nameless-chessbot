@@ -1,6 +1,6 @@
 gen_move = executable(
 	'gen_move',
-	['move_king.c', 'move_knight.c', 'move_pawn.c', 'move.c'],
+	['move_king.c', 'move_knight.c', 'move_pawn.c', 'move_between.c', 'move.c'],
 	include_directories: incl_src,
 )
 

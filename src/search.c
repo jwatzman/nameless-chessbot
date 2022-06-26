@@ -8,6 +8,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "bitops.h"
 #include "evaluate.h"
 #include "move.h"
 #include "moveiter.h"
@@ -69,10 +70,6 @@ static void search_transposition_put(uint64_t zobrist,
                                      int8_t depth);
 
 static void search_print_pv(Move* pv, int8_t depth);
-
-static inline uint8_t min(uint8_t a, uint8_t b) {
-  return a < b ? a : b;
-}
 
 Move search_find_move(Bitboard* board, const SearchDebug* debug) {
   Move best_move = 0;

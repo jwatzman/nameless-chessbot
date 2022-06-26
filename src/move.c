@@ -31,7 +31,6 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
   if (in_single_check) {
     // To block a check, need to move to one of the squares the attacking piece
     // is attacking.
-    // TODO: specifically one in between the king and the piece.
     uint8_t index = bitscan(board->state->king_attackers);
     Piecetype checker = board_piecetype_at_index(board, index);
     switch (checker) {
@@ -49,6 +48,9 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
         non_capture_mask = 0;
         break;
     }
+
+    non_capture_mask &=
+        between[bitscan(board->boards[board->to_move][KING])][index];
   }
 
   for (Piecetype piece = 0; piece < 6; piece++) {

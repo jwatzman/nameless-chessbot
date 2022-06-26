@@ -11,4 +11,12 @@ static inline uint8_t popcnt(uint64_t x) {
   return __builtin_popcountll(x);
 }
 
+static inline uint8_t min(uint8_t a, uint8_t b) {
+  return a < b ? a : b;
+}
+
+static inline uint8_t max(uint8_t a, uint8_t b) {
+  return a > b ? a : b;
+}
+
 #endif
