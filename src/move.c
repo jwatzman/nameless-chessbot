@@ -191,8 +191,6 @@ uint64_t move_generate_king_danger(Bitboard* board, Color color) {
   }
   board->full_composite ^= board->boards[1 - color][KING];
 
-  // TODO: enpassant
-
   return all_attacks;
 }
 
