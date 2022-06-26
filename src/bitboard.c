@@ -272,11 +272,10 @@ void board_do_move(Bitboard* board, Move move, State* state) {
     board->state->zobrist ^= board->zobrist_black;
   }
 
-  // NASTY HACK: don't update king_attackers here, wait until board_in_check is
-  // called with the off-move player as an argument -- i.e., because we know
-  // this move is only pseudolegal, and we know that king_attackers won't be
-  // used unless the move was fully-legal, wait until after that final legality
-  // check (which comes in the form of board_in_check being called that way).
+  board->state->king_attackers =
+      board_gen_king_attackers(board, board->to_move);
+  board->state->king_danger =
+      move_generate_king_danger(board, 1 - board->to_move);
 }
 
 void board_undo_move(Bitboard* board, Move move) {
@@ -357,23 +356,16 @@ static uint64_t board_gen_king_attackers(Bitboard* board, Color color) {
 }
 
 int board_in_check(Bitboard* board, Color color) {
-  if (color == board->to_move) {
-    return board->state->king_attackers > 0;
-  } else {
+  uint64_t king_attackers;
+  if (color == board->to_move)
+    king_attackers = board->state->king_attackers;
+  else
     // Board is not in a legal position if the person not to-move is in check.
     // We only do this as the final move legality check, so don't bother caching
     // it.
-    if (board_gen_king_attackers(board, color) == 0) {
-      // NASTY HACK: see comment in board_do_move.
-      board->state->king_attackers =
-          board_gen_king_attackers(board, board->to_move);
-      board->state->king_danger =
-          move_generate_king_danger(board, 1 - board->to_move);
-      return 0;
-    } else {
-      return 1;
-    }
-  }
+    king_attackers = board_gen_king_attackers(board, color);
+
+  return popcnt(king_attackers) > 0;
 }
 
 void board_print(Bitboard* board) {
