@@ -37,7 +37,7 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
       dests &=
           ~(board->composite_boards[to_move]);  // can't capture your own piece
       if (piece == KING)
-        dests &= ~(board->state->all_attacked);  // King can't move into check.
+        dests &= ~(board->state->king_danger);  // King can't move into check.
 
       uint64_t captures = dests & board->composite_boards[1 - to_move];
       uint64_t non_captures =
@@ -135,7 +135,7 @@ uint64_t move_generate_attacks(Bitboard* board,
   }
 }
 
-uint64_t move_generate_all_attacks(Bitboard* board, Color color) {
+uint64_t move_generate_king_danger(Bitboard* board, Color color) {
   uint64_t all_attacks = 0;
 
   // This is used to prevent 1 - color's king from moving into check. Moving
@@ -258,7 +258,7 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
     uint64_t noattack = (1ULL << 2) | (1ULL << 3);
     uint64_t clear = (1ULL << 1) | noattack;
     if ((board->full_composite & clear) == 0 &&
-        (board->state->all_attacked & noattack) == 0) {
+        (board->state->king_danger & noattack) == 0) {
       Move move = 0;
       move |= 4 << move_source_index_offset;
       move |= 2 << move_destination_index_offset;
@@ -274,7 +274,7 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
       (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, WHITE))) {
     uint64_t clear = (1ULL << 5) | (1ULL << 6);
     if ((board->full_composite & clear) == 0 &&
-        (board->state->all_attacked & clear) == 0) {
+        (board->state->king_danger & clear) == 0) {
       Move move = 0;
       move |= 4 << move_source_index_offset;
       move |= 6 << move_destination_index_offset;
@@ -291,7 +291,7 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
     uint64_t noattack = (1ULL << 58) | (1ULL << 59);
     uint64_t clear = (1ULL << 57) | noattack;
     if ((board->full_composite & clear) == 0 &&
-        (board->state->all_attacked & noattack) == 0) {
+        (board->state->king_danger & noattack) == 0) {
       Move move = 0;
       move |= 60 << move_source_index_offset;
       move |= 58 << move_destination_index_offset;
@@ -307,7 +307,7 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
       (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, BLACK))) {
     uint64_t clear = (1ULL << 61) | (1ULL << 62);
     if ((board->full_composite & clear) == 0 &&
-        (board->state->all_attacked & clear) == 0) {
+        (board->state->king_danger & clear) == 0) {
       Move move = 0;
       move |= 60 << move_source_index_offset;
       move |= 62 << move_destination_index_offset;

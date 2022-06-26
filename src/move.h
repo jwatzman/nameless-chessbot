@@ -27,8 +27,8 @@ uint64_t move_generate_attacks(Bitboard* board,
                                Color color,
                                uint8_t index);
 
-// What is the entire set of squares attacked by this color?
-uint64_t move_generate_all_attacks(Bitboard* board, Color color);
+// What are the attacked squares the king cannot move into?
+uint64_t move_generate_king_danger(Bitboard* board, Color color);
 
 #define move_source_index_offset 0
 #define move_source_index(move) ((move)&0x3F)

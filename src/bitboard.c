@@ -173,8 +173,8 @@ void board_init_with_fen(Bitboard* board, State* state, const char* fen) {
   board->state->prev = NULL;
   board->state->king_attackers =
       board_gen_king_attackers(board, board->to_move);
-  board->state->all_attacked =
-      move_generate_all_attacks(board, 1 - board->to_move);
+  board->state->king_danger =
+      move_generate_king_danger(board, 1 - board->to_move);
   board->generation = 0;
 }
 
@@ -367,8 +367,8 @@ int board_in_check(Bitboard* board, Color color) {
       // NASTY HACK: see comment in board_do_move.
       board->state->king_attackers =
           board_gen_king_attackers(board, board->to_move);
-      board->state->all_attacked =
-          move_generate_all_attacks(board, 1 - board->to_move);
+      board->state->king_danger =
+          move_generate_king_danger(board, 1 - board->to_move);
       return 0;
     } else {
       return 1;

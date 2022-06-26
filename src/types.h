@@ -72,7 +72,7 @@ typedef struct State {
   // ----- Everything below prev is not!
 
   uint64_t king_attackers;
-  uint64_t all_attacked;
+  uint64_t king_danger;
 } State;
 
 typedef struct {
