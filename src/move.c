@@ -9,7 +9,8 @@
 #include "types.h"
 
 static void move_generate_movelist_pawn_push(Bitboard* board,
-                                             Movelist* movelist);
+                                             Movelist* movelist,
+                                             uint64_t non_capture_mask);
 static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist);
 static void move_generate_movelist_enpassant(Bitboard* board,
                                              Movelist* movelist);
@@ -126,7 +127,7 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
   }
 
   if (!in_double_check) {
-    move_generate_movelist_pawn_push(board, movelist);
+    move_generate_movelist_pawn_push(board, movelist, non_capture_mask);
     if (!in_single_check)
       move_generate_movelist_castle(board, movelist);
     move_generate_movelist_enpassant(board, movelist);
@@ -205,7 +206,8 @@ uint64_t move_generate_attackers(Bitboard* board,
 }
 
 static void move_generate_movelist_pawn_push(Bitboard* board,
-                                             Movelist* movelist) {
+                                             Movelist* movelist,
+                                             uint64_t non_capture_mask) {
   Color to_move = board->to_move;
   uint64_t pawns = board->boards[to_move][PAWN];
 
@@ -224,7 +226,10 @@ static void move_generate_movelist_pawn_push(Bitboard* board,
       else
         dest = board_index_of(row - 1, col);
 
-      if (!(board->full_composite & (1ULL << dest))) {
+      uint64_t one_forward = 1ULL << dest;
+      uint64_t one_forward_blocked = board->full_composite & one_forward;
+      uint64_t one_forward_unmasked = non_capture_mask & one_forward;
+      if (!one_forward_blocked && one_forward_unmasked) {
         Move move = 0;
         move |= src << move_source_index_offset;
         move |= dest << move_destination_index_offset;
@@ -243,9 +248,12 @@ static void move_generate_movelist_pawn_push(Bitboard* board,
               (move | (BISHOP << move_promoted_piecetype_offset));
           movelist->moves_promo[movelist->num_promo++] =
               (move | (KNIGHT << move_promoted_piecetype_offset));
-        } else
+        } else {
           movelist->moves_other[movelist->num_other++] = move;
+        }
+      }
 
+      if (!one_forward_blocked) {
         // try to move two spaces forward
         if ((to_move == WHITE && row == 1) || (to_move == BLACK && row == 6)) {
           if (to_move == WHITE)
@@ -253,8 +261,11 @@ static void move_generate_movelist_pawn_push(Bitboard* board,
           else
             dest = board_index_of(row - 2, col);
 
-          if (!(board->full_composite & (1ULL << dest))) {
-            move = 0;
+          uint64_t two_forward = (1ULL << dest);
+          uint64_t two_forward_blocked = board->full_composite & two_forward;
+          uint64_t two_forward_unmasked = non_capture_mask & two_forward;
+          if (!two_forward_blocked && two_forward_unmasked) {
+            Move move = 0;
             move |= src << move_source_index_offset;
             move |= dest << move_destination_index_offset;
             move |= PAWN << move_piecetype_offset;
