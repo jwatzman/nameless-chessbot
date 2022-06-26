@@ -268,9 +268,13 @@ static void move_generate_movelist_pawn_push(Bitboard* board,
   Color to_move = board->to_move;
   uint64_t pawns = board->boards[to_move][PAWN];
 
+  uint8_t king_loc = bitscan(board->boards[board->to_move][KING]);
+
   while (pawns) {
     uint8_t src = bitscan(pawns);
     pawns &= pawns - 1;
+
+    int pinned = board->state->pinned & (1ULL << src);
 
     uint8_t row = board_row_of(src);
     uint8_t col = board_col_of(src);
@@ -282,6 +286,9 @@ static void move_generate_movelist_pawn_push(Bitboard* board,
         dest = board_index_of(row + 1, col);
       else
         dest = board_index_of(row - 1, col);
+
+      if (pinned && (raycast[king_loc][dest] & (1ULL << dest)) == 0)
+        continue;
 
       uint64_t one_forward = 1ULL << dest;
       uint64_t one_forward_blocked = board->full_composite & one_forward;
@@ -422,6 +429,8 @@ static void move_generate_movelist_enpassant(Bitboard* board,
   uint8_t ep_index = board->state->enpassant_index;
   if (ep_index == 0)
     return;
+
+  // TODO: deal with pins
 
   Color color = board->to_move;
 
