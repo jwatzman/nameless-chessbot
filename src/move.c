@@ -25,6 +25,7 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
 
   // In double check, the king must move, so skip generating other moves.
   int in_double_check = popcnt(board->state->king_attackers) > 1;
+  int in_check = board->state->king_attackers > 0;
 
   for (Piecetype piece = in_double_check ? KING : 0; piece < 6; piece++) {
     uint64_t pieces = board->boards[to_move][piece];
@@ -40,6 +41,11 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
         dests &= ~(board->state->king_danger);  // King can't move into check.
 
       uint64_t captures = dests & board->composite_boards[1 - to_move];
+      if (in_check && piece != KING)
+        // Other pieces can only get us out of check by capturing the checking
+        // piece.
+        captures &= board->state->king_attackers;
+
       uint64_t non_captures =
           piece == PAWN ? 0 : dests & ~(board->composite_boards[1 - to_move]);
 
