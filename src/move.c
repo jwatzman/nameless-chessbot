@@ -213,7 +213,7 @@ uint64_t move_generate_pinned(Bitboard* board, Color color) {
     if (cast == 0)
       continue;
 
-    uint8_t bishop = movemagic_bishop(pinner_loc, board->full_composite);
+    uint64_t bishop = movemagic_bishop(pinner_loc, board->full_composite);
     pinned |= bishop & king_bishop & cast;
   }
 
@@ -226,7 +226,7 @@ uint64_t move_generate_pinned(Bitboard* board, Color color) {
     if (cast == 0)
       continue;
 
-    uint8_t rook = movemagic_rook(pinner_loc, board->full_composite);
+    uint64_t rook = movemagic_rook(pinner_loc, board->full_composite);
     pinned |= rook & king_rook & cast;
   }
 
@@ -239,8 +239,8 @@ uint64_t move_generate_pinned(Bitboard* board, Color color) {
     if (cast == 0)
       continue;
 
-    uint8_t queen = movemagic_bishop(pinner_loc, board->full_composite) |
-                    movemagic_rook(pinner_loc, board->full_composite);
+    uint64_t queen = movemagic_bishop(pinner_loc, board->full_composite) |
+                     movemagic_rook(pinner_loc, board->full_composite);
     pinned |= queen & (king_bishop | king_rook) & cast;
   }
 
@@ -274,7 +274,7 @@ static void move_generate_movelist_pawn_push(Bitboard* board,
     uint8_t src = bitscan(pawns);
     pawns &= pawns - 1;
 
-    int pinned = board->state->pinned & (1ULL << src);
+    int pinned = (board->state->pinned & (1ULL << src)) > 0;
 
     uint8_t row = board_row_of(src);
     uint8_t col = board_col_of(src);
