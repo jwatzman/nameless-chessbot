@@ -127,7 +127,8 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
 
   if (!in_double_check) {
     move_generate_movelist_pawn_push(board, movelist);
-    move_generate_movelist_castle(board, movelist);
+    if (!in_single_check)
+      move_generate_movelist_castle(board, movelist);
     move_generate_movelist_enpassant(board, movelist);
   }
 
@@ -142,32 +143,25 @@ uint64_t move_generate_attacks(Bitboard* board,
   switch (piece) {
     case PAWN:
       return pawn_attacks[color][index];
-      break;
 
     case BISHOP:
       return movemagic_bishop(index, board->full_composite);
-      break;
 
     case KNIGHT:
       return knight_attacks[index];
-      break;
 
     case ROOK:
       return movemagic_rook(index, board->full_composite);
-      break;
 
     case QUEEN:
-      return move_generate_attacks(board, BISHOP, color, index) |
-             move_generate_attacks(board, ROOK, color, index);
-      break;
+      return movemagic_bishop(index, board->full_composite) |
+             movemagic_rook(index, board->full_composite);
 
     case KING:
       return king_attacks[index];
-      break;
 
     default:  // err...
       return 0;
-      break;
   }
 }
 
@@ -285,8 +279,6 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
   // happen if you, e.g., load a FEN with an invalid set of rights
 
   Color color = board->to_move;
-  if (board_in_check(board, color))  // TODO :(
-    return;
 
   // white queenside
   if ((color == WHITE) &&
