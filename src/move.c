@@ -198,14 +198,13 @@ uint64_t move_generate_king_danger(Bitboard* board, Color color) {
 }
 
 uint64_t move_generate_pinned(Bitboard* board, Color color) {
-  // We compute pinned pieces by:
-  //  - pretending there is a bishop/rook/queen at the spot where the king is,
-  //    and seeing which squares that would attack
-  //  - seeing which squares the opponent's actual bishop/rook/queens attack
-  //  - intersecting the two along the line between the king and that piece (so
-  //    that, e.g., a king and a bishop which are on the same rank/file don't
-  //    pin any pieces on the diagonals where their "attacks" happen to
-  //    intersect
+  // We compute pinned pieces using an algorithm inspired by Stockfish:
+  // - compute "snipers": the enemy sliding pieces which could hit the king if
+  //   there were no other pieces in the way (empty occupancy to movemagic)
+  // - compute "targets": everything that could get in the way of the sniper to
+  //   the king (i.e., anything except the snipers or the king)
+  // - for each sniper, if there is exactly one target in the area between the
+  //   sniper and the king, and that piece is our piece, then it is pinned
   //
   // When doing movegen, if a piece is pinned, moving it is only legal if its
   // destination is the same ray from the king to its source location (since its
@@ -213,50 +212,29 @@ uint64_t move_generate_pinned(Bitboard* board, Color color) {
   // between the two).
 
   uint8_t king_loc = bitscan(board->boards[color][KING]);
-  uint64_t king_bishop = movemagic_bishop(king_loc, board->full_composite);
-  uint64_t king_rook = movemagic_rook(king_loc, board->full_composite);
+  uint64_t king_bishop = movemagic_bishop(king_loc, 0);
+  uint64_t king_rook = movemagic_rook(king_loc, 0);
+
+  uint64_t snipers = 0;
+  snipers |= king_bishop & (board->boards[1 - color][BISHOP] |
+                            board->boards[1 - color][QUEEN]);
+  snipers |= king_rook &
+             (board->boards[1 - color][ROOK] | board->boards[1 - color][QUEEN]);
+
+  uint64_t targets =
+      board->full_composite & ~snipers & ~board->boards[color][KING];
 
   uint64_t pinned = 0;
-  uint64_t pinners;
+  while (snipers) {
+    uint8_t sniper_loc = bitscan(snipers);
+    snipers &= snipers - 1;
 
-  pinners = board->boards[1 - color][BISHOP];
-  while (pinners) {
-    uint8_t pinner_loc = bitscan(pinners);
-    pinners &= pinners - 1;
+    uint64_t between =
+        raycast[king_loc][sniper_loc] & raycast[sniper_loc][king_loc];
 
-    uint64_t cast = raycast[king_loc][pinner_loc];
-    if (cast == 0)
-      continue;
-
-    uint64_t bishop = movemagic_bishop(pinner_loc, board->full_composite);
-    pinned |= bishop & king_bishop & cast;
-  }
-
-  pinners = board->boards[1 - color][ROOK];
-  while (pinners) {
-    uint8_t pinner_loc = bitscan(pinners);
-    pinners &= pinners - 1;
-
-    uint64_t cast = raycast[king_loc][pinner_loc];
-    if (cast == 0)
-      continue;
-
-    uint64_t rook = movemagic_rook(pinner_loc, board->full_composite);
-    pinned |= rook & king_rook & cast;
-  }
-
-  pinners = board->boards[1 - color][QUEEN];
-  while (pinners) {
-    uint8_t pinner_loc = bitscan(pinners);
-    pinners &= pinners - 1;
-
-    uint64_t cast = raycast[king_loc][pinner_loc];
-    if (cast == 0)
-      continue;
-
-    uint64_t queen = movemagic_bishop(pinner_loc, board->full_composite) |
-                     movemagic_rook(pinner_loc, board->full_composite);
-    pinned |= queen & (king_bishop | king_rook) & cast;
+    uint64_t hits = targets & between;
+    if (hits > 0 && !twobits(hits) && (hits & board->composite_boards[color]))
+      pinned |= hits;
   }
 
   return pinned;
