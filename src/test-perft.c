@@ -49,6 +49,16 @@ static const TestCase cases[] = {
     {"8/k1P5/8/1K6/8/8/8/8 w - - 0 1", 7, 567584},
     {"8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1", 4, 23527},
 
+    // https://github.com/peterellisjones/rust_move_gen/blob/master/src/gen/mod.rs
+    {"5k2/8/8/q7/8/2Q5/8/4K3 w - -", 1, 8},
+    {"5k2/5pb1/5Q1B/8/8/8/8/4K3 b - - 1 1", 1, 3},
+    {"4k3/8/5r2/8/8/8/4PPpP/5K2 w - - 0 1", 1, 3},
+    {"4k3/3pq3/4Q3/1B2N3/1p2P3/2N5/PPPB1PP1/R3K2R b KQ - 0 1", 1, 5},
+    {"8/8/8/6k1/4Pp2/8/8/K1B5 b - e3 0 1", 1, 7},
+    {"8/8/8/8/R3Ppk1/8/8/K7 b - e3 0 1", 1, 7},
+    {"4k3/3NqQ2/8/8/8/8/4p3/4K3 b - - 0 1", 1, 4},
+    {"8/8/5k2/8/4Pp2/8/8/4KR2 b - e3 0 1", 1, 8},
+
     {NULL, 0, 0},
 };
 // clang-format on
