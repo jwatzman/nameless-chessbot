@@ -287,7 +287,7 @@ static void move_generate_movelist_pawn_push(Bitboard* board,
       else
         dest = board_index_of(row - 1, col);
 
-      if (pinned && (raycast[king_loc][dest] & (1ULL << dest)) == 0)
+      if (pinned && (raycast[king_loc][src] & (1ULL << dest)) == 0)
         continue;
 
       uint64_t one_forward = 1ULL << dest;
