@@ -11,6 +11,10 @@ static inline uint8_t popcnt(uint64_t x) {
   return __builtin_popcountll(x);
 }
 
+static inline int twobits(uint64_t x) {
+  return (x & (x - 1)) > 0;
+}
+
 static inline uint8_t min(uint8_t a, uint8_t b) {
   return a < b ? a : b;
 }

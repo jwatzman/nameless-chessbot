@@ -27,7 +27,7 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
 
   Color to_move = board->to_move;
 
-  int in_double_check = popcnt(board->state->king_attackers) > 1;
+  int in_double_check = twobits(board->state->king_attackers);
   int in_single_check = !in_double_check && board->state->king_attackers > 0;
   uint8_t king_loc = bitscan(board->boards[board->to_move][KING]);
 

@@ -368,7 +368,7 @@ int board_in_check(Bitboard* board, Color color) {
     // it.
     king_attackers = board_gen_king_attackers(board, color);
 
-  return popcnt(king_attackers) > 0;
+  return king_attackers > 0;
 }
 
 void board_print(Bitboard* board) {
