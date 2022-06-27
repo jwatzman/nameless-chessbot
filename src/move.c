@@ -445,8 +445,6 @@ static void move_generate_movelist_enpassant(Bitboard* board,
   if (ep_index == 0)
     return;
 
-  // TODO: deal with pins
-
   if (in_single_check) {
     uint8_t dest = board->to_move == WHITE ? ep_index + 8 : ep_index - 8;
     uint64_t dest_mask = 1ULL << dest;
@@ -479,6 +477,29 @@ static Move move_generate_enpassant_move(Bitboard* board, uint8_t src) {
 
   uint8_t ep_index = board->state->enpassant_index;
   uint8_t dest = color == WHITE ? ep_index + 8 : ep_index - 8;
+  uint8_t king_loc = bitscan(board->boards[color][KING]);
+
+  // Standard pin check: if we are pinned we need to land along the pinning ray.
+  if ((board->state->pinned & (1ULL << src)) != 0 &&
+      (raycast[king_loc][src] & (1ULL << dest)) == 0)
+    return MOVE_NULL;
+
+  // This is a check like the pin checks, but it's not quite a pin: an enpassant
+  // capture (re)moves both the capturing and captured piece from the same row,
+  // so we need to make sure there isn't a rook or queen behind them. (Neither
+  // is pinned since they are *both* in the way at the same time, but then
+  // removed at the same time exposing the king.)
+  if (board_row_of(ep_index) == board_row_of(king_loc)) {
+    uint64_t removed = (1ULL << ep_index) | (1ULL << src);
+    // We don't need to be especially careful checking that the attacks are on
+    // that row -- if we hit a rook/queen in a different direction, we're in
+    // check anyway and this move won't help.
+    uint64_t attacks =
+        movemagic_rook(king_loc, board->full_composite & ~removed);
+    if ((attacks & board->boards[1 - board->to_move][ROOK]) ||
+        (attacks & board->boards[1 - board->to_move][QUEEN]))
+      return MOVE_NULL;
+  }
 
   Move move = 0;
   move |= src << move_source_index_offset;
