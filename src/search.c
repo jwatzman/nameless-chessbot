@@ -265,80 +265,76 @@ static int search_alpha_beta(Bitboard* board,
     State s;
     board_do_move(board, move, &s);
 
-    // make the final legality check
-    if (!board_in_check(board, 1 - board->to_move)) {
-      // value from recursive call to alpha-beta search
-      int recursive_value;
+    // value from recursive call to alpha-beta search
+    int recursive_value;
 
-      // keeps track of various re-search conditions
-      int search_completed = 0;
+    // keeps track of various re-search conditions
+    int search_completed = 0;
 
-      int move_causes_check = board_in_check(board, board->to_move);
-      int extensions = move_causes_check;
+    int move_causes_check = board_in_check(board, board->to_move);
+    int extensions = move_causes_check;
 
-      if (type == TRANSPOSITION_EXACT) {
-        // PV search
-        search_completed = 1;
-        recursive_value = -search_alpha_beta(
-            board, -alpha - 1, -alpha, depth - 1 + extensions, ply + 1, NULL);
+    if (type == TRANSPOSITION_EXACT) {
+      // PV search
+      search_completed = 1;
+      recursive_value = -search_alpha_beta(
+          board, -alpha - 1, -alpha, depth - 1 + extensions, ply + 1, NULL);
 
-        if ((recursive_value > alpha) && (recursive_value < beta)) {
-          // PV search failed
-          search_completed = 0;
-        }
+      if ((recursive_value > alpha) && (recursive_value < beta)) {
+        // PV search failed
+        search_completed = 0;
       }
-      // LMR disabled -- move ordering not smart enough?
-      /*
-      else if (legal_moves > 4 && depth > 2 && extensions == 0 &&
-               !move_is_promotion(move) && !move_is_capture(move) &&
-               move_piecetype(move) != PAWN && !in_check &&
-               !move_causes_check && !quiescent) {
-        // LMR
-        search_completed = 1;
-        recursive_value = -search_alpha_beta(board, -alpha - 1, -alpha,
-                                             depth - 2, ply + 1, pv + 1);
-
-        if (recursive_value > alpha) {
-          // LMR failed
-          search_completed = 0;
-        }
-      }
-      */
-
-      if (!search_completed) {
-        // normal search
-        recursive_value =
-            -search_alpha_beta(board, -beta, -alpha, depth - 1 + extensions,
-                               ply + 1, pv ? localpv : NULL);
-      }
-
-      board_undo_move(board, move);
-
-      if (recursive_value >= beta) {
-        /* since this move caused a beta cutoff, we don't want
-           to bother storing it in the pv *however*, we most
-           definitely want to put it in the transposition table,
-           since it will be searched first next time, and will
-           thus immediately cause a cutoff again */
-        search_transposition_put(board->state->zobrist, recursive_value, move,
-                                 TRANSPOSITION_BETA, board->generation, depth);
-
-        return recursive_value;
-      }
+    }
+    // LMR disabled -- move ordering not smart enough?
+    /*
+    else if (legal_moves > 4 && depth > 2 && extensions == 0 &&
+             !move_is_promotion(move) && !move_is_capture(move) &&
+             move_piecetype(move) != PAWN && !in_check &&
+             !move_causes_check && !quiescent) {
+      // LMR
+      search_completed = 1;
+      recursive_value = -search_alpha_beta(board, -alpha - 1, -alpha,
+                                           depth - 2, ply + 1, pv + 1);
 
       if (recursive_value > alpha) {
-        alpha = recursive_value;
-        type = TRANSPOSITION_EXACT;
-        best_move = move;
-        if (pv) {
-          pv[0] = best_move;
-          memcpy(pv + 1, localpv, depth * sizeof(Move));
-        }
+        // LMR failed
+        search_completed = 0;
       }
+    }
+    */
 
-      legal_moves++;
-    } else
-      board_undo_move(board, move);
+    if (!search_completed) {
+      // normal search
+      recursive_value =
+          -search_alpha_beta(board, -beta, -alpha, depth - 1 + extensions,
+                             ply + 1, pv ? localpv : NULL);
+    }
+
+    board_undo_move(board, move);
+
+    if (recursive_value >= beta) {
+      /* since this move caused a beta cutoff, we don't want
+         to bother storing it in the pv *however*, we most
+         definitely want to put it in the transposition table,
+         since it will be searched first next time, and will
+         thus immediately cause a cutoff again */
+      search_transposition_put(board->state->zobrist, recursive_value, move,
+                               TRANSPOSITION_BETA, board->generation, depth);
+
+      return recursive_value;
+    }
+
+    if (recursive_value > alpha) {
+      alpha = recursive_value;
+      type = TRANSPOSITION_EXACT;
+      best_move = move;
+      if (pv) {
+        pv[0] = best_move;
+        memcpy(pv + 1, localpv, depth * sizeof(Move));
+      }
+    }
+
+    legal_moves++;
   }
 
   if (timeup)
