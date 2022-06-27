@@ -197,6 +197,20 @@ uint64_t move_generate_king_danger(Bitboard* board, Color color) {
 }
 
 uint64_t move_generate_pinned(Bitboard* board, Color color) {
+  // We compute pinned pieces by:
+  //  - pretending there is a bishop/rook/queen at the spot where the king is,
+  //    and seeing which squares that would attack
+  //  - seeing which squares the opponent's actual bishop/rook/queens attack
+  //  - intersecting the two along the line between the king and that piece (so
+  //    that, e.g., a king and a bishop which are on the same rank/file don't
+  //    pin any pieces on the diagonals where their "attacks" happen to
+  //    intersect
+  //
+  // When doing movegen, if a piece is pinned, moving it is only legal if its
+  // destination is the same ray from the king to its source location (since its
+  // pinning attacker must be further along that ray, that means it stays in
+  // between the two).
+
   uint8_t king_loc = bitscan(board->boards[color][KING]);
   uint64_t king_bishop = movemagic_bishop(king_loc, board->full_composite);
   uint64_t king_rook = movemagic_rook(king_loc, board->full_composite);

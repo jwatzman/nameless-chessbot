@@ -30,6 +30,7 @@ uint64_t move_generate_attacks(Bitboard* board,
 // What are the attacked squares the king cannot move into?
 uint64_t move_generate_king_danger(Bitboard* board, Color color);
 
+// Which pieces are pinned to the king?
 uint64_t move_generate_pinned(Bitboard* board, Color color);
 
 #define move_source_index_offset 0
