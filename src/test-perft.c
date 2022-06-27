@@ -59,6 +59,10 @@ static const TestCase cases[] = {
     {"4k3/3NqQ2/8/8/8/8/4p3/4K3 b - - 0 1", 1, 4},
     {"8/8/5k2/8/4Pp2/8/8/4KR2 b - e3 0 1", 1, 8},
 
+    // My own cases:
+    // Two snipers blocking each other
+    {"k7/8/8/r1b2P1K/8/8/8/8 w - - 0 1", 1, 6},
+
     {NULL, 0, 0},
 };
 // clang-format on
