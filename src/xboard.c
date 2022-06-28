@@ -94,7 +94,7 @@ int main(void) {
     } else if (!strncmp("level ", input, 6)) {
       timer_init_xboard(input);
     } else if (!strcmp("_print\n", input) || !strncmp("_perft ", input, 7)) {
-      int perft_depth = input[2] == 'e' ? strtol(input + 7, NULL, 10) - 1 : 0;
+      int perft_depth = input[2] == 'e' ? strtol(input + 7, NULL, 10) - 1 : -1;
       uint64_t perft_tot = 0;
 
       board_print(board);
@@ -113,7 +113,7 @@ int main(void) {
         move_srcdest_form(m, srcdest_form);
         printf("%s ", srcdest_form);
 
-        if (perft_depth > 0) {
+        if (perft_depth >= 0) {
           State s;
           if (!move_is_legal(board, m)) {
             printf("(illegal)\n");
@@ -128,7 +128,7 @@ int main(void) {
         }
       }
 
-      if (perft_depth > 0)
+      if (perft_depth >= 0)
         printf("Total: %" PRIu64 "\n", perft_tot);
       else
         printf("\n");
