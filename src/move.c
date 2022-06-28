@@ -71,9 +71,9 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
       uint64_t dests = move_generate_attacks(board, piece, to_move, src);
       dests &=
           ~(board->composite_boards[to_move]);  // can't capture your own piece
-      if (piece == KING)
-        dests &= ~(board->state->king_danger);  // King can't move into check.
-      else if (board->state->pinned & (1ULL << src))
+      // Do not bother to mask off dests for the king which are in check:
+      // move_is_legal tests that.
+      if (board->state->pinned & (1ULL << src))
         dests &= raycast[king_loc][src];  // Pinned movement restricted.
 
       uint64_t captures = dests & board->composite_boards[1 - to_move];
@@ -175,26 +175,32 @@ uint64_t move_generate_attacks(Bitboard* board,
   }
 }
 
-uint64_t move_generate_king_danger(Bitboard* board, Color color) {
-  uint64_t all_attacks = 0;
-
-  // This is used to prevent 1 - color's king from moving into check. Moving
-  // away from a sliding piece is still in check, so temporarily mask out that
-  // king to extend the sliding's range.
-  board->full_composite ^= board->boards[1 - color][KING];
-  for (Piecetype piece = 0; piece < 6; piece++) {
-    uint64_t pieces = board->boards[color][piece];
-
-    while (pieces) {
-      uint8_t src = bitscan(pieces);
-      pieces &= pieces - 1;
-
-      all_attacks |= move_generate_attacks(board, piece, color, src);
+int move_is_legal(Bitboard* board, Move m) {
+  if (move_is_castle(m)) {
+    // Do not allow castling through check.
+    uint8_t src = move_source_index(m);
+    uint8_t dest = move_destination_index(m);
+    int8_t dir = src < dest ? 1 : -1;
+    for (uint8_t pos = src + dir; pos != (dest + dir); pos += dir) {
+      if (move_generate_attackers(board, 1 - board->to_move, pos,
+                                  board->full_composite) > 0)
+        return 0;
     }
-  }
-  board->full_composite ^= board->boards[1 - color][KING];
 
-  return all_attacks;
+    return 1;
+  } else if (move_piecetype(m) == KING) {
+    // Do not allow moving the king into check.
+    uint64_t composite =
+        // Mask out the king because moving away from a sliding piece does not
+        // get you out of check.
+        board->full_composite & ~board->boards[board->to_move][KING];
+    uint8_t dest = move_destination_index(m);
+    return move_generate_attackers(board, 1 - board->to_move, dest,
+                                   composite) == 0;
+  } else {
+    // All of the other cases are dealt with when intially generating the moves.
+    return 1;
+  }
 }
 
 uint64_t move_generate_pinned(Bitboard* board, Color color) {
@@ -242,9 +248,10 @@ uint64_t move_generate_pinned(Bitboard* board, Color color) {
 
 uint64_t move_generate_attackers(Bitboard* board,
                                  Color attacker,
-                                 uint8_t square) {
-  uint64_t rook_attacks = movemagic_rook(square, board->full_composite);
-  uint64_t bishop_attacks = movemagic_bishop(square, board->full_composite);
+                                 uint8_t square,
+                                 uint64_t composite) {
+  uint64_t rook_attacks = movemagic_rook(square, composite);
+  uint64_t bishop_attacks = movemagic_bishop(square, composite);
 
   return (knight_attacks[square] & board->boards[attacker][KNIGHT]) |
          (king_attacks[square] & board->boards[attacker][KING]) |
@@ -345,16 +352,18 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
   // XXX this assumes the validity of the castling rights, in particular
   // that there actually are a rook/king in the right spot, funny things
   // happen if you, e.g., load a FEN with an invalid set of rights
+  //
+  // Finally, this does not check for castling through check: move_is_legal
+  // tests that. (And it assumes it will not be called in the first place if the
+  // king is already in check.)
 
   Color color = board->to_move;
 
   // white queenside
   if ((color == WHITE) &&
       (board->state->castle_rights & CASTLE_R(CASTLE_R_QS, WHITE))) {
-    uint64_t noattack = (1ULL << 2) | (1ULL << 3);
-    uint64_t clear = (1ULL << 1) | noattack;
-    if ((board->full_composite & clear) == 0 &&
-        (board->state->king_danger & noattack) == 0) {
+    uint64_t clear = (1ULL << 1) | (1ULL << 2) | (1ULL << 3);
+    if ((board->full_composite & clear) == 0) {
       Move move = 0;
       move |= 4 << move_source_index_offset;
       move |= 2 << move_destination_index_offset;
@@ -369,8 +378,7 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
   if ((color == WHITE) &&
       (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, WHITE))) {
     uint64_t clear = (1ULL << 5) | (1ULL << 6);
-    if ((board->full_composite & clear) == 0 &&
-        (board->state->king_danger & clear) == 0) {
+    if ((board->full_composite & clear) == 0) {
       Move move = 0;
       move |= 4 << move_source_index_offset;
       move |= 6 << move_destination_index_offset;
@@ -384,10 +392,8 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
   // black queenside
   if ((color == BLACK) &&
       (board->state->castle_rights & CASTLE_R(CASTLE_R_QS, BLACK))) {
-    uint64_t noattack = (1ULL << 58) | (1ULL << 59);
-    uint64_t clear = (1ULL << 57) | noattack;
-    if ((board->full_composite & clear) == 0 &&
-        (board->state->king_danger & noattack) == 0) {
+    uint64_t clear = (1ULL << 57) | (1ULL << 58) | (1ULL << 59);
+    if ((board->full_composite & clear) == 0) {
       Move move = 0;
       move |= 60 << move_source_index_offset;
       move |= 58 << move_destination_index_offset;
@@ -402,8 +408,7 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
   if ((color == BLACK) &&
       (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, BLACK))) {
     uint64_t clear = (1ULL << 61) | (1ULL << 62);
-    if ((board->full_composite & clear) == 0 &&
-        (board->state->king_danger & clear) == 0) {
+    if ((board->full_composite & clear) == 0) {
       Move move = 0;
       move |= 60 << move_source_index_offset;
       move |= 62 << move_destination_index_offset;

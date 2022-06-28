@@ -262,6 +262,9 @@ static int search_alpha_beta(Bitboard* board,
     if (quiescent && !in_check && !move_is_capture(move))
       break;
 
+    if (!move_is_legal(board, move))
+      continue;
+
     State s;
     board_do_move(board, move, &s);
 

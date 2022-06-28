@@ -10,15 +10,16 @@
 // Must be called at program startup.
 void move_init(void);
 
-// generates *psdueomoves* -- taking one of these moves could leave the king in
-// check
+// *Most*, but not *all*, of the moves returned here are legal. Need to still
+// call move_is_legal as a final check before applying the move.
 void move_generate_movelist(Bitboard* board, Movelist* movelist);
 
 // does not consider enpassant (this is basically for checking king move and
 // castling viability)
 uint64_t move_generate_attackers(Bitboard* board,
                                  Color attacker,
-                                 uint8_t square);
+                                 uint8_t square,
+                                 uint64_t composite);
 
 // assuming this piece were to be at this location, where could it attack?
 // note: does *not* generate pawn pushes or mask out friendly pieces
@@ -27,8 +28,9 @@ uint64_t move_generate_attacks(Bitboard* board,
                                Color color,
                                uint8_t index);
 
-// What are the attacked squares the king cannot move into?
-uint64_t move_generate_king_danger(Bitboard* board, Color color);
+// Final move legality checks that are too expensive to do in
+// move_generate_movelist.
+int move_is_legal(Bitboard* board, Move m);
 
 // Which pieces are pinned to the king?
 uint64_t move_generate_pinned(Bitboard* board, Color color);

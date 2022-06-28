@@ -115,14 +115,15 @@ int main(void) {
 
         if (perft_depth > 0) {
           State s;
-          board_do_move(board, m, &s);
-          if (board_in_check(board, 1 - board->to_move))
+          if (!move_is_legal(board, m)) {
             printf("(illegal)\n");
-          else {
-            uint64_t p = perft(board, perft_depth);
-            printf("%" PRIu64 "\n", p);
-            perft_tot += p;
+            continue;
           }
+
+          board_do_move(board, m, &s);
+          uint64_t p = perft(board, perft_depth);
+          printf("%" PRIu64 "\n", p);
+          perft_tot += p;
           board_undo_move(board, m);
         }
       }

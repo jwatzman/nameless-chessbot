@@ -13,8 +13,6 @@ uint64_t perft(Bitboard* board, int depth) {
 
   Movelist moves;
   move_generate_movelist(board, &moves);
-  if (depth == 1)
-    return moves.num_total;
 
   Moveiter iter;
   moveiter_init(&iter, &moves, MOVEITER_SORT_NONE, MOVE_NULL);
@@ -23,9 +21,17 @@ uint64_t perft(Bitboard* board, int depth) {
   while (moveiter_has_next(&iter)) {
     Move m = moveiter_next(&iter);
     State s;
-    board_do_move(board, m, &s);
-    nodes += perft(board, depth - 1);
-    board_undo_move(board, m);
+
+    if (!move_is_legal(board, m))
+      continue;
+
+    if (depth == 1) {
+      nodes += 1;
+    } else {
+      board_do_move(board, m, &s);
+      nodes += perft(board, depth - 1);
+      board_undo_move(board, m);
+    }
   }
 
   return nodes;

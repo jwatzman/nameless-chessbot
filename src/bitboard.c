@@ -347,14 +347,13 @@ static void board_toggle_piece(Bitboard* board,
 
 static uint64_t board_gen_king_attackers(Bitboard* board, Color color) {
   return move_generate_attackers(board, 1 - color,
-                                 bitscan(board->boards[color][KING]));
+                                 bitscan(board->boards[color][KING]),
+                                 board->full_composite);
 }
 
 static void board_update_expensive_state(Bitboard* board) {
   board->state->king_attackers =
       board_gen_king_attackers(board, board->to_move);
-  board->state->king_danger =
-      move_generate_king_danger(board, 1 - board->to_move);
   board->state->pinned = move_generate_pinned(board, board->to_move);
 }
 
