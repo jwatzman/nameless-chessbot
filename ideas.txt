@@ -2,7 +2,6 @@
 - is the table zeroed?
 - transposition: split out "best move" table from "header" table etc?
 - transposition: eviction policy -- "used" count?
-- movegen/moveiter: can generate only captures at all, if beta cutoff don't generate other moves?
 - compare against http://mediocrechess.blogspot.com/2007/01/guide-perft-scores.html
 
 - why is perft so slow???
@@ -13,15 +12,21 @@
 	- improve branch prediction
 		- manual hints in movegen?
 		- pgo?
-	- add pins and others to reduce/eliminate illegal moves
-		- can save expensive checks for a final is_legal check that happens before doing the move -- doing/undoing illegal moves is the expensive bit?
+	- improve movemagic:
+		- "fancy" (dense) boards have been a loss when I have tried?
+			- because of cache misses of extra lookups? because the shift is no longer a constant?
+			- try putting the magic, shift, and table pointer into a struct for better data locality
+		- bmi pext tables: https://www.chessprogramming.org/BMI2#PEXTBitboards
+		- dump Stockfish tables? https://github.com/official-stockfish/Stockfish/blob/90cf8e7d2bde9e480aac4b119ce130e09dd2be39/src/bitboard.cpp#L148
 
 - killer moves -- table of 2 moves per ply that were previous best for that depth; if legal sort after tt move or after captures?
 - improve timer
 	- move to setitimer(TIMER_REAL) [macOS does not have timer_create]
-	- track "expected end" and re-set timer if we haven't hit it yet
+		- track "expected end" and re-set timer if we haven't hit it yet (so time can be increased during search)
+		- or just check the time every N nodes searched -- removes unix-ixm
 	- allows time to be increased, e.g., if hit aspiration failure
 	- allows computing remaining time, e.g., if about to start another ply but there's very little time left
+	- do something with fixed time, e.g., in 2+1 we just use the 1 right now!
 - pondering
 	- maybe straightforward with pthreads and manually forcing a timeup?
 	- always move search into a thread so it can be interrupted?
