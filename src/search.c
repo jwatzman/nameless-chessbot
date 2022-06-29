@@ -215,17 +215,17 @@ static int search_alpha_beta(Bitboard* board,
     return eval;
   }
 
-  // null move pruning
-  if (quiescent) {
+  // Quiescent stand-pat: "you don't have to ttake". Disallow when in check
+  // since the position isn't "quiet" yet and there's no option to "do nothing".
+  if (quiescent && !in_check) {
     pv = NULL;
 
-    // quiescent null-move; this is necessary for correctness
-    int null_move_value = evaluate_board(board);
+    int stand_pat = evaluate_board(board);
 
-    if (null_move_value >= beta)
-      return null_move_value;
-    else if (null_move_value > alpha) {
-      alpha = null_move_value;
+    if (stand_pat >= beta) {
+      return stand_pat;
+    } else if (stand_pat > alpha) {
+      alpha = stand_pat;
       type = TRANSPOSITION_EXACT;
     }
   }
