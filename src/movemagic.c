@@ -5,8 +5,18 @@
 #include "movemagic-consts.h"
 #include "movemagic.h"
 
-static uint64_t rookdb[64][1 << (64 - MIN_R_SHIFT)];
-static uint64_t bishopdb[64][1 << (64 - MIN_B_SHIFT)];
+typedef struct {
+  uint64_t mask;
+  uint64_t magic;
+  uint64_t* attacks;
+  uint8_t shift;
+} Entry;
+
+static uint64_t* rook_attacks;
+static uint64_t* bishop_attacks;
+
+static Entry rook_entries[64];
+static Entry bishop_entries[64];
 
 static void movemagic_init_findsetbits(uint64_t board,
                                        uint8_t* setbits,
@@ -82,7 +92,41 @@ static uint64_t movemagic_init_bishop_attacks(uint8_t pos, uint64_t occ) {
          movemagic_init_compute_attacks(pos, occ, sub_one, sub_one);
 }
 
+static void movemagic_init_tables(void) {
+  // XXX this can be worked out statically. Is heap or BSS better, or does it
+  // matter? This is simple for now.
+  int r_tot = 0;
+  int b_tot = 0;
+  for (uint8_t pos = 0; pos < 64; pos++) {
+    r_tot += 1 << (64 - r_shift[pos]);
+    b_tot += 1 << (64 - b_shift[pos]);
+  }
+  rook_attacks = malloc(r_tot * sizeof(uint64_t));
+  bishop_attacks = malloc(b_tot * sizeof(uint64_t));
+
+  uint64_t* p_rook = rook_attacks;
+  uint64_t* p_bishop = bishop_attacks;
+  for (uint8_t pos = 0; pos < 64; pos++) {
+    Entry* r = &rook_entries[pos];
+    r->mask = r_mask[pos];
+    r->magic = r_magic[pos];
+    r->attacks = p_rook;
+    r->shift = r_shift[pos];
+
+    Entry* b = &bishop_entries[pos];
+    b->mask = b_mask[pos];
+    b->magic = b_magic[pos];
+    b->attacks = p_bishop;
+    b->shift = b_shift[pos];
+
+    p_rook += 1 << (64 - r_shift[pos]);
+    p_bishop += 1 << (64 - b_shift[pos]);
+  }
+}
+
 void movemagic_init(void) {
+  movemagic_init_tables();
+
   uint8_t setbits[64];
   uint8_t numsetbits;
 
@@ -91,7 +135,9 @@ void movemagic_init(void) {
     for (uint64_t n = 0; n < (1ULL << numsetbits); n++) {
       uint64_t occ = movemagic_init_nth_subset(n, setbits, numsetbits);
       uint64_t attacks = movemagic_init_rook_attacks(pos, occ);
-      rookdb[pos][occ * r_magic[pos] >> MIN_R_SHIFT] = attacks;
+
+      Entry* e = &rook_entries[pos];
+      e->attacks[occ * e->magic >> e->shift] = attacks;
     }
   }
 
@@ -100,17 +146,21 @@ void movemagic_init(void) {
     for (uint64_t n = 0; n < (1ULL << numsetbits); n++) {
       uint64_t occ = movemagic_init_nth_subset(n, setbits, numsetbits);
       uint64_t attacks = movemagic_init_bishop_attacks(pos, occ);
-      bishopdb[pos][occ * b_magic[pos] >> MIN_B_SHIFT] = attacks;
+
+      Entry* e = &bishop_entries[pos];
+      e->attacks[occ * e->magic >> e->shift] = attacks;
     }
   }
 }
 
 uint64_t movemagic_rook(uint8_t pos, uint64_t occ) {
-  occ = occ & r_mask[pos];
-  return rookdb[pos][occ * r_magic[pos] >> MIN_R_SHIFT];
+  Entry* e = &rook_entries[pos];
+  occ = occ & e->mask;
+  return e->attacks[occ * e->magic >> e->shift];
 }
 
 uint64_t movemagic_bishop(uint8_t pos, uint64_t occ) {
-  occ = occ & b_mask[pos];
-  return bishopdb[pos][occ * b_magic[pos] >> MIN_B_SHIFT];
+  Entry* e = &bishop_entries[pos];
+  occ = occ & e->mask;
+  return e->attacks[occ * e->magic >> e->shift];
 }

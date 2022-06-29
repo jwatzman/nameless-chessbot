@@ -13,11 +13,7 @@
 		- manual hints in movegen?
 		- pgo?
 	- improve movemagic:
-		- "fancy" (dense) boards have been a loss when I have tried?
-			- because of cache misses of extra lookups? because the shift is no longer a constant?
-			- try putting the magic, shift, and table pointer into a struct for better data locality
 		- bmi pext tables: https://www.chessprogramming.org/BMI2#PEXTBitboards
-		- dump Stockfish tables? https://github.com/official-stockfish/Stockfish/blob/90cf8e7d2bde9e480aac4b119ce130e09dd2be39/src/bitboard.cpp#L148
 
 - killer moves -- table of 2 moves per ply that were previous best for that depth; if legal sort after tt move or after captures?
 - improve timer
