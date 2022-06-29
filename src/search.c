@@ -13,27 +13,7 @@
 #include "move.h"
 #include "moveiter.h"
 #include "timer.h"
-
-typedef enum {
-  TRANSPOSITION_EXACT,
-  TRANSPOSITION_ALPHA,
-  TRANSPOSITION_BETA,
-  TRANSPOSITION_INVALIDATED
-} __attribute__((__packed__)) TranspositionType;
-
-typedef struct {
-  uint64_t zobrist;
-  int8_t depth;
-  uint16_t generation;
-  int value;
-  Move best_move;
-  TranspositionType type;
-} __attribute__((__packed__)) TranspositionNode;
-
-#define transposition_width 4
-#define transposition_entries 524288
-static TranspositionNode transposition_table[transposition_entries]
-                                            [transposition_width];
+#include "tt.h"
 
 #define max_possible_depth 30
 #define max_quiescent_depth 50
@@ -49,25 +29,6 @@ static int search_alpha_beta(Bitboard* board,
                              int8_t depth,
                              int8_t ply,
                              Move* pv);
-
-/* asks the transposition table if we already know a good value for this
-   position. If we do, return it. Otherwise, return INFINITY but adjust
-   *alpha and *beta if we know better bounds for them */
-static int search_transposition_get_value(uint64_t zobrist,
-                                          int alpha,
-                                          int beta,
-                                          int8_t depth);
-
-// if we have a previous best move for this zobrist, return it; 0 otherwise
-static Move search_transposition_get_best_move(uint64_t zobrist);
-
-// add to transposition table
-static void search_transposition_put(uint64_t zobrist,
-                                     int value,
-                                     Move best_move,
-                                     TranspositionType type,
-                                     uint16_t generation,
-                                     int8_t depth);
 
 static void search_print_pv(Move* pv, int8_t depth);
 
@@ -197,12 +158,11 @@ static int search_alpha_beta(Bitboard* board,
     }
 
     // check transposition table for a useful value
-    int table_val = search_transposition_get_value(board->state->zobrist, alpha,
-                                                   beta, depth);
+    int table_val = tt_get_value(board->state->zobrist, alpha, beta, depth);
 
     if (table_val != INFINITY) {
       if (pv) {
-        pv[0] = search_transposition_get_best_move(board->state->zobrist);
+        pv[0] = tt_get_best_move(board->state->zobrist);
         pv[1] = MOVE_NULL;  // We don't store pv in the table.
       }
       return table_val;
@@ -240,8 +200,7 @@ static int search_alpha_beta(Bitboard* board,
   // have a reduced search space anyway, the memory lookup isn't worth it
   Move transposition_move = MOVE_NULL;
   if (!quiescent) {
-    transposition_move =
-        search_transposition_get_best_move(board->state->zobrist);
+    transposition_move = tt_get_best_move(board->state->zobrist);
   }
 
   Moveiter iter;
@@ -318,8 +277,9 @@ static int search_alpha_beta(Bitboard* board,
          definitely want to put it in the transposition table,
          since it will be searched first next time, and will
          thus immediately cause a cutoff again */
-      search_transposition_put(board->state->zobrist, recursive_value, move,
-                               TRANSPOSITION_BETA, board->generation, depth);
+      if (!timeup)
+        tt_put(board->state->zobrist, recursive_value, move, TRANSPOSITION_BETA,
+               board->generation, depth);
 
       return recursive_value;
     }
@@ -351,112 +311,12 @@ static int search_alpha_beta(Bitboard* board,
     int eval = evaluate_board(board);
     return eval;
   } else {
-    search_transposition_put(board->state->zobrist, alpha, best_move, type,
-                             board->generation, depth);
+    // Do not need to check for timeup here since we do it a few lines above,
+    // after which the search of this position is complete and so we are still
+    // safe to store even if time is up right now.
+    tt_put(board->state->zobrist, alpha, best_move, type, board->generation,
+           depth);
     return alpha;
-  }
-}
-
-static int search_transposition_get_value(uint64_t zobrist,
-                                          int alpha,
-                                          int beta,
-                                          int8_t depth) {
-  int index = zobrist % transposition_entries;
-
-  if (depth < 1)
-    return INFINITY;
-
-  for (int i = 0; i < transposition_width; i++) {
-    /* Since many zobrists may map to a single slot in the table, we
-    want to make sure we got a match; also, we want to make sure that
-    the entry was not made with a shallower depth than what we're
-    currently using. */
-    TranspositionNode* node = &transposition_table[index][i];
-    if (node->zobrist == zobrist) {
-      if (node->depth >= depth) {
-        int val = node->value;
-
-        if (node->type == TRANSPOSITION_EXACT)
-          return val;
-        else if ((node->type == TRANSPOSITION_ALPHA) && (val <= alpha))
-          return val;
-        else if ((node->type == TRANSPOSITION_BETA) && (val >= beta))
-          return val;
-      }
-    }
-  }
-
-  return INFINITY;
-}
-
-static Move search_transposition_get_best_move(uint64_t zobrist) {
-  int index = zobrist % transposition_entries;
-
-  for (int i = 0; i < transposition_width; i++) {
-    TranspositionNode* node = &transposition_table[index][i];
-
-    if (node->zobrist == zobrist)
-      return node->best_move;
-  }
-
-  return MOVE_NULL;
-}
-
-static void search_transposition_put(uint64_t zobrist,
-                                     int value,
-                                     Move best_move,
-                                     TranspositionType type,
-                                     uint16_t generation,
-                                     int8_t depth) {
-  /* we might not store in the transnposition table if:
-      - time is up, thus we can't garuntee this was a full search
-      - the depth is not deep enough to be useful
-      - the value is dependent upon the ply at which it was searched and the
-        depth to which it was searched (currently, only MATE moves)
-      - it would replace a deeper search of this node
-   */
-  if (timeup || (depth < 1) || (value >= MATE) || (value <= -MATE))
-    return;
-
-  int index = zobrist % transposition_entries;
-  TranspositionNode* target = NULL;
-
-  for (int i = 0; i < transposition_width; i++) {
-    if (transposition_table[index][i].zobrist == zobrist) {
-      target = &transposition_table[index][i];
-      break;
-    }
-  }
-
-  if (!target) {
-    int replace_depth = 999;
-    for (int i = 0; i < transposition_width; i++) {
-      TranspositionNode* node = &transposition_table[index][i];
-      if (node->generation != generation && replace_depth > node->depth) {
-        replace_depth = node->depth;
-        target = node;
-      }
-    }
-  }
-
-  if (!target) {
-    int replace_depth = 999;
-    for (int i = 0; i < transposition_width; i++) {
-      TranspositionNode* node = &transposition_table[index][i];
-      if (replace_depth > node->depth) {
-        replace_depth = node->depth;
-        target = node;
-      }
-    }
-  }
-
-  if (target) {
-    target->zobrist = zobrist;
-    target->depth = depth;
-    target->generation = generation;
-    target->value = value;
-    target->best_move = best_move;
-    target->type = type;
   }
 }
 
