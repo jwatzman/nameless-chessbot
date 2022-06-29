@@ -78,6 +78,18 @@ void tt_put(uint64_t zobrist,
   for (int i = 0; i < TT_WIDTH; i++) {
     if (transposition_table[index][i].zobrist == zobrist) {
       target = &transposition_table[index][i];
+      /* XXX this seems to help `search-perf 8 6` but hurt test 2 in
+      `test-search`? Why? (The latter even ends up with different results at the
+      larger depths.)
+      // We found this position in the table already. We might be able to
+      // improve it with a deeper search, or tighter bounds on the current
+      // depth. But if we can't do that, we should do nothing and keep the
+      // existing entry.
+      if (target->depth > depth)
+        return;
+      if (target->depth == depth && target->type == TRANSPOSITION_EXACT)
+        return;
+      */
       break;
     }
   }
