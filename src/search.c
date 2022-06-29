@@ -258,10 +258,16 @@ static int search_alpha_beta(Bitboard* board,
   while (moveiter_has_next(&iter)) {
     Move move = moveiter_next(&iter);
 
-    /* if we're quiescent, we only want capture moves unless the
-       original position was in check, then do everything */
-    if (quiescent && !in_check && !move_is_capture(move))
-      break;
+    // For quiescent search, we want to search all moves if in check, and only
+    // captures/queen promotions when not in check.
+    if (quiescent && !in_check && !move_is_capture(move)) {
+      if (!move_is_promotion(move))
+        break;
+      if (move_promoted_piecetype(move) != QUEEN)
+        // Underpromotions are next in the movelist, followed by captures --
+        // don't break prematurely.
+        continue;
+    }
 
     if (!move_is_legal(board, move))
       continue;
