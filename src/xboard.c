@@ -19,7 +19,7 @@ static const int max_input_length = 1024;
 // returns 0 on illegal move
 static Move parse_move(Bitboard* board, char* possible_move) {
   Movelist moves;
-  move_generate_movelist(board, &moves);
+  move_generate_movelist(board, &moves, MOVE_GEN_ALL);
   char test[6];
 
   Moveiter it;
@@ -102,7 +102,7 @@ int main(void) {
       puts("Pseudolegal moves: ");
 
       Movelist all_moves;
-      move_generate_movelist(board, &all_moves);
+      move_generate_movelist(board, &all_moves, MOVE_GEN_ALL);
 
       Moveiter it;
       moveiter_init(&it, &all_moves, MOVEITER_SORT_NONE, MOVE_NULL);

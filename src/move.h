@@ -7,12 +7,19 @@
 
 #define MOVE_NULL ((Move)0)
 
+typedef enum {
+  MOVE_GEN_ALL = 0,
+
+  // Only moves for quiescent search: captures and queen promotions.
+  MOVE_GEN_QUIET = 1,
+} MoveGenMode;
+
 // Must be called at program startup.
 void move_init(void);
 
 // *Most*, but not *all*, of the moves returned here are legal. Need to still
 // call move_is_legal as a final check before applying the move.
-void move_generate_movelist(Bitboard* board, Movelist* movelist);
+void move_generate_movelist(Bitboard* board, Movelist* movelist, MoveGenMode m);
 
 // does not consider enpassant (this is basically for checking king move and
 // castling viability)

@@ -27,7 +27,7 @@ int main(void) {
     printf("Evaluation: %i\n", evaluate_board(test));
 
     Movelist moves;
-    move_generate_movelist(test, &moves);
+    move_generate_movelist(test, &moves, MOVE_GEN_ALL);
 
     Moveiter it;
     moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL);

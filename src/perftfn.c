@@ -12,7 +12,7 @@ uint64_t perft(Bitboard* board, int depth) {
   }
 
   Movelist moves;
-  move_generate_movelist(board, &moves);
+  move_generate_movelist(board, &moves, MOVE_GEN_ALL);
 
   Moveiter iter;
   moveiter_init(&iter, &moves, MOVEITER_SORT_NONE, MOVE_NULL);

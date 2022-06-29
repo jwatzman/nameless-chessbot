@@ -232,7 +232,8 @@ static int search_alpha_beta(Bitboard* board,
 
   // generate pseudolegal moves
   Movelist moves;
-  move_generate_movelist(board, &moves);
+  move_generate_movelist(
+      board, &moves, quiescent && !in_check ? MOVE_GEN_QUIET : MOVE_GEN_ALL);
 
   // grab move from transposition table for move ordering -- but don't bother
   // for quiescent searches, since we don't write to the table for those and
@@ -257,17 +258,6 @@ static int search_alpha_beta(Bitboard* board,
   // loop thru all moves
   while (moveiter_has_next(&iter)) {
     Move move = moveiter_next(&iter);
-
-    // For quiescent search, we want to search all moves if in check, and only
-    // captures/queen promotions when not in check.
-    if (quiescent && !in_check && !move_is_capture(move)) {
-      if (!move_is_promotion(move))
-        break;
-      if (move_promoted_piecetype(move) != QUEEN)
-        // Underpromotions are next in the movelist, followed by captures --
-        // don't break prematurely.
-        continue;
-    }
 
     if (!move_is_legal(board, move))
       continue;

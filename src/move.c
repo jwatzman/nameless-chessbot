@@ -10,7 +10,8 @@
 
 static void move_generate_movelist_pawn_push(Bitboard* board,
                                              Movelist* movelist,
-                                             uint64_t non_capture_mask);
+                                             uint64_t non_capture_mask,
+                                             MoveGenMode m);
 static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist);
 static void move_generate_movelist_enpassant(Bitboard* board,
                                              Movelist* movelist,
@@ -22,7 +23,9 @@ void move_init(void) {
   movemagic_init();
 }
 
-void move_generate_movelist(Bitboard* board, Movelist* movelist) {
+void move_generate_movelist(Bitboard* board,
+                            Movelist* movelist,
+                            MoveGenMode m) {
   movelist->num_promo = movelist->num_capture = movelist->num_other = 0;
 
   Color to_move = board->to_move;
@@ -82,10 +85,13 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
         // piece.
         captures &= board->state->king_attackers;
 
-      uint64_t non_captures =
-          piece == PAWN ? 0 : dests & ~(board->composite_boards[1 - to_move]);
-      if (in_single_check && piece != KING) {
-        non_captures &= non_capture_mask;
+      uint64_t non_captures;
+      if (m == MOVE_GEN_QUIET || piece == PAWN) {
+        non_captures = 0;
+      } else {
+        non_captures = dests & ~(board->composite_boards[1 - to_move]);
+        if (in_single_check && piece != KING)
+          non_captures &= non_capture_mask;
       }
 
       while (captures) {
@@ -135,11 +141,13 @@ void move_generate_movelist(Bitboard* board, Movelist* movelist) {
   }
 
   if (!in_double_check) {
-    move_generate_movelist_pawn_push(board, movelist, non_capture_mask);
-    if (!in_single_check)
-      move_generate_movelist_castle(board, movelist);
-    move_generate_movelist_enpassant(board, movelist, in_single_check,
-                                     non_capture_mask);
+    move_generate_movelist_pawn_push(board, movelist, non_capture_mask, m);
+    if (m != MOVE_GEN_QUIET) {
+      if (!in_single_check)
+        move_generate_movelist_castle(board, movelist);
+      move_generate_movelist_enpassant(board, movelist, in_single_check,
+                                       non_capture_mask);
+    }
   }
 
   movelist->num_total =
@@ -264,7 +272,8 @@ uint64_t move_generate_attackers(Bitboard* board,
 
 static void move_generate_movelist_pawn_push(Bitboard* board,
                                              Movelist* movelist,
-                                             uint64_t non_capture_mask) {
+                                             uint64_t non_capture_mask,
+                                             MoveGenMode m) {
   Color to_move = board->to_move;
   uint64_t pawns = board->boards[to_move][PAWN];
 
@@ -306,18 +315,20 @@ static void move_generate_movelist_pawn_push(Bitboard* board,
 
           movelist->moves_promo[movelist->num_promo++] =
               (move | (QUEEN << move_promoted_piecetype_offset));
-          movelist->moves_promo[movelist->num_promo++] =
-              (move | (ROOK << move_promoted_piecetype_offset));
-          movelist->moves_promo[movelist->num_promo++] =
-              (move | (BISHOP << move_promoted_piecetype_offset));
-          movelist->moves_promo[movelist->num_promo++] =
-              (move | (KNIGHT << move_promoted_piecetype_offset));
-        } else {
+          if (m != MOVE_GEN_QUIET) {
+            movelist->moves_promo[movelist->num_promo++] =
+                (move | (ROOK << move_promoted_piecetype_offset));
+            movelist->moves_promo[movelist->num_promo++] =
+                (move | (BISHOP << move_promoted_piecetype_offset));
+            movelist->moves_promo[movelist->num_promo++] =
+                (move | (KNIGHT << move_promoted_piecetype_offset));
+          }
+        } else if (m != MOVE_GEN_QUIET) {
           movelist->moves_other[movelist->num_other++] = move;
         }
       }
 
-      if (!one_forward_blocked) {
+      if (!one_forward_blocked && m != MOVE_GEN_QUIET) {
         // try to move two spaces forward
         if ((to_move == WHITE && row == 1) || (to_move == BLACK && row == 6)) {
           if (to_move == WHITE)
