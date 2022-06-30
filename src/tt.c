@@ -94,6 +94,11 @@ void tt_put(uint64_t zobrist,
     }
   }
 
+  // XXX commenting this out might help too? Is it because it saves another
+  // pass/read through the table? (Can we do this and the below check in one
+  // pass?) Or because the replacement strategy is bad? Is *that* because
+  // generation is updated on every move and not just on "final" moves? (What is
+  // Stockfish's replacement strategy?)
   if (!target) {
     int replace_depth = 999;
     for (int i = 0; i < TT_WIDTH; i++) {

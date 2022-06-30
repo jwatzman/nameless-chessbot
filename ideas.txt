@@ -27,3 +27,7 @@
 	- maybe straightforward with pthreads and manually forcing a timeup?
 	- always move search into a thread so it can be interrupted?
 	- need to be careful of atomic access / memory barriers
+- move ordering
+  - SEE
+  - can we do any ordering on non-captures?
+  - can movelist/moveiter be improved to help branch mispredicts and cache locality? (and making "forced first" less dumb?)
