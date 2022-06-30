@@ -85,10 +85,11 @@ void tt_put(uint64_t zobrist,
       // improve it with a deeper search, or tighter bounds on the current
       // depth. But if we can't do that, we should do nothing and keep the
       // existing entry.
-      if (target->depth > depth)
+      if (target->depth > depth) {
+        if (target->best_move == MOVE_NULL && best_move != MOVE_NULL)
+          target->best_move = best_move;
         return;
-      if (target->depth == depth && target->type == TRANSPOSITION_EXACT)
-        return;
+      }
       */
       break;
     }
