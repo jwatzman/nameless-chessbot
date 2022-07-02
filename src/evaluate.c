@@ -11,7 +11,7 @@
 
 // position bonuses; remember that
 // since a1 is the first number, it is in the upper left
-static const int rook_pos[] = {
+static const Score rook_pos[] = {
 0, 3, 7,  8,  8, 7, 3, 0,
 0, 3, 7,  8,  8, 7, 3, 0,
 0, 3, 7,  8,  8, 7, 3, 0,
@@ -22,7 +22,7 @@ static const int rook_pos[] = {
 0, 3, 7,  8,  8, 7, 3, 0
 };
 
-static const int bishop_pos[] = {
+static const Score bishop_pos[] = {
 -5, -5, -7, -5, -5, -7, -5, -5,
 -5, 10,  5,  8,  8,  5, 10, -5,
 -5,  5,  3,  8,  8,  3,  5, -5,
@@ -33,7 +33,7 @@ static const int bishop_pos[] = {
 -5, -5, -7, -5, -5, -7, -5, -5
 };
 
-static const int knight_pos[] = {
+static const Score knight_pos[] = {
 -10, -7, -5, -5, -5, -5, -7,-10,
  -8,  0,  0,  3,  3,  0,  0, -8,
  -8,  0, 10,  8,  8, 10,  0, -8,
@@ -46,7 +46,7 @@ static const int knight_pos[] = {
 
 // pawns aren't hoizontally symmetric;
 // this needs to be special-cased, see below
-static const int pawn_pos[] = {
+static const Score pawn_pos[] = {
 0,  0,  0,  0,  0,  0,  0,  0,
 0,  0,  0, -9, -9,  0,  0,  0,
 0,  2,  3,  5,  5,  3,  2,  0,
@@ -57,7 +57,7 @@ static const int pawn_pos[] = {
 0,  0,  0,  0,  0,  0,  0,  0
 };
 
-static const int passed_pawn_bonus[] = {
+static const Score passed_pawn_bonus[] = {
   0,  0,  0,  0,  0,  0,  0,  0,
  10, 10, 10, 10, 10, 10, 10, 10,
  15, 15, 15, 15, 15, 15, 15, 15,
@@ -69,7 +69,7 @@ static const int passed_pawn_bonus[] = {
 };
 
 // endgame only
-static const int king_endgame_pos[] = {
+static const Score king_endgame_pos[] = {
 0,  0,  1,  3,  3,  1,  0,  0,
 0,  5,  5,  5,  5,  5,  5,  0,
 1,  5,  8,  8,  8,  8,  5,  1,
@@ -83,29 +83,29 @@ static const int king_endgame_pos[] = {
 // clang-format on
 
 // metatables
-static const int* pos_tables[] = {pawn_pos, bishop_pos, knight_pos,
-                                  rook_pos, 0,          0};
+static const Score* pos_tables[] = {pawn_pos, bishop_pos, knight_pos,
+                                    rook_pos, 0,          0};
 
-static const int* endgame_pos_tables[] = {
+static const Score* endgame_pos_tables[] = {
     pawn_pos, bishop_pos, knight_pos, rook_pos, 0, king_endgame_pos};
 
 // piece intrinsic values, in order of:
 // pawn, bishop, knight, rook, queen, king
 // (as defined in types.h)
-static const int values[] = {100, 300, 300, 500, 900, 0};
-static const int endgame_values[] = {175, 300, 300, 500, 1000, 0};
+static const Score values[] = {100, 300, 300, 500, 900, 0};
+static const Score endgame_values[] = {175, 300, 300, 500, 1000, 0};
 
 #define doubled_pawn_penalty -10
 
-int evaluate_board(Bitboard* board) {
-  int result = 0;
+Score evaluate_board(Bitboard* board) {
+  Score result = 0;
   int endgame = popcnt(board->full_composite ^ board->boards[WHITE][PAWN] ^
                        board->boards[BLACK][PAWN]) < 8;
   Color to_move = board->to_move;
 
   for (Color color = 0; color < 2; color++) {
     // add values for the current player, and subtract them for the opponent
-    int color_result = 0;
+    Score color_result = 0;
 
     // XXX bring back has-castled bonus? (10)
 
@@ -140,7 +140,7 @@ int evaluate_board(Bitboard* board) {
         }
 
         // add in piece intrinsic value, and bonus for its location
-        const int* table =
+        const Score* table =
             endgame ? endgame_pos_tables[piece] : pos_tables[piece];
         if (table)
           color_result += table[loc];

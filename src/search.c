@@ -23,12 +23,12 @@ static volatile sig_atomic_t timeup;
 static uint64_t nodes_searched;
 
 // main search workhorse
-static int search_alpha_beta(Bitboard* board,
-                             int alpha,
-                             int beta,
-                             int8_t depth,
-                             int8_t ply,
-                             Move* pv);
+static Score search_alpha_beta(Bitboard* board,
+                               Score alpha,
+                               Score beta,
+                               int8_t depth,
+                               int8_t ply,
+                               Move* pv);
 
 static void search_print_pv(Move* pv, int8_t depth);
 
@@ -44,8 +44,8 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
   timeup = 0;
   timer_begin(&timeup);
 
-  int alpha = -INFINITY;
-  int beta = INFINITY;
+  Score alpha = -INFINITY;
+  Score beta = INFINITY;
 
   // for each depth, call the main workhorse, search_alpha_beta
   uint8_t max_depth = debug && debug->maxDepth > 0
@@ -53,7 +53,7 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
                           : max_possible_depth;
   for (int8_t depth = 1; depth <= max_depth; depth++) {
     // here we go...
-    int val = search_alpha_beta(board, alpha, beta, depth, 1, pv);
+    Score val = search_alpha_beta(board, alpha, beta, depth, 1, pv);
 
     struct timespec end_time;
     clock_gettime(CLOCK_MONOTONIC, &end_time);
@@ -101,7 +101,7 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
         char buf[6];
         move_srcdest_form(best_move, buf);
 
-        int eval = evaluate_board(board);
+        Score eval = evaluate_board(board);
         if (val > eval + 50 && !strcmp(buf, debug->stopMove)) {
           fprintf(stderr, "Found stop-move.\n");
           break;
@@ -120,12 +120,12 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
   return best_move;
 }
 
-static int search_alpha_beta(Bitboard* board,
-                             int alpha,
-                             int beta,
-                             int8_t depth,
-                             int8_t ply,
-                             Move* pv) {
+static Score search_alpha_beta(Bitboard* board,
+                               Score alpha,
+                               Score beta,
+                               int8_t depth,
+                               int8_t ply,
+                               Move* pv) {
   Move localpv[max_possible_depth + 1];
 
   if (timeup)
@@ -158,7 +158,7 @@ static int search_alpha_beta(Bitboard* board,
     }
 
     // check transposition table for a useful value
-    int table_val = tt_get_value(board->state->zobrist, alpha, beta, depth);
+    Score table_val = tt_get_value(board->state->zobrist, alpha, beta, depth);
 
     if (table_val != INFINITY) {
       if (pv) {
@@ -170,17 +170,15 @@ static int search_alpha_beta(Bitboard* board,
   }
 
   // leaf node
-  if (depth <= -max_quiescent_depth) {
-    int eval = evaluate_board(board);
-    return eval;
-  }
+  if (depth <= -max_quiescent_depth)
+    return evaluate_board(board);
 
   // Quiescent stand-pat: "you don't have to ttake". Disallow when in check
   // since the position isn't "quiet" yet and there's no option to "do nothing".
   if (quiescent && !in_check) {
     pv = NULL;
 
-    int stand_pat = evaluate_board(board);
+    Score stand_pat = evaluate_board(board);
 
     if (stand_pat >= beta) {
       return stand_pat;
@@ -225,7 +223,7 @@ static int search_alpha_beta(Bitboard* board,
     board_do_move(board, move, &s);
 
     // value from recursive call to alpha-beta search
-    int recursive_value;
+    Score recursive_value;
 
     // keeps track of various re-search conditions
     int search_completed = 0;
