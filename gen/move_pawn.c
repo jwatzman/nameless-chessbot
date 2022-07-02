@@ -9,7 +9,7 @@ void gen_move_pawn(void) {
   printf("uint64_t pawn_attacks[2][64] = {\n\t{");
 
   for (Color color = 0; color < 2; color++) {
-    for (int position = 0; position < 64; position++) {
+    for (uint8_t position = 0; position < 64; position++) {
       uint64_t attack_mask = 0;
       uint64_t bit = 1;
       uint8_t row = board_row_of(position);

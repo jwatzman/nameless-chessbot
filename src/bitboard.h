@@ -22,9 +22,15 @@ int board_in_check(Bitboard* board, Color color);
 void board_print(Bitboard* board);
 
 // for all of these conversions, 0 <= row,col < 8
-#define board_index_of(row, col) ((col) | ((row) << 3))
-#define board_row_of(index) ((uint8_t)((index) / 8))
-#define board_col_of(index) ((index) % 8)
+static inline uint8_t board_index_of(uint8_t row, uint8_t col) {
+  return col | (uint8_t)(row << 3);
+}
+static inline uint8_t board_row_of(uint8_t index) {
+  return index >> 3;
+}
+static inline uint8_t board_col_of(uint8_t index) {
+  return index & 0x7;
+}
 
 // undefined return value if there is no piece at index
 static inline Piecetype board_piecetype_at_index(Bitboard* board,
@@ -42,7 +48,7 @@ static inline Piecetype board_piecetype_at_index(Bitboard* board,
       return result;
   }
 
-  return -1;  // should not get here...
+  abort();
 }
 
 #endif

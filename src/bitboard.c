@@ -34,9 +34,9 @@ void board_init_with_fen(Bitboard* board, State* state, const char* fen) {
   memset(board->boards, 0, 2 * 6 * sizeof(uint64_t));  // clear out boards
   board->state = state;
 
-  int row = 7;
-  while (row >= 0) {
-    int col = 0;
+  uint8_t row = 0;
+  while (row < 8) {
+    uint8_t col = 0;
     while (col < 8) {
       if (*fen >= '1' && *fen <= '8') {
         // skip that number of slots
@@ -89,7 +89,7 @@ void board_init_with_fen(Bitboard* board, State* state, const char* fen) {
         }
 
         // set the proper bit
-        board->boards[color][piece] |= (1ULL << board_index_of(row, col));
+        board->boards[color][piece] |= (1ULL << board_index_of(7 - row, col));
 
         col++;
       }
@@ -98,7 +98,7 @@ void board_init_with_fen(Bitboard* board, State* state, const char* fen) {
     }
 
     fen++;  // skip the slash or space
-    row--;  // next row
+    row++;  // next row
   }
 
   // calculate the composite and rotated boards
@@ -145,9 +145,9 @@ void board_init_with_fen(Bitboard* board, State* state, const char* fen) {
 
   // enpassant index
   if (*fen != '-') {
-    int col = *fen - 'a';
+    uint8_t col = (uint8_t)(*fen - 'a');
     fen++;
-    int row = *fen - '1';
+    uint8_t row = (uint8_t)(*fen - '1');
     fen++;
 
     // the board keeps a different notion of enpassant row than FEN
@@ -167,7 +167,7 @@ void board_init_with_fen(Bitboard* board, State* state, const char* fen) {
      but the halfmove count says how far back we need to check the
      history. So zero it out, which will hopefully not conencide
      with any used zobrist */
-  board->state->halfmove_count = strtol(fen, NULL, 10);
+  board->state->halfmove_count = (uint8_t)strtol(fen, NULL, 10);
 
   // set up the mess of zobrist random numbers and the rest of the state
   board_init_zobrist(board);
@@ -381,7 +381,7 @@ void board_print(Bitboard* board) {
      if pieces are in that row, filling in the right slot in the template
      with the sigil. Add the row number after each row, and print
      column letters after each column. */
-  for (int row = 7; row >= 0; row--) {
+  for (int8_t row = 7; row >= 0; row--) {
     strcpy(this_line, template);
 
     for (int color = 0; color <= 1; color++) {
@@ -413,7 +413,7 @@ void board_print(Bitboard* board) {
         }
 
         if (color == BLACK)
-          sigil = tolower(sigil);
+          sigil = (char)tolower(sigil);
 
         int column = 0;
         uint8_t bits =

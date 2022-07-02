@@ -35,7 +35,7 @@ static uint64_t raycast(uint8_t src, uint8_t dest) {
   uint64_t result = 0;
   for (; src_row >= 0 && src_row < 8 && src_col >= 0 && src_col < 8;
        src_row += delta_row, src_col += delta_col)
-    result |= (1ULL << board_index_of(src_row, src_col));
+    result |= (1ULL << board_index_of((uint8_t)src_row, (uint8_t)src_col));
 
   return result;
 }

@@ -7,7 +7,7 @@
 void gen_move_knight(void) {
   printf("uint64_t knight_attacks[64] = {\n");
 
-  for (int position = 0; position < 64; position++) {
+  for (uint8_t position = 0; position < 64; position++) {
     uint64_t attack_mask = 0;
     uint64_t bit = 1;
     uint8_t row = board_row_of(position);

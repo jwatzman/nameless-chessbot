@@ -4,11 +4,11 @@
 #include <stdint.h>
 
 static inline uint8_t bitscan(uint64_t x) {
-  return __builtin_ctzll(x);
+  return (uint8_t)__builtin_ctzll(x);
 }
 
 static inline uint8_t popcnt(uint64_t x) {
-  return __builtin_popcountll(x);
+  return (uint8_t)__builtin_popcountll(x);
 }
 
 static inline int twobits(uint64_t x) {
