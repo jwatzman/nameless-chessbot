@@ -1,33 +1,27 @@
-- do I need to if (target) -- should be redundant
-- is the table zeroed?
-- transposition: split out "best move" table from "header" table etc?
-- transposition: eviction policy -- "used" count?
-- compare against http://mediocrechess.blogspot.com/2007/01/guide-perft-scores.html
-
-- why is perft so slow???
-	- explicitly setting/unsetting bits, instead of xor, might help;
-	  will prob require splitting do/undo common
-		- nope: https://gist.github.com/jwatzman/e6853976d46eb9eb35e4440f737c9508
-	- can i remove/reduce zobrist_castle?
-	- improve branch prediction
-		- manual hints in movegen?
-		- pgo?
-	- improve movemagic:
-		- bmi pext tables: https://www.chessprogramming.org/BMI2#PEXTBitboards
-
-- killer moves -- table of 2 moves per ply that were previous best for that depth; if legal sort after tt move or after captures?
+- transposition table
+	- does zeroing the table matter? i don't think so?
+	- eviction policy: move to two-buckets, one always-replace, one current algo
+	- move tt size to an exponent so always power of two
+	- try to make it smaller
+		- store alpha/beta/exact flag in top bits of Move?
+		- can i make Move smaller? capture/castle/enpassant can be two bits total, don't need promotion bit
 - improve timer
 	- move to setitimer(TIMER_REAL) [macOS does not have timer_create]
 		- track "expected end" and re-set timer if we haven't hit it yet (so time can be increased during search)
 		- or just check the time every N nodes searched -- removes unix-ixm
 	- allows time to be increased, e.g., if hit aspiration failure
 	- allows computing remaining time, e.g., if about to start another ply but there's very little time left
+		- assume next ply will take AT LEAST twice current spent
 	- do something with fixed time, e.g., in 2+1 we just use the 1 right now!
 - pondering
 	- maybe straightforward with pthreads and manually forcing a timeup?
 	- always move search into a thread so it can be interrupted?
 	- need to be careful of atomic access / memory barriers
 - move ordering
-  - SEE
-  - can we do any ordering on non-captures?
-  - can movelist/moveiter be improved to help branch mispredicts and cache locality? (and making "forced first" less dumb?)
+	- SEE
+		- http://mediocrechess.sourceforge.net/guides/see.html
+	- can we do any ordering on non-captures?
+		- killer moves -- table of 2 moves per ply that were previous best for that depth; if legal sort after tt move or after captures?
+		- history heuristic http://mediocrechess.sourceforge.net/guides/killermoveshistoryheuristic.html
+	- can movelist/moveiter be improved to help branch mispredicts and cache locality? (and making "forced first" less dumb?)
+		- score all moves first and then sort the scored pairs?
