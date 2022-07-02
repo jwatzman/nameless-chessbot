@@ -21,7 +21,7 @@ static Entry bishop_entries[64];
 static void movemagic_init_findsetbits(uint64_t board,
                                        uint8_t* setbits,
                                        uint8_t* numsetbits) {
-  int i = 0;
+  uint8_t i = 0;
   while (board) {
     uint8_t bit = bitscan(board);
     board &= board - 1;
@@ -63,13 +63,13 @@ static uint64_t movemagic_init_compute_attacks(uint8_t pos,
                                                int8_t (*col_incr)(int8_t)) {
   uint64_t attacks = 0;
 
-  int8_t init_row = board_row_of(pos);
-  int8_t init_col = board_col_of(pos);
+  int8_t init_row = (int8_t)board_row_of(pos);
+  int8_t init_col = (int8_t)board_col_of(pos);
 
   for (int8_t row = row_incr(init_row), col = col_incr(init_col);
        row < 8 && col < 8 && row >= 0 && col >= 0;
        row = row_incr(row), col = col_incr(col)) {
-    uint64_t bit = 1ULL << board_index_of(row, col);
+    uint64_t bit = 1ULL << board_index_of((uint8_t)row, (uint8_t)col);
     attacks |= bit;
     if (occ & bit)
       break;
@@ -95,8 +95,8 @@ static uint64_t movemagic_init_bishop_attacks(uint8_t pos, uint64_t occ) {
 static void movemagic_init_tables(void) {
   // XXX this can be worked out statically. Is heap or BSS better, or does it
   // matter? This is simple for now.
-  int r_tot = 0;
-  int b_tot = 0;
+  size_t r_tot = 0;
+  size_t b_tot = 0;
   for (uint8_t pos = 0; pos < 64; pos++) {
     r_tot += 1 << (64 - r_shift[pos]);
     b_tot += 1 << (64 - b_shift[pos]);

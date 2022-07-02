@@ -19,6 +19,36 @@ static void move_generate_movelist_enpassant(Bitboard* board,
                                              uint64_t non_capture_mask);
 static Move move_generate_enpassant_move(Bitboard* board, uint8_t src);
 
+static inline Move make_move(uint8_t src,
+                             uint8_t dest,
+                             Piecetype piece,
+                             Color to_move) {
+  return (unsigned)src << move_source_index_offset |
+         (unsigned)dest << move_destination_index_offset |
+         (unsigned)piece << move_piecetype_offset |
+         (unsigned)to_move << move_color_offset;
+}
+
+static inline Move make_move_capture(Move move, Piecetype captured) {
+  return move | 1U << move_is_capture_offset |
+         (unsigned)captured << move_captured_piecetype_offset;
+}
+
+static inline Move make_move_promotion(Move move, Piecetype promoted) {
+  return move | 1U << move_is_promotion_offset |
+         (unsigned)promoted << move_promoted_piecetype_offset;
+}
+
+static inline Move make_move_castle(uint8_t src, uint8_t dest, Color to_move) {
+  return make_move(src, dest, KING, to_move) | 1U << move_is_castle_offset;
+}
+
+static inline Move make_move_enpassant(uint8_t src,
+                                       uint8_t dest,
+                                       Color to_move) {
+  return make_move(src, dest, PAWN, to_move) | 1U << move_is_enpassant_offset;
+}
+
 void move_init(void) {
   movemagic_init();
 }
@@ -34,7 +64,7 @@ void move_generate_movelist(Bitboard* board,
   int in_single_check = !in_double_check && board->state->king_attackers > 0;
   uint8_t king_loc = bitscan(board->boards[board->to_move][KING]);
 
-  uint64_t non_capture_mask = ~0;
+  uint64_t non_capture_mask = ~0ULL;
   if (in_single_check) {
     // To block a check, need to move to one of the squares the attacking piece
     // is attacking.
@@ -98,28 +128,19 @@ void move_generate_movelist(Bitboard* board,
         uint8_t dest = bitscan(captures);
         captures &= captures - 1;
 
-        Move move = 0;
-        move |= src << move_source_index_offset;
-        move |= dest << move_destination_index_offset;
-        move |= piece << move_piecetype_offset;
-        move |= to_move << move_color_offset;
-
-        move |= 1ULL << move_is_capture_offset;
-        move |= board_piecetype_at_index(board, dest)
-                << move_captured_piecetype_offset;
+        Move move = make_move_capture(make_move(src, dest, piece, to_move),
+                                      board_piecetype_at_index(board, dest));
 
         if (piece == PAWN &&
             (board_row_of(dest) == 0 || board_row_of(dest) == 7)) {
-          move |= 1ULL << move_is_promotion_offset;
-
           movelist->moves_promo[movelist->num_promo++] =
-              (move | (QUEEN << move_promoted_piecetype_offset));
+              make_move_promotion(move, QUEEN);
           movelist->moves_promo[movelist->num_promo++] =
-              (move | (ROOK << move_promoted_piecetype_offset));
+              make_move_promotion(move, ROOK);
           movelist->moves_promo[movelist->num_promo++] =
-              (move | (BISHOP << move_promoted_piecetype_offset));
+              make_move_promotion(move, BISHOP);
           movelist->moves_promo[movelist->num_promo++] =
-              (move | (KNIGHT << move_promoted_piecetype_offset));
+              make_move_promotion(move, KNIGHT);
         } else {
           movelist->moves_capture[movelist->num_capture++] = move;
         }
@@ -128,14 +149,8 @@ void move_generate_movelist(Bitboard* board,
       while (non_captures) {
         uint8_t dest = bitscan(non_captures);
         non_captures &= non_captures - 1;
-
-        Move move = 0;
-        move |= src << move_source_index_offset;
-        move |= dest << move_destination_index_offset;
-        move |= piece << move_piecetype_offset;
-        move |= to_move << move_color_offset;
-
-        movelist->moves_other[movelist->num_other++] = move;
+        movelist->moves_other[movelist->num_other++] =
+            make_move(src, dest, piece, to_move);
       }
     }
   }
@@ -189,7 +204,7 @@ int move_is_legal(Bitboard* board, Move m) {
     uint8_t src = move_source_index(m);
     uint8_t dest = move_destination_index(m);
     int8_t dir = src < dest ? 1 : -1;
-    for (uint8_t pos = src + dir; pos != (dest + dir); pos += dir) {
+    for (uint8_t pos = (uint8_t)(src + dir); pos != (dest + dir); pos += dir) {
       if (move_generate_attackers(board, 1 - board->to_move, pos,
                                   board->full_composite) > 0)
         return 0;
@@ -303,25 +318,19 @@ static void move_generate_movelist_pawn_push(Bitboard* board,
       uint64_t one_forward_blocked = board->full_composite & one_forward;
       uint64_t one_forward_unmasked = non_capture_mask & one_forward;
       if (!one_forward_blocked && one_forward_unmasked) {
-        Move move = 0;
-        move |= src << move_source_index_offset;
-        move |= dest << move_destination_index_offset;
-        move |= PAWN << move_piecetype_offset;
-        move |= to_move << move_color_offset;
+        Move move = make_move(src, dest, PAWN, to_move);
 
         // promote if needed
         if ((to_move == WHITE && row == 6) || (to_move == BLACK && row == 1)) {
-          move |= 1ULL << move_is_promotion_offset;
-
           movelist->moves_promo[movelist->num_promo++] =
-              (move | (QUEEN << move_promoted_piecetype_offset));
+              make_move_promotion(move, QUEEN);
           if (m != MOVE_GEN_QUIET) {
             movelist->moves_promo[movelist->num_promo++] =
-                (move | (ROOK << move_promoted_piecetype_offset));
+                make_move_promotion(move, ROOK);
             movelist->moves_promo[movelist->num_promo++] =
-                (move | (BISHOP << move_promoted_piecetype_offset));
+                make_move_promotion(move, BISHOP);
             movelist->moves_promo[movelist->num_promo++] =
-                (move | (KNIGHT << move_promoted_piecetype_offset));
+                make_move_promotion(move, KNIGHT);
           }
         } else if (m != MOVE_GEN_QUIET) {
           movelist->moves_other[movelist->num_other++] = move;
@@ -340,13 +349,8 @@ static void move_generate_movelist_pawn_push(Bitboard* board,
           uint64_t two_forward_blocked = board->full_composite & two_forward;
           uint64_t two_forward_unmasked = non_capture_mask & two_forward;
           if (!two_forward_blocked && two_forward_unmasked) {
-            Move move = 0;
-            move |= src << move_source_index_offset;
-            move |= dest << move_destination_index_offset;
-            move |= PAWN << move_piecetype_offset;
-            move |= to_move << move_color_offset;
-
-            movelist->moves_other[movelist->num_other++] = move;
+            movelist->moves_other[movelist->num_other++] =
+                make_move(src, dest, PAWN, to_move);
           }
         }
       }
@@ -375,13 +379,8 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
       (board->state->castle_rights & CASTLE_R(CASTLE_R_QS, WHITE))) {
     uint64_t clear = (1ULL << 1) | (1ULL << 2) | (1ULL << 3);
     if ((board->full_composite & clear) == 0) {
-      Move move = 0;
-      move |= 4 << move_source_index_offset;
-      move |= 2 << move_destination_index_offset;
-      move |= KING << move_piecetype_offset;
-      move |= color << move_color_offset;
-      move |= 1 << move_is_castle_offset;
-      movelist->moves_other[movelist->num_other++] = move;
+      movelist->moves_other[movelist->num_other++] =
+          make_move_castle(4, 2, color);
     }
   }
 
@@ -390,13 +389,8 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
       (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, WHITE))) {
     uint64_t clear = (1ULL << 5) | (1ULL << 6);
     if ((board->full_composite & clear) == 0) {
-      Move move = 0;
-      move |= 4 << move_source_index_offset;
-      move |= 6 << move_destination_index_offset;
-      move |= KING << move_piecetype_offset;
-      move |= color << move_color_offset;
-      move |= 1 << move_is_castle_offset;
-      movelist->moves_other[movelist->num_other++] = move;
+      movelist->moves_other[movelist->num_other++] =
+          make_move_castle(4, 6, color);
     }
   }
 
@@ -405,13 +399,8 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
       (board->state->castle_rights & CASTLE_R(CASTLE_R_QS, BLACK))) {
     uint64_t clear = (1ULL << 57) | (1ULL << 58) | (1ULL << 59);
     if ((board->full_composite & clear) == 0) {
-      Move move = 0;
-      move |= 60 << move_source_index_offset;
-      move |= 58 << move_destination_index_offset;
-      move |= KING << move_piecetype_offset;
-      move |= color << move_color_offset;
-      move |= 1 << move_is_castle_offset;
-      movelist->moves_other[movelist->num_other++] = move;
+      movelist->moves_other[movelist->num_other++] =
+          make_move_castle(60, 58, color);
     }
   }
 
@@ -420,13 +409,8 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
       (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, BLACK))) {
     uint64_t clear = (1ULL << 61) | (1ULL << 62);
     if ((board->full_composite & clear) == 0) {
-      Move move = 0;
-      move |= 60 << move_source_index_offset;
-      move |= 62 << move_destination_index_offset;
-      move |= KING << move_piecetype_offset;
-      move |= color << move_color_offset;
-      move |= 1 << move_is_castle_offset;
-      movelist->moves_other[movelist->num_other++] = move;
+      movelist->moves_other[movelist->num_other++] =
+          make_move_castle(60, 62, color);
     }
   }
 }
@@ -495,12 +479,5 @@ static Move move_generate_enpassant_move(Bitboard* board, uint8_t src) {
       return MOVE_NULL;
   }
 
-  Move move = 0;
-  move |= src << move_source_index_offset;
-  move |= dest << move_destination_index_offset;
-  move |= PAWN << move_piecetype_offset;
-  move |= color << move_color_offset;
-  move |= 1 << move_is_enpassant_offset;
-
-  return move;
+  return make_move_enpassant(src, dest, color);
 }
