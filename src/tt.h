@@ -15,14 +15,14 @@ typedef enum {
 /* asks the transposition table if we already know a good value for this
    position. If we do, return it. Otherwise, return INFINITY but adjust
    *alpha and *beta if we know better bounds for them */
-Score tt_get_value(uint64_t zobrist, Score alpha, Score beta, int8_t depth);
+int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth);
 
 // if we have a previous best move for this zobrist, return it; 0 otherwise
 Move tt_get_best_move(uint64_t zobrist);
 
 // add to transposition table
 void tt_put(uint64_t zobrist,
-            Score value,
+            int value,
             Move best_move,
             TranspositionType type,
             uint16_t generation,

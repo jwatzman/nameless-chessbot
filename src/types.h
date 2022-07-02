@@ -20,9 +20,8 @@ typedef unsigned char Piecetype;
 #define CASTLE_R_BOTH (CASTLE_R_KS | CASTLE_R_QS)
 #define CASTLE_R(side, color) ((side) << (color))
 
-typedef int16_t Score;
-static const Score INFINITY = 30000;
-static const Score MATE = 25000;
+#define INFINITY 1000000
+#define MATE 300000
 
 // moves are stored in 24 bits
 // from LSB to MSB:

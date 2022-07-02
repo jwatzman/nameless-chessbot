@@ -3,6 +3,6 @@
 
 #include "types.h"
 
-Score evaluate_board(Bitboard* board);
+int evaluate_board(Bitboard* board);
 
 #endif

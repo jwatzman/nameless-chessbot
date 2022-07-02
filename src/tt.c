@@ -8,7 +8,7 @@ typedef struct {
   uint64_t zobrist;
   int8_t depth;
   uint16_t generation;
-  Score value;
+  int value;
   Move best_move;
   TranspositionType type;
 } __attribute__((__packed__)) TranspositionNode;
@@ -17,7 +17,7 @@ typedef struct {
 #define TT_ENTRIES 524288
 static TranspositionNode transposition_table[TT_ENTRIES][TT_WIDTH];
 
-Score tt_get_value(uint64_t zobrist, Score alpha, Score beta, int8_t depth) {
+int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth) {
   int index = zobrist % TT_ENTRIES;
 
   if (depth < 1)
@@ -30,7 +30,7 @@ Score tt_get_value(uint64_t zobrist, Score alpha, Score beta, int8_t depth) {
     currently using. */
     TranspositionNode* node = &transposition_table[index][i];
     if (node->zobrist == zobrist && node->depth >= depth) {
-      Score val = node->value;
+      int val = node->value;
 
       if (node->type == TRANSPOSITION_EXACT)
         return val;
@@ -58,7 +58,7 @@ Move tt_get_best_move(uint64_t zobrist) {
 }
 
 void tt_put(uint64_t zobrist,
-            Score value,
+            int value,
             Move best_move,
             TranspositionType type,
             uint16_t generation,
