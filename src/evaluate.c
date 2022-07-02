@@ -114,7 +114,7 @@ int evaluate_board(Bitboard* board) {
     for (int col = 0; col < 8; col++)
       color_result +=
           doubled_pawn_penalty *
-          (popcnt(board->boards[color][PAWN] & (0x0101010101010101 << col)) -
+          (popcnt(board->boards[color][PAWN] & (0x0101010101010101ULL << col)) -
            1);
 
     for (Piecetype piece = 0; piece < 6; piece++) {
