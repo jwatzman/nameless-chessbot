@@ -19,35 +19,25 @@ static void move_generate_movelist_enpassant(Bitboard* board,
                                              uint64_t non_capture_mask);
 static Move move_generate_enpassant_move(Bitboard* board, uint8_t src);
 
-static inline Move make_move(uint8_t src,
-                             uint8_t dest,
-                             Piecetype piece,
-                             Color to_move) {
-  return (unsigned)src << move_source_index_offset |
-         (unsigned)dest << move_destination_index_offset |
-         (unsigned)piece << move_piecetype_offset |
-         (unsigned)to_move << move_color_offset;
-}
+#define make_move(src, dest, piece, to_move)           \
+  ((unsigned)(src) << move_source_index_offset |       \
+   (unsigned)(dest) << move_destination_index_offset | \
+   (unsigned)(piece) << move_piecetype_offset |        \
+   (unsigned)(to_move) << move_color_offset)
 
-static inline Move make_move_capture(Move move, Piecetype captured) {
-  return move | 1U << move_is_capture_offset |
-         (unsigned)captured << move_captured_piecetype_offset;
-}
+#define make_move_capture(move, captured)  \
+  ((move) | 1U << move_is_capture_offset | \
+   ((unsigned)(captured) << move_captured_piecetype_offset))
 
-static inline Move make_move_promotion(Move move, Piecetype promoted) {
-  return move | 1U << move_is_promotion_offset |
-         (unsigned)promoted << move_promoted_piecetype_offset;
-}
+#define make_move_promotion(move, promoted)  \
+  ((move) | 1U << move_is_promotion_offset | \
+   (unsigned)(promoted) << move_promoted_piecetype_offset)
 
-static inline Move make_move_castle(uint8_t src, uint8_t dest, Color to_move) {
-  return make_move(src, dest, KING, to_move) | 1U << move_is_castle_offset;
-}
+#define make_move_castle(src, dest, to_move) \
+  (make_move(src, dest, KING, to_move) | 1U << move_is_castle_offset)
 
-static inline Move make_move_enpassant(uint8_t src,
-                                       uint8_t dest,
-                                       Color to_move) {
-  return make_move(src, dest, PAWN, to_move) | 1U << move_is_enpassant_offset;
-}
+#define make_move_enpassant(src, dest, to_move) \
+  (make_move(src, dest, PAWN, to_move) | 1U << move_is_enpassant_offset)
 
 void move_init(void) {
   movemagic_init();
