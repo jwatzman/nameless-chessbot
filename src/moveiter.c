@@ -34,10 +34,6 @@ Move moveiter_next(Moveiter* iter) {
 }
 
 static int moveiter_comparator(const void* p1, const void* p2) {
-  // Move dm1 = *(const Move*)m1;
-  // Move dm2 = *(const Move*)m2;
-  // const MoveAndScore *p1 = (const MoveAndScore*)m1;
-  // const MoveAndScore *p1 = (const MoveAndScore*)m1;
   int8_t s1 = ((const MoveAndScore*)p1)->s;
   int8_t s2 = ((const MoveAndScore*)p2)->s;
 

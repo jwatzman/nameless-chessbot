@@ -21,7 +21,7 @@
 	- SEE
 		- http://mediocrechess.sourceforge.net/guides/see.html
 	- can we do any ordering on non-captures?
-		- killer moves -- table of 2 moves per ply that were previous best for that depth; if legal sort after tt move or after captures?
 		- history heuristic http://mediocrechess.sourceforge.net/guides/killermoveshistoryheuristic.html
+		- there's something where you make sure you aren't moving a queen to be attacked by a pawn (generally, lower-value piece)
 	- can movelist/moveiter be improved to help branch mispredicts and cache locality? (and making "forced first" less dumb?)
 		- score all moves first and then sort the scored pairs?
