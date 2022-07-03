@@ -23,7 +23,7 @@ static Move parse_move(Bitboard* board, char* possible_move) {
   char test[6];
 
   Moveiter it;
-  moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL);
+  moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL, NULL);
   while (moveiter_has_next(&it)) {
     Move m = moveiter_next(&it);
     move_srcdest_form(m, test);
@@ -105,7 +105,7 @@ int main(void) {
       move_generate_movelist(board, &all_moves, MOVE_GEN_ALL);
 
       Moveiter it;
-      moveiter_init(&it, &all_moves, MOVEITER_SORT_NONE, MOVE_NULL);
+      moveiter_init(&it, &all_moves, MOVEITER_SORT_NONE, MOVE_NULL, NULL);
 
       char srcdest_form[6];
       while (moveiter_has_next(&it)) {

@@ -8,15 +8,19 @@ typedef struct {
 } MoveAndScore;
 
 static int moveiter_comparator(const void* m1, const void* m2);
-static int8_t moveiter_score(Move m, Move tt_move);
-static void moveiter_qsort(Movelist* moves, Move tt_move);
+static int8_t moveiter_score(Move m, Move tt_move, Move* killers);
+static void moveiter_qsort(Movelist* moves, Move tt_move, Move* killers);
 
-void moveiter_init(Moveiter* iter, Movelist* list, int mode, Move tt_move) {
+void moveiter_init(Moveiter* iter,
+                   Movelist* list,
+                   int mode,
+                   Move tt_move,
+                   Move* killers) {
   iter->m = list->moves;
   list->moves[list->n] = MOVE_NULL;
 
   if (mode == MOVEITER_SORT_FULL)
-    moveiter_qsort(list, tt_move);
+    moveiter_qsort(list, tt_move, killers);
 }
 
 int moveiter_has_next(Moveiter* iter) {
@@ -40,15 +44,18 @@ static int moveiter_comparator(const void* p1, const void* p2) {
   return s2 - s1;
 }
 
-static int8_t moveiter_score(Move m, Move tt_move) {
-  /* sorts in this priority:
-     transposition move first,
-     captures before noncaptures,
-     more valuable captured pieces first,
-     less valuable capturing pieces first */
+static int8_t moveiter_score(Move m, Move tt_move, Move* killers) {
+  // Move ordering:
+  // - Transposition table move
+  // - Captures, MVV/LVA
+  // - Killer moves (empirically seems to work better *after* captures)
+  // - Everything else (XXX including promotions?)
 
   if (m == tt_move)
     return 127;
+
+  if (killers && (m == killers[0] || m == killers[1]))
+    return 1;
 
   if (!move_is_capture(m))
     return 0;
@@ -56,12 +63,12 @@ static int8_t moveiter_score(Move m, Move tt_move) {
   return 15 + 2 * move_captured_piecetype(m) - move_piecetype(m);
 }
 
-static void moveiter_qsort(Movelist* list, Move tt_move) {
+static void moveiter_qsort(Movelist* list, Move tt_move, Move* killers) {
   MoveAndScore pairs[MAX_MOVES];
   uint8_t n = list->n;
   for (int i = 0; i < n; i++) {
     Move m = list->moves[i];
-    int8_t score = moveiter_score(m, tt_move);
+    int8_t score = moveiter_score(m, tt_move, killers);
     pairs[i].m = m;
     pairs[i].s = score;
   }

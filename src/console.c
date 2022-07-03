@@ -30,7 +30,7 @@ int main(void) {
     move_generate_movelist(test, &moves, MOVE_GEN_ALL);
 
     Moveiter it;
-    moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL);
+    moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL, NULL);
 
     int num_legal_moves = 0;
     while (moveiter_has_next(&it)) {
@@ -84,7 +84,7 @@ static Move get_human_move(Bitboard* board, Movelist* orig_moves) {
   Moveiter it;
 
   memcpy(&moves, orig_moves, sizeof(Movelist));
-  moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL);
+  moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL, NULL);
 
   while (moveiter_has_next(&it)) {
     Move move = moveiter_next(&it);
@@ -102,7 +102,7 @@ static Move get_human_move(Bitboard* board, Movelist* orig_moves) {
       return MOVE_NULL;
 
     memcpy(&moves, orig_moves, sizeof(Movelist));
-    moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL);
+    moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL, NULL);
 
     while (moveiter_has_next(&it)) {
       Move move = moveiter_next(&it);

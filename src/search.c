@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -22,6 +23,8 @@
 static volatile sig_atomic_t timeup;
 static uint64_t nodes_searched;
 
+static Move killers[max_possible_depth][2];
+
 // main search workhorse
 static int search_alpha_beta(Bitboard* board,
                              int alpha,
@@ -30,11 +33,16 @@ static int search_alpha_beta(Bitboard* board,
                              int8_t ply,
                              Move* pv);
 
+static void search_store_killer(Move m, int8_t ply);
+static Move* search_get_killers(int8_t ply);
+
 static void search_print_pv(Move* pv, int8_t depth);
 
 Move search_find_move(Bitboard* board, const SearchDebug* debug) {
   Move best_move = 0;
   nodes_searched = 0;
+  bzero(killers,
+        max_possible_depth * 2 * sizeof(Move));  // Assumes MOVE_NULL is 0!
 
   Move pv[max_possible_depth + 1];
 
@@ -198,9 +206,9 @@ static int search_alpha_beta(Bitboard* board,
   // grab move from transposition table for move ordering -- but don't bother
   // for quiescent searches, since we don't write to the table for those and
   // have a reduced search space anyway, the memory lookup isn't worth it
-  Move transposition_move = MOVE_NULL;
+  Move tt_move = MOVE_NULL;
   if (!quiescent) {
-    transposition_move = tt_get_best_move(board->state->zobrist);
+    tt_move = tt_get_best_move(board->state->zobrist);
   }
 
   Moveiter iter;
@@ -208,7 +216,8 @@ static int search_alpha_beta(Bitboard* board,
   // save a full sort when we are likely to only need the first few moves. I
   // think it may actually do that but it increases the branch misses so much
   // that it's slower. Figure out a better way.
-  moveiter_init(&iter, &moves, MOVEITER_SORT_FULL, transposition_move);
+  moveiter_init(&iter, &moves, MOVEITER_SORT_FULL, tt_move,
+                search_get_killers(ply));
 
   /* since we generate only pseudolegal moves, we need to keep track if
      there actually are any legal moves at all */
@@ -278,9 +287,11 @@ static int search_alpha_beta(Bitboard* board,
          definitely want to put it in the transposition table,
          since it will be searched first next time, and will
          thus immediately cause a cutoff again */
-      if (!timeup)
+      if (!timeup) {
         tt_put(board->state->zobrist, recursive_value, move, TRANSPOSITION_BETA,
                board->generation, depth);
+        search_store_killer(best_move, ply);
+      }
 
       return recursive_value;
     }
@@ -317,8 +328,27 @@ static int search_alpha_beta(Bitboard* board,
     // safe to store even if time is up right now.
     tt_put(board->state->zobrist, alpha, best_move, type, board->generation,
            depth);
+    search_store_killer(best_move, ply);
     return alpha;
   }
+}
+
+static void search_store_killer(Move m, int8_t ply) {
+  Move* slot = search_get_killers(ply);
+
+  if (slot[0] == m || slot[1] == m)
+    return;
+
+  if (slot[0] == MOVE_NULL) {
+    slot[0] = m;
+  } else {
+    slot[1] = slot[0];
+    slot[0] = m;
+  }
+}
+
+static Move* search_get_killers(int8_t ply) {
+  return killers[ply - 1];  // Ply starts at 1
 }
 
 static void search_print_pv(Move* pv, int8_t depth) {
