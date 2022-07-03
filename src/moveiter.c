@@ -2,78 +2,53 @@
 
 #include "moveiter.h"
 
-static Move moveiter_nth(Moveiter* iter, int n);
-static Move moveiter_next_nosort(Moveiter* iter);
+typedef struct {
+  Move m;
+  int8_t s;
+} MoveAndScore;
 
 static int moveiter_comparator(const void* m1, const void* m2);
-static int moveiter_score(Move m);
-static void moveiter_qsort(Movelist* moves);
+static int8_t moveiter_score(Move m, Move tt_move);
+static void moveiter_qsort(Movelist* moves, Move tt_move);
 
-void moveiter_init(Moveiter* iter,
-                   Movelist* list,
-                   int mode,
-                   Move forced_first) {
-  iter->movelist = list;
-  iter->forced_first = forced_first;
-  iter->pos = 0;
+void moveiter_init(Moveiter* iter, Movelist* list, int mode, Move tt_move) {
+  iter->m = list->moves;
+  list->moves[list->n] = MOVE_NULL;
 
   if (mode == MOVEITER_SORT_FULL)
-    moveiter_qsort(list);
+    moveiter_qsort(list, tt_move);
 }
 
 int moveiter_has_next(Moveiter* iter) {
-  return iter->pos < iter->movelist->num_total;
+  return *iter->m != MOVE_NULL;
 }
 
 Move moveiter_next(Moveiter* iter) {
-  return moveiter_next_nosort(iter);
-}
-
-static Move moveiter_nth(Moveiter* iter, int n) {
-  if (n < iter->movelist->num_promo)
-    return iter->movelist->moves_promo[n];
-  n -= iter->movelist->num_promo;
-
-  if (n < iter->movelist->num_capture)
-    return iter->movelist->moves_capture[n];
-  n -= iter->movelist->num_capture;
-
-  return iter->movelist->moves_other[n];
-}
-
-static Move moveiter_next_nosort(Moveiter* iter) {
-  iter->pos++;
-
-  if (iter->pos == 1 && iter->forced_first != MOVE_NULL)
-    return iter->forced_first;
-
-  int n = iter->pos - 1;
-  if (iter->forced_first != MOVE_NULL)
-    n--;
-
-  Move m = moveiter_nth(iter, n);
-  if (m == iter->forced_first) {
-    n++;
-    iter->forced_first = MOVE_NULL;
-    m = moveiter_nth(iter, n);
-  }
-
+  Move m = *iter->m;
+  iter->m++;
   return m;
 }
 
-static int moveiter_comparator(const void* m1, const void* m2) {
-  Move dm1 = *(const Move*)m1;
-  Move dm2 = *(const Move*)m2;
+static int moveiter_comparator(const void* p1, const void* p2) {
+  // Move dm1 = *(const Move*)m1;
+  // Move dm2 = *(const Move*)m2;
+  // const MoveAndScore *p1 = (const MoveAndScore*)m1;
+  // const MoveAndScore *p1 = (const MoveAndScore*)m1;
+  int8_t s1 = ((const MoveAndScore*)p1)->s;
+  int8_t s2 = ((const MoveAndScore*)p2)->s;
 
-  return moveiter_score(dm2) - moveiter_score(dm1);
+  return s2 - s1;
 }
 
-static int moveiter_score(Move m) {
+static int8_t moveiter_score(Move m, Move tt_move) {
   /* sorts in this priority:
      transposition move first,
      captures before noncaptures,
      more valuable captured pieces first,
      less valuable capturing pieces first */
+
+  if (m == tt_move)
+    return 127;
 
   if (!move_is_capture(m))
     return 0;
@@ -81,7 +56,18 @@ static int moveiter_score(Move m) {
   return 15 + 2 * move_captured_piecetype(m) - move_piecetype(m);
 }
 
-static void moveiter_qsort(Movelist* moves) {
-  qsort(&(moves->moves_capture), moves->num_capture, sizeof(Move),
-        moveiter_comparator);
+static void moveiter_qsort(Movelist* list, Move tt_move) {
+  MoveAndScore pairs[MAX_MOVES];
+  uint8_t n = list->n;
+  for (int i = 0; i < n; i++) {
+    Move m = list->moves[i];
+    int8_t score = moveiter_score(m, tt_move);
+    pairs[i].m = m;
+    pairs[i].s = score;
+  }
+
+  qsort(pairs, n, sizeof(MoveAndScore), moveiter_comparator);
+
+  for (int i = 0; i < n; i++)
+    list->moves[i] = pairs[i].m;
 }

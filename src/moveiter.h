@@ -8,15 +8,13 @@
 #define MOVEITER_SORT_FULL 1
 
 struct Moveiter {
-  Movelist* movelist;
-  Move forced_first;
-  uint8_t pos;
+  Move* m;
 };
 
 typedef struct Moveiter Moveiter;
 
 // May modify the input list
-void moveiter_init(Moveiter* iter, Movelist* list, int mode, Move forced_first);
+void moveiter_init(Moveiter* iter, Movelist* list, int mode, Move tt_move);
 int moveiter_has_next(Moveiter* iter);
 Move moveiter_next(Moveiter* iter);
 

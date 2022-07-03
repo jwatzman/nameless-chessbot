@@ -20,6 +20,8 @@ typedef unsigned char Piecetype;
 #define CASTLE_R_BOTH (CASTLE_R_KS | CASTLE_R_QS)
 #define CASTLE_R(side, color) ((side) << (color))
 
+#define MAX_MOVES 256
+
 #define INFINITY 1000000
 #define MATE 300000
 
@@ -92,14 +94,8 @@ typedef struct {
 } Bitboard;
 
 typedef struct {
-  Move moves_promo[32];
-  Move moves_capture[256];
-  Move moves_other[256];
-
-  uint8_t num_promo;
-  uint8_t num_capture;
-  uint8_t num_other;
-  uint8_t num_total;
+  Move moves[MAX_MOVES];
+  uint8_t n;
 } Movelist;
 
 #endif
