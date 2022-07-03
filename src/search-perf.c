@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
 
   timer_init_secs(180);
   SearchDebug debug = {0};
-  debug.maxDepth = atoi(argv[1]);
+  debug.maxDepth = (uint8_t)atoi(argv[1]);
 
   int max_pass = atoi(argv[2]);
   for (int pass = 0; pass < max_pass; pass++) {
@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
     // Invalidate the transposition table, so that we are perft-testing
     // a more complete search every time. Not doing this is fine for
     // corectness, but means the first N-1 ply are probably already cached.
-    board->state->zobrist = random();
+    board->state->zobrist = (uint64_t)random();
 
     char move_srcdest[6];
     move_srcdest_form(best, move_srcdest);

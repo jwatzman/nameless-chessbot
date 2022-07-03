@@ -57,7 +57,7 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
 
     struct timespec end_time;
     clock_gettime(CLOCK_MONOTONIC, &end_time);
-    unsigned long int centiseconds_taken =
+    time_t centiseconds_taken =
         100 * (end_time.tv_sec - start_time.tv_sec) +
         (end_time.tv_nsec - start_time.tv_nsec) / 10000000;
 
@@ -236,8 +236,9 @@ static int search_alpha_beta(Bitboard* board,
     if (type == TRANSPOSITION_EXACT) {
       // PV search
       search_completed = 1;
-      recursive_value = -search_alpha_beta(
-          board, -alpha - 1, -alpha, depth - 1 + extensions, ply + 1, NULL);
+      recursive_value =
+          -search_alpha_beta(board, -alpha - 1, -alpha,
+                             (int8_t)(depth - 1 + extensions), ply + 1, NULL);
 
       if ((recursive_value > alpha) && (recursive_value < beta)) {
         // PV search failed
@@ -264,9 +265,9 @@ static int search_alpha_beta(Bitboard* board,
 
     if (!search_completed) {
       // normal search
-      recursive_value =
-          -search_alpha_beta(board, -beta, -alpha, depth - 1 + extensions,
-                             ply + 1, pv ? localpv : NULL);
+      recursive_value = -search_alpha_beta(board, -beta, -alpha,
+                                           (int8_t)(depth - 1 + extensions),
+                                           ply + 1, pv ? localpv : NULL);
     }
 
     board_undo_move(board, move);
@@ -290,7 +291,7 @@ static int search_alpha_beta(Bitboard* board,
       best_move = move;
       if (pv) {
         pv[0] = best_move;
-        memcpy(pv + 1, localpv, depth * sizeof(Move));
+        memcpy(pv + 1, localpv, (size_t)depth * sizeof(Move));
       }
     }
 

@@ -38,7 +38,7 @@ static Move parse_move(Bitboard* board, char* possible_move) {
 
 int main(void) {
   Color computer_player =
-      -1;  // not WHITE or BLACK if we don't play either (e.g. -1)
+      (Color)-1;  // not WHITE or BLACK if we don't play either (e.g. -1)
   int game_on = 0;
   Statelist* sl = statelist_alloc();
   Bitboard* board = malloc(sizeof(Bitboard));
@@ -82,14 +82,14 @@ int main(void) {
     } else if (!strcmp("quit\n", input)) {
       break;
     } else if (!strcmp("force\n", input)) {
-      computer_player = -1;
+      computer_player = (Color)-1;
     } else if (!strcmp("go\n", input)) {
       computer_player = board->to_move;
     } else if (!strncmp("setboard ", input, 9)) {
       statelist_clear(sl);
       board_init_with_fen(board, statelist_new_state(sl), input + 9);
     } else if (!strncmp("result", input, 6)) {
-      computer_player = -1;
+      computer_player = (Color)-1;
       game_on = 0;
     } else if (!strncmp("level ", input, 6)) {
       timer_init_xboard(input);

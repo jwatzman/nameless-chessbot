@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-static int secs = 0;
+static unsigned int secs = 0;
 static volatile sig_atomic_t* timeup;
 
 static void timer_timeup(int unused);
@@ -19,8 +19,8 @@ static void timer_timeup(int unused) {
 }
 
 void timer_init_xboard(char* level) {
-  int moves, base, inc;
-  int ret = sscanf(level, "level %d %d %d", &moves, &base, &inc);
+  unsigned int moves, base, inc;
+  int ret = sscanf(level, "level %u %u %u", &moves, &base, &inc);
 
   if (ret == 3) {
     if (moves == 0 || base == 0)
@@ -34,7 +34,7 @@ void timer_init_xboard(char* level) {
   timer_install_handler();
 }
 
-void timer_init_secs(int n) {
+void timer_init_secs(unsigned int n) {
   secs = n;
   timer_install_handler();
 }
