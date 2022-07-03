@@ -1,10 +1,14 @@
 - transposition table
 	- does zeroing the table matter? i don't think so?
-	- eviction policy: move to two-buckets, one always-replace, one current algo
+	- eviction policy: move to two-buckets, one always-replace, one current algo http://mediocrechess.sourceforge.net/guides/transpositiontables.html
+	- improve replacement algo -- don't replace deep search from 1 generation ago with shallow search now
 	- move tt size to an exponent so always power of two
 	- try to make it smaller
 		- store alpha/beta/exact flag in top bits of Move?
 		- can i make Move smaller? capture/castle/enpassant can be two bits total, don't need promotion bit
+	- weirdness around killer moves -- try killer changes again after tweaking tt
+		- only store noncaptures in killers -- most people do this, why is it such a loss for us
+		- or, order capture killer before captures before killer before rest
 - improve timer
 	- move to setitimer(TIMER_REAL) [macOS does not have timer_create]
 		- track "expected end" and re-set timer if we haven't hit it yet (so time can be increased during search)
@@ -23,5 +27,3 @@
 	- can we do any ordering on non-captures?
 		- history heuristic http://mediocrechess.sourceforge.net/guides/killermoveshistoryheuristic.html
 		- there's something where you make sure you aren't moving a queen to be attacked by a pawn (generally, lower-value piece)
-	- can movelist/moveiter be improved to help branch mispredicts and cache locality? (and making "forced first" less dumb?)
-		- score all moves first and then sort the scored pairs?
