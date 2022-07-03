@@ -5,11 +5,9 @@
 #include "move.h"
 
 #define MOVEITER_SORT_NONE 0
-#define MOVEITER_SORT_ONDEMAND 1
-#define MOVEITER_SORT_FULL 2
+#define MOVEITER_SORT_FULL 1
 
 struct Moveiter {
-  Move (*next)(struct Moveiter*);
   Movelist* movelist;
   Move forced_first;
   uint8_t pos;
