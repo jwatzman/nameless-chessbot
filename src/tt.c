@@ -14,7 +14,8 @@ typedef struct {
 } __attribute__((__packed__)) TranspositionNode;
 
 #define TT_WIDTH 4
-#define TT_ENTRIES 524288
+#define TT_ENTRIES_EXPONENT 19
+#define TT_ENTRIES (1 << TT_ENTRIES_EXPONENT)
 static TranspositionNode transposition_table[TT_ENTRIES][TT_WIDTH];
 
 int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth) {
