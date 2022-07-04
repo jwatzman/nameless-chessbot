@@ -79,19 +79,15 @@ void tt_put(uint64_t zobrist,
   for (int i = 0; i < TT_WIDTH; i++) {
     if (transposition_table[index][i].zobrist == zobrist) {
       target = &transposition_table[index][i];
-      /* XXX this seems to help `search-perf 8 6` but hurt test 2 in
-      `test-search`? Why? (The latter even ends up with different results at the
-      larger depths.)
-      // We found this position in the table already. We might be able to
-      // improve it with a deeper search, or tighter bounds on the current
-      // depth. But if we can't do that, we should do nothing and keep the
-      // existing entry.
-      if (target->depth > depth) {
-        if (target->best_move == MOVE_NULL && best_move != MOVE_NULL)
-          target->best_move = best_move;
-        return;
-      }
-      */
+
+      // Don't blow away a best_move if we already have one. Beyond that, you
+      // would think that only overwriting if the new data is a bigger
+      // generation or a deeper depth (otherwise keeping the original entry)
+      // would be good, but every variation I've tried to do that ends up being
+      // a big loss for some reason?
+      if (best_move == MOVE_NULL)
+        best_move = target->best_move;
+
       break;
     }
   }
