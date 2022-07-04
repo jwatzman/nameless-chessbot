@@ -5,7 +5,7 @@
 #include "types.h"
 
 typedef struct {
-  uint64_t zobrist;
+  uint32_t zobrist_check;
   int8_t depth;
   uint16_t generation;
   int value;
@@ -18,8 +18,18 @@ typedef struct {
 #define TT_ENTRIES (1 << TT_ENTRIES_EXPONENT)
 static TranspositionNode transposition_table[TT_ENTRIES][TT_WIDTH];
 
+// As is standard for hash tables, we use the lower bits of the zobrist to find
+// the right index. On a read, we need to make sure the node we found is
+// actually for our position, so we need to store and compare zobrist. However,
+// we don't really need the whole thing -- we've used the lower bits for the
+// index, so we just need the upper bits to compare. While this does leave a few
+// bits in the middle unused, saving the 4 bytes per tt entry is a win.
+#define TT_INDEX(zobrist) ((zobrist) & (TT_ENTRIES - 1))
+#define TT_ZOBRIST_CHECK(zobrist) ((zobrist) >> 32)
+
 int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth) {
   int index = zobrist % TT_ENTRIES;
+  uint32_t zobrist_check = TT_ZOBRIST_CHECK(zobrist);
 
   if (depth < 1)
     return INFINITY;
@@ -30,7 +40,7 @@ int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth) {
     the entry was not made with a shallower depth than what we're
     currently using. */
     TranspositionNode* node = &transposition_table[index][i];
-    if (node->zobrist == zobrist && node->depth >= depth) {
+    if (node->zobrist_check == zobrist_check && node->depth >= depth) {
       int val = node->value;
 
       if (node->type == TRANSPOSITION_EXACT)
@@ -47,11 +57,12 @@ int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth) {
 
 Move tt_get_best_move(uint64_t zobrist) {
   int index = zobrist % TT_ENTRIES;
+  uint32_t zobrist_check = TT_ZOBRIST_CHECK(zobrist);
 
   for (int i = 0; i < TT_WIDTH; i++) {
     TranspositionNode* node = &transposition_table[index][i];
 
-    if (node->zobrist == zobrist)
+    if (node->zobrist_check == zobrist_check)
       return node->best_move;
   }
 
@@ -73,11 +84,13 @@ void tt_put(uint64_t zobrist,
   if ((depth < 1) || (value >= MATE) || (value <= -MATE))
     return;
 
-  int index = zobrist % TT_ENTRIES;
+  int index = TT_INDEX(zobrist);
+  uint32_t zobrist_check = TT_ZOBRIST_CHECK(zobrist);
+
   TranspositionNode* target = NULL;
 
   for (int i = 0; i < TT_WIDTH; i++) {
-    if (transposition_table[index][i].zobrist == zobrist) {
+    if (transposition_table[index][i].zobrist_check == zobrist_check) {
       target = &transposition_table[index][i];
 
       // Don't blow away a best_move if we already have one. Beyond that, you
@@ -120,7 +133,7 @@ void tt_put(uint64_t zobrist,
   }
 
   if (target) {
-    target->zobrist = zobrist;
+    target->zobrist_check = zobrist_check;
     target->depth = depth;
     target->generation = generation;
     target->value = value;
