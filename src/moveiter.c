@@ -1,6 +1,12 @@
+#include <limits.h>
 #include <stdlib.h>
 
 #include "moveiter.h"
+
+#define SCORE_TT SCHAR_MAX
+#define SCORE_CAPTURE 0
+#define SCORE_KILLER (SCHAR_MIN + 1)
+#define SCORE_OTHER SCHAR_MIN
 
 typedef struct {
   Move m;
@@ -48,15 +54,15 @@ static int8_t moveiter_score(Move m, Move tt_move, Move* killers) {
   // - Everything else (XXX including promotions?)
 
   if (m == tt_move)
-    return 127;
+    return SCORE_TT;
 
   if (killers && (m == killers[0] || m == killers[1]))
-    return 1;
+    return SCORE_KILLER;
 
   if (!move_is_capture(m))
-    return 0;
+    return SCORE_OTHER;
 
-  return 15 + 2 * move_captured_piecetype(m) - move_piecetype(m);
+  return SCORE_CAPTURE + 2 * move_captured_piecetype(m) - move_piecetype(m);
 }
 
 static void moveiter_qsort(Movelist* list, Move tt_move, Move* killers) {
