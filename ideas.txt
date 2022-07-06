@@ -7,9 +7,6 @@
 	- try to make it smaller
 		- store alpha/beta/exact flag in top bits of Move?
 		- can i make Move smaller? capture/castle/enpassant can be two bits total, don't need promotion bit
-	- weirdness around killer moves -- try killer changes again after tweaking tt
-		- only store noncaptures in killers -- most people do this, why is it such a loss for us
-		- or, order capture killer before captures before killer before rest
 - improve timer
 	- move to setitimer(TIMER_REAL) [macOS does not have timer_create]
 		- track "expected end" and re-set timer if we haven't hit it yet (so time can be increased during search)

@@ -334,6 +334,9 @@ static int search_alpha_beta(Bitboard* board,
 }
 
 static void search_store_killer(Move m, int8_t ply) {
+  if (move_is_capture(m))
+    return;
+
   Move* slot = search_get_killers(ply);
 
   if (slot[0] == m || slot[1] == m)
