@@ -62,7 +62,8 @@ static int8_t moveiter_score(Move m, Move tt_move, Move* killers) {
   if (!move_is_capture(m))
     return SCORE_OTHER;
 
-  return SCORE_CAPTURE + 2 * move_captured_piecetype(m) - move_piecetype(m);
+  return SCORE_CAPTURE + 6 * move_captured_piecetype(m) +
+         (5 - move_piecetype(m));
 }
 
 static void moveiter_qsort(Movelist* list, Move tt_move, Move* killers) {
