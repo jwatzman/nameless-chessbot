@@ -37,6 +37,9 @@ int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth) {
   if (depth < 1)
     return INFINITY;
 
+  for (int i = 0; i < TT_WIDTH; i++)
+    __builtin_prefetch(&transposition_table[index][i]);
+
   for (int i = 0; i < TT_WIDTH; i++) {
     /* Since many zobrists may map to a single slot in the table, we
     want to make sure we got a match; also, we want to make sure that
@@ -62,6 +65,9 @@ int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth) {
 Move tt_get_best_move(uint64_t zobrist) {
   int index = zobrist % TT_ENTRIES;
   uint32_t zobrist_check = TT_ZOBRIST_CHECK(zobrist);
+
+  for (int i = 0; i < TT_WIDTH; i++)
+    __builtin_prefetch(&transposition_table[index][i]);
 
   for (int i = 0; i < TT_WIDTH; i++) {
     TranspositionNode* node = &transposition_table[index][i];
@@ -90,6 +96,9 @@ void tt_put(uint64_t zobrist,
 
   int index = TT_INDEX(zobrist);
   uint32_t zobrist_check = TT_ZOBRIST_CHECK(zobrist);
+
+  for (int i = 0; i < TT_WIDTH; i++)
+    __builtin_prefetch(&transposition_table[index][i], 1);
 
   TranspositionNode* target = NULL;
 
