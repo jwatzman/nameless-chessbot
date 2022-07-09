@@ -78,6 +78,8 @@ uint64_t move_generate_pinned(Bitboard* board, Color color);
   (((move) >> move_promoted_piecetype_offset) & 0x07)
 #define move_is_promotion(move) (move_promoted_piecetype(move) > 0)
 
+#define move_unused_offset 24
+
 static inline void move_srcdest_form(Move move, char srcdest_form[6]) {
   uint8_t src = move_source_index(move);
   uint8_t dest = move_destination_index(move);

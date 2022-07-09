@@ -6,17 +6,20 @@
 
 typedef struct {
   uint32_t zobrist_check;
+  Move best_move;
+  int value;
   int8_t depth;
   uint16_t generation;
-  int value;
-  Move best_move;
-  TranspositionType type;
 } __attribute__((__packed__)) TranspositionNode;
 
 #define TT_WIDTH 4
 #define TT_ENTRIES_EXPONENT 19
 #define TT_ENTRIES (1 << TT_ENTRIES_EXPONENT)
 static TranspositionNode transposition_table[TT_ENTRIES][TT_WIDTH];
+
+#define INJECT_TYPE(move, type) ((move) | (Move)((type) << move_unused_offset))
+#define EXTRACT_TYPE(move) (((move) >> move_unused_offset) & 0xff)
+#define CLEAN_MOVE(move) ((move)&0x00ffffff)
 
 // As is standard for hash tables, we use the lower bits of the zobrist to find
 // the right index. On a read, we need to make sure the node we found is
@@ -41,13 +44,14 @@ int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth) {
     currently using. */
     TranspositionNode* node = &transposition_table[index][i];
     if (node->zobrist_check == zobrist_check && node->depth >= depth) {
+      TranspositionType type = EXTRACT_TYPE(node->best_move);
       int val = node->value;
 
-      if (node->type == TRANSPOSITION_EXACT)
+      if (type == TRANSPOSITION_EXACT)
         return val;
-      else if ((node->type == TRANSPOSITION_ALPHA) && (val <= alpha))
+      else if ((type == TRANSPOSITION_ALPHA) && (val <= alpha))
         return val;
-      else if ((node->type == TRANSPOSITION_BETA) && (val >= beta))
+      else if ((type == TRANSPOSITION_BETA) && (val >= beta))
         return val;
     }
   }
@@ -63,7 +67,7 @@ Move tt_get_best_move(uint64_t zobrist) {
     TranspositionNode* node = &transposition_table[index][i];
 
     if (node->zobrist_check == zobrist_check)
-      return node->best_move;
+      return CLEAN_MOVE(node->best_move);
   }
 
   return MOVE_NULL;
@@ -99,7 +103,7 @@ void tt_put(uint64_t zobrist,
       // would be good, but every variation I've tried to do that ends up being
       // a big loss for some reason?
       if (best_move == MOVE_NULL)
-        best_move = target->best_move;
+        best_move = CLEAN_MOVE(target->best_move);
 
       break;
     }
@@ -137,7 +141,6 @@ void tt_put(uint64_t zobrist,
     target->depth = depth;
     target->generation = generation;
     target->value = value;
-    target->best_move = best_move;
-    target->type = type;
+    target->best_move = INJECT_TYPE(best_move, type);
   }
 }

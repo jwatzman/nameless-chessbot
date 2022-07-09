@@ -5,12 +5,10 @@
 
 #include "types.h"
 
-typedef enum {
-  TRANSPOSITION_EXACT,
-  TRANSPOSITION_ALPHA,
-  TRANSPOSITION_BETA,
-  TRANSPOSITION_INVALIDATED
-} __attribute__((__packed__)) TranspositionType;
+#define TRANSPOSITION_EXACT 0
+#define TRANSPOSITION_ALPHA 1
+#define TRANSPOSITION_BETA 2
+typedef uint8_t TranspositionType;
 
 /* asks the transposition table if we already know a good value for this
    position. If we do, return it. Otherwise, return INFINITY but adjust
