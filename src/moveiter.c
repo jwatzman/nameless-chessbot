@@ -8,10 +8,10 @@
 #define SCORE_KILLER (SCHAR_MIN + 1)
 #define SCORE_OTHER SCHAR_MIN
 
-typedef struct {
-  Move m;
-  int8_t s;
-} MoveAndScore;
+#define INJECT_SCORE(move, score) \
+  ((move) | (Move)((score) << move_unused_offset))
+#define EXTRACT_SCORE(move) ((int32_t)(move) >> move_unused_offset)
+#define CLEAN_MOVE(move) ((move)&0x00ffffff)
 
 static int moveiter_comparator(const void* m1, const void* m2);
 static int8_t moveiter_score(Move m, Move tt_move, Move* killers);
@@ -36,12 +36,12 @@ int moveiter_has_next(Moveiter* iter) {
 Move moveiter_next(Moveiter* iter) {
   Move m = *iter->m;
   iter->m++;
-  return m;
+  return CLEAN_MOVE(m);
 }
 
 static int moveiter_comparator(const void* p1, const void* p2) {
-  int8_t s1 = ((const MoveAndScore*)p1)->s;
-  int8_t s2 = ((const MoveAndScore*)p2)->s;
+  int8_t s1 = EXTRACT_SCORE(*(const Move*)p1);
+  int8_t s2 = EXTRACT_SCORE(*(const Move*)p2);
 
   return s2 - s1;
 }
@@ -67,17 +67,12 @@ static int8_t moveiter_score(Move m, Move tt_move, Move* killers) {
 }
 
 static void moveiter_qsort(Movelist* list, Move tt_move, Move* killers) {
-  MoveAndScore pairs[MAX_MOVES];
   uint8_t n = list->n;
   for (int i = 0; i < n; i++) {
     Move m = list->moves[i];
-    int8_t score = moveiter_score(m, tt_move, killers);
-    pairs[i].m = m;
-    pairs[i].s = score;
+    int8_t s = moveiter_score(m, tt_move, killers);
+    list->moves[i] = INJECT_SCORE(m, s);
   }
 
-  qsort(pairs, n, sizeof(MoveAndScore), moveiter_comparator);
-
-  for (int i = 0; i < n; i++)
-    list->moves[i] = pairs[i].m;
+  qsort(list->moves, n, sizeof(Move), moveiter_comparator);
 }
