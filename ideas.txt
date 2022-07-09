@@ -28,5 +28,3 @@
 - alpha-beta
 	- move to separate qsearch function? easier to reason about at least
 	- I think I'm half-fail-soft -- go all the way? https://www.chessprogramming.org/Alpha-Beta#Outside_the_Bounds
-
-- investigate why 7fd9600c6bab9e30d6799bf416a6a65527763289 was such a win and f86343df5f089f26916d67581934e7178ab00036 overtook it as such a loss
