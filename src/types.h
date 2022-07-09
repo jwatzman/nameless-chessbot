@@ -31,12 +31,10 @@ typedef unsigned char Piecetype;
 // destination square (6)
 // type (3)
 // color (1)
-// is castle (1)
-// is en passant (1)
-// is capture (1)
+// move type normal/capture/castle/enpassant (2)
 // captured type (3)
 // promoted type (3)
-// which leaves the seven MSB unused
+// which leaves the eight MSB unused
 typedef uint32_t Move;
 
 /**

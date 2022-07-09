@@ -27,18 +27,19 @@ static Move move_generate_enpassant_move(Bitboard* board, uint8_t src);
    (unsigned)(piece) << move_piecetype_offset |        \
    (unsigned)(to_move) << move_color_offset)
 
-#define make_move_capture(move, captured)  \
-  ((move) | 1U << move_is_capture_offset | \
+#define make_move_capture(move, captured)           \
+  ((move) | move_type_capture << move_type_offset | \
    ((unsigned)(captured) << move_captured_piecetype_offset))
 
 #define make_move_promotion(move, promoted) \
   ((move) | (unsigned)(promoted) << move_promoted_piecetype_offset)
 
 #define make_move_castle(src, dest, to_move) \
-  (make_move(src, dest, KING, to_move) | 1U << move_is_castle_offset)
+  (make_move(src, dest, KING, to_move) | move_type_castle << move_type_offset)
 
-#define make_move_enpassant(src, dest, to_move) \
-  (make_move(src, dest, PAWN, to_move) | 1U << move_is_enpassant_offset)
+#define make_move_enpassant(src, dest, to_move)              \
+  (make_move(src, dest, PAWN, to_move) | move_type_enpassant \
+                                             << move_type_offset)
 
 void move_init(void) {
   movemagic_init();

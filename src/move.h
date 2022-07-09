@@ -55,22 +55,25 @@ uint64_t move_generate_pinned(Bitboard* board, Color color);
 #define move_color_offset 15
 #define move_color(move) (((move) >> move_color_offset) & 0x01)
 
-#define move_is_castle_offset 16
-#define move_is_castle(move) (((move) >> move_is_castle_offset) & 0x01)
+#define move_type_normal 0U
+#define move_type_capture 1U
+#define move_type_castle 2U
+#define move_type_enpassant 3U
+#define move_type_offset 16
+#define move_is_capture(move) \
+  ((((move) >> move_type_offset) & 0x03) == move_type_capture)
+#define move_is_castle(move) \
+  ((((move) >> move_type_offset) & 0x03) == move_type_castle)
+#define move_is_enpassant(move) \
+  ((((move) >> move_type_offset) & 0x03) == move_type_enpassant)
 
-#define move_is_enpassant_offset 17
-#define move_is_enpassant(move) (((move) >> move_is_enpassant_offset) & 0x01)
-
-#define move_is_capture_offset 18
-#define move_is_capture(move) (((move) >> move_is_capture_offset) & 0x01)
-
-#define move_captured_piecetype_offset 19
+#define move_captured_piecetype_offset 18
 #define move_captured_piecetype(move) \
   (((move) >> move_captured_piecetype_offset) & 0x07)
 
 // Promoted piecetype being set to > 0 means the move is a promotion (since you
 // can never promote to a pawn).
-#define move_promoted_piecetype_offset 22
+#define move_promoted_piecetype_offset 21
 #define move_promoted_piecetype(move) \
   (((move) >> move_promoted_piecetype_offset) & 0x07)
 #define move_is_promotion(move) (move_promoted_piecetype(move) > 0)
