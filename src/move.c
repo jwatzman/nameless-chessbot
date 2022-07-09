@@ -31,9 +31,8 @@ static Move move_generate_enpassant_move(Bitboard* board, uint8_t src);
   ((move) | 1U << move_is_capture_offset | \
    ((unsigned)(captured) << move_captured_piecetype_offset))
 
-#define make_move_promotion(move, promoted)  \
-  ((move) | 1U << move_is_promotion_offset | \
-   (unsigned)(promoted) << move_promoted_piecetype_offset)
+#define make_move_promotion(move, promoted) \
+  ((move) | (unsigned)(promoted) << move_promoted_piecetype_offset)
 
 #define make_move_castle(src, dest, to_move) \
   (make_move(src, dest, KING, to_move) | 1U << move_is_castle_offset)

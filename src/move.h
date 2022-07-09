@@ -64,16 +64,16 @@ uint64_t move_generate_pinned(Bitboard* board, Color color);
 #define move_is_capture_offset 18
 #define move_is_capture(move) (((move) >> move_is_capture_offset) & 0x01)
 
-#define move_is_promotion_offset 19
-#define move_is_promotion(move) (((move) >> move_is_promotion_offset) & 0x01)
-
-#define move_captured_piecetype_offset 20
+#define move_captured_piecetype_offset 19
 #define move_captured_piecetype(move) \
   (((move) >> move_captured_piecetype_offset) & 0x07)
 
-#define move_promoted_piecetype_offset 23
+// Promoted piecetype being set to > 0 means the move is a promotion (since you
+// can never promote to a pawn).
+#define move_promoted_piecetype_offset 22
 #define move_promoted_piecetype(move) \
   (((move) >> move_promoted_piecetype_offset) & 0x07)
+#define move_is_promotion(move) (move_promoted_piecetype(move) > 0)
 
 static inline void move_srcdest_form(Move move, char srcdest_form[6]) {
   uint8_t src = move_source_index(move);

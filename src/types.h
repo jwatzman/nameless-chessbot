@@ -34,10 +34,9 @@ typedef unsigned char Piecetype;
 // is castle (1)
 // is en passant (1)
 // is capture (1)
-// is promotion (1)
 // captured type (3)
 // promoted type (3)
-// which leaves the six MSB unused
+// which leaves the seven MSB unused
 typedef uint32_t Move;
 
 /**
