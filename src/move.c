@@ -8,6 +8,8 @@
 #include "movemagic.h"
 #include "types.h"
 
+#define INSERT_MOVE(movelist, move) (movelist->moves[movelist->n++] = (move))
+
 static void move_generate_movelist_pawn_push(Bitboard* board,
                                              Movelist* movelist,
                                              uint64_t non_capture_mask,
@@ -123,19 +125,19 @@ void move_generate_movelist(Bitboard* board,
 
         if (piece == PAWN &&
             (board_row_of(dest) == 0 || board_row_of(dest) == 7)) {
-          movelist->moves[movelist->n++] = make_move_promotion(move, QUEEN);
-          movelist->moves[movelist->n++] = make_move_promotion(move, ROOK);
-          movelist->moves[movelist->n++] = make_move_promotion(move, BISHOP);
-          movelist->moves[movelist->n++] = make_move_promotion(move, KNIGHT);
+          INSERT_MOVE(movelist, make_move_promotion(move, QUEEN));
+          INSERT_MOVE(movelist, make_move_promotion(move, ROOK));
+          INSERT_MOVE(movelist, make_move_promotion(move, BISHOP));
+          INSERT_MOVE(movelist, make_move_promotion(move, KNIGHT));
         } else {
-          movelist->moves[movelist->n++] = move;
+          INSERT_MOVE(movelist, move);
         }
       }
 
       while (non_captures) {
         uint8_t dest = bitscan(non_captures);
         non_captures &= non_captures - 1;
-        movelist->moves[movelist->n++] = make_move(src, dest, piece, to_move);
+        INSERT_MOVE(movelist, make_move(src, dest, piece, to_move));
       }
     }
   }
@@ -304,14 +306,14 @@ static void move_generate_movelist_pawn_push(Bitboard* board,
 
         // promote if needed
         if ((to_move == WHITE && row == 6) || (to_move == BLACK && row == 1)) {
-          movelist->moves[movelist->n++] = make_move_promotion(move, QUEEN);
+          INSERT_MOVE(movelist, make_move_promotion(move, QUEEN));
           if (m != MOVE_GEN_QUIET) {
-            movelist->moves[movelist->n++] = make_move_promotion(move, ROOK);
-            movelist->moves[movelist->n++] = make_move_promotion(move, BISHOP);
-            movelist->moves[movelist->n++] = make_move_promotion(move, KNIGHT);
+            INSERT_MOVE(movelist, make_move_promotion(move, ROOK));
+            INSERT_MOVE(movelist, make_move_promotion(move, BISHOP));
+            INSERT_MOVE(movelist, make_move_promotion(move, KNIGHT));
           }
         } else if (m != MOVE_GEN_QUIET) {
-          movelist->moves[movelist->n++] = move;
+          INSERT_MOVE(movelist, move);
         }
       }
 
@@ -327,8 +329,7 @@ static void move_generate_movelist_pawn_push(Bitboard* board,
           uint64_t two_forward_blocked = board->full_composite & two_forward;
           uint64_t two_forward_unmasked = non_capture_mask & two_forward;
           if (!two_forward_blocked && two_forward_unmasked) {
-            movelist->moves[movelist->n++] =
-                make_move(src, dest, PAWN, to_move);
+            INSERT_MOVE(movelist, make_move(src, dest, PAWN, to_move));
           }
         }
       }
@@ -357,7 +358,7 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
       (board->state->castle_rights & CASTLE_R(CASTLE_R_QS, WHITE))) {
     uint64_t clear = (1ULL << 1) | (1ULL << 2) | (1ULL << 3);
     if ((board->full_composite & clear) == 0) {
-      movelist->moves[movelist->n++] = make_move_castle(4, 2, color);
+      INSERT_MOVE(movelist, make_move_castle(4, 2, color));
     }
   }
 
@@ -366,7 +367,7 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
       (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, WHITE))) {
     uint64_t clear = (1ULL << 5) | (1ULL << 6);
     if ((board->full_composite & clear) == 0) {
-      movelist->moves[movelist->n++] = make_move_castle(4, 6, color);
+      INSERT_MOVE(movelist, make_move_castle(4, 6, color));
     }
   }
 
@@ -375,7 +376,7 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
       (board->state->castle_rights & CASTLE_R(CASTLE_R_QS, BLACK))) {
     uint64_t clear = (1ULL << 57) | (1ULL << 58) | (1ULL << 59);
     if ((board->full_composite & clear) == 0) {
-      movelist->moves[movelist->n++] = make_move_castle(60, 58, color);
+      INSERT_MOVE(movelist, make_move_castle(60, 58, color));
     }
   }
 
@@ -384,7 +385,7 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
       (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, BLACK))) {
     uint64_t clear = (1ULL << 61) | (1ULL << 62);
     if ((board->full_composite & clear) == 0) {
-      movelist->moves[movelist->n++] = make_move_castle(60, 62, color);
+      INSERT_MOVE(movelist, make_move_castle(60, 62, color));
     }
   }
 }
@@ -412,13 +413,13 @@ static void move_generate_movelist_enpassant(Bitboard* board,
   if (board_col_of(ep_index) > 0) {
     Move move = move_generate_enpassant_move(board, ep_index - 1);
     if (move != MOVE_NULL)
-      movelist->moves[movelist->n++] = move;
+      INSERT_MOVE(movelist, move);
   }
 
   if (board_col_of(ep_index) < 7) {
     Move move = move_generate_enpassant_move(board, ep_index + 1);
     if (move != MOVE_NULL)
-      movelist->moves[movelist->n++] = move;
+      INSERT_MOVE(movelist, move);
   }
 }
 
