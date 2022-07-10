@@ -23,7 +23,6 @@
 	- can we do any ordering on non-captures?
 		- history heuristic http://mediocrechess.sourceforge.net/guides/killermoveshistoryheuristic.html
 		- there's something where you make sure you aren't moving a queen to be attacked by a pawn (generally, lower-value piece)
-	- why do we search so many more nodes after 0a3a0f67fd32d94e2cee2e59ae51f2f34f36c134? even `search-perf 2 1` shows it
 - alpha-beta
 	- move to separate qsearch function? easier to reason about at least
 	- I think I'm half-fail-soft -- go all the way? https://www.chessprogramming.org/Alpha-Beta#Outside_the_Bounds
