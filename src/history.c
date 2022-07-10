@@ -17,7 +17,7 @@ void history_update(Move m, int8_t ply) {
   if (move_is_capture(m))
     return;
 
-  Move* slot = history_get_killers(ply);
+  Move* slot = (Move*)history_get_killers(ply);
 
   if (slot[0] == m || slot[1] == m)
     return;
@@ -30,6 +30,6 @@ void history_update(Move m, int8_t ply) {
   }
 }
 
-Move* history_get_killers(int8_t ply) {
+const Move* history_get_killers(int8_t ply) {
   return killers[ply - 1];  // Ply starts at 1
 }

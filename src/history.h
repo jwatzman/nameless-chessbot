@@ -7,6 +7,6 @@
 
 void history_clear(void);
 void history_update(Move m, int8_t ply);
-Move* history_get_killers(int8_t ply);
+const Move* history_get_killers(int8_t ply);
 
 #endif

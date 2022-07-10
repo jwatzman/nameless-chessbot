@@ -15,15 +15,15 @@ typedef int8_t Score;
 #define EXTRACT_SCORE(move) ((int32_t)(move) >> move_unused_offset)
 #define CLEAN_MOVE(move) ((move)&0x00ffffff)
 
-static Score moveiter_score(Move m, Move tt_move, Move* killers);
+static Score moveiter_score(Move m, Move tt_move, const Move* killers);
 static void moveiter_inject_scores(Movelist* moves,
                                    Move tt_move,
-                                   Move* killers);
+                                   const Move* killers);
 
 void moveiter_init(Moveiter* iter,
                    Movelist* list,
                    Move tt_move,
-                   Move* killers) {
+                   const Move* killers) {
   iter->m = list->moves;
   list->moves[list->n] = MOVE_NULL;
 
@@ -60,7 +60,7 @@ Move moveiter_next(Moveiter* iter) {
   return ret;
 }
 
-static Score moveiter_score(Move m, Move tt_move, Move* killers) {
+static Score moveiter_score(Move m, Move tt_move, const Move* killers) {
   // Move ordering:
   // - Transposition table move
   // - Captures, MVV/LVA
@@ -82,7 +82,7 @@ static Score moveiter_score(Move m, Move tt_move, Move* killers) {
 
 static void moveiter_inject_scores(Movelist* list,
                                    Move tt_move,
-                                   Move* killers) {
+                                   const Move* killers) {
   uint8_t n = list->n;
   for (int i = 0; i < n; i++) {
     Move m = list->moves[i];

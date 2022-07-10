@@ -11,7 +11,10 @@ struct Moveiter {
 typedef struct Moveiter Moveiter;
 
 // May modify the input list
-void moveiter_init(Moveiter* iter, Movelist* list, Move tt_move, Move* killers);
+void moveiter_init(Moveiter* iter,
+                   Movelist* list,
+                   Move tt_move,
+                   const Move* killers);
 int moveiter_has_next(Moveiter* iter);
 Move moveiter_next(Moveiter* iter);
 
