@@ -154,7 +154,12 @@ static int search_alpha_beta(Bitboard* board,
     // XXX is this right?
     State* s = board->state;
     for (int back = board->state->halfmove_count - 2; back >= 0; back -= 2) {
-      s = s->prev->prev;
+      s = s->prev;
+      if (!s)
+        break;
+      s = s->prev;
+      if (!s)
+        break;
       if (s->zobrist == board->state->zobrist)
         return 0;
     }
@@ -177,7 +182,7 @@ static int search_alpha_beta(Bitboard* board,
     return eval;
   }
 
-  // Quiescent stand-pat: "you don't have to ttake". Disallow when in check
+  // Quiescent stand-pat: "you don't have to take". Disallow when in check
   // since the position isn't "quiet" yet and there's no option to "do nothing".
   if (quiescent && !in_check) {
     pv = NULL;

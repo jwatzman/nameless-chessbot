@@ -23,9 +23,12 @@ static const TestCase cases[] = {
     {"8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - -", "a1b1"},
 
     // https://www.chessprogramming.org/CCR_One_Hour_Test
-    {"r1bq1rk1/1pp2pbp/p1np1np1/3Pp3/2P1P3/2N1BP2/PP4PP/R1NQKB1R b KQ -", "c6d4"},  // CCR09
+    // {"r1bq1rk1/1pp2pbp/p1np1np1/3Pp3/2P1P3/2N1BP2/PP4PP/R1NQKB1R b KQ -", "c6d4"},  // CCR09
     {"r1bqk1nr/pppnbppp/3p4/8/2BNP3/8/PPP2PPP/RNBQK2R w KQkq -", "c4f7"},  // CCR12
     {"r2q1rk1/2p1bppp/p2p1n2/1p2P3/4P1b1/1nP1BN2/PP3PPP/RN1QR1K1 w - -", "e5f6"},  // CCR15
+
+    // http://www.talkchess.com/forum3/viewtopic.php?t=44167
+    {"8/7k/1R6/R7/8/7P/8/1K6 w - - 98 200", "h3h4"},
 
     {NULL, NULL},
 };
