@@ -22,7 +22,7 @@ static void board_toggle_piece(Bitboard* board,
                                Piecetype piece,
                                Color color,
                                uint8_t loc);
-static uint64_t board_gen_king_attackers(Bitboard* board, Color color);
+static uint64_t board_gen_king_attackers(const Bitboard* board, Color color);
 static void board_update_expensive_state(Bitboard* board);
 
 void board_init(Bitboard* board, State* state) {
@@ -345,7 +345,7 @@ static void board_toggle_piece(Bitboard* board,
   board->state->zobrist ^= board->zobrist_pos[color][piece][loc];
 }
 
-static uint64_t board_gen_king_attackers(Bitboard* board, Color color) {
+static uint64_t board_gen_king_attackers(const Bitboard* board, Color color) {
   return move_generate_attackers(board, 1 - color,
                                  bitscan(board->boards[color][KING]),
                                  board->full_composite);
@@ -357,7 +357,7 @@ static void board_update_expensive_state(Bitboard* board) {
   board->state->pinned = move_generate_pinned(board, board->to_move);
 }
 
-int board_in_check(Bitboard* board, Color color) {
+int board_in_check(const Bitboard* board, Color color) {
   uint64_t king_attackers;
   if (color == board->to_move)
     king_attackers = board->state->king_attackers;
@@ -370,7 +370,7 @@ int board_in_check(Bitboard* board, Color color) {
   return king_attackers > 0;
 }
 
-void board_print(Bitboard* board) {
+void board_print(const Bitboard* board) {
   char* separator = "-----------------";
   char* template = "| | | | | | | | |  ";
   char* this_line = malloc(sizeof(char) * (strlen(template) + 1));

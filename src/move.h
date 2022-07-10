@@ -19,28 +19,30 @@ void move_init(void);
 
 // *Most*, but not *all*, of the moves returned here are legal. Need to still
 // call move_is_legal as a final check before applying the move.
-void move_generate_movelist(Bitboard* board, Movelist* movelist, MoveGenMode m);
+void move_generate_movelist(const Bitboard* board,
+                            Movelist* movelist,
+                            MoveGenMode m);
 
 // does not consider enpassant (this is basically for checking king move and
 // castling viability)
-uint64_t move_generate_attackers(Bitboard* board,
+uint64_t move_generate_attackers(const Bitboard* board,
                                  Color attacker,
                                  uint8_t square,
                                  uint64_t composite);
 
 // assuming this piece were to be at this location, where could it attack?
 // note: does *not* generate pawn pushes or mask out friendly pieces
-uint64_t move_generate_attacks(Bitboard* board,
+uint64_t move_generate_attacks(const Bitboard* board,
                                Piecetype piece,
                                Color color,
                                uint8_t index);
 
 // Final move legality checks that are too expensive to do in
 // move_generate_movelist.
-int move_is_legal(Bitboard* board, Move m);
+int move_is_legal(const Bitboard* board, Move m);
 
 // Which pieces are pinned to the king?
-uint64_t move_generate_pinned(Bitboard* board, Color color);
+uint64_t move_generate_pinned(const Bitboard* board, Color color);
 
 #define move_source_index_offset 0
 #define move_source_index(move) ((move)&0x3F)

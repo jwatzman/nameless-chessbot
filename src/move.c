@@ -10,16 +10,17 @@
 
 #define INSERT_MOVE(movelist, move) (movelist->moves[movelist->n++] = (move))
 
-static void move_generate_movelist_pawn_push(Bitboard* board,
+static void move_generate_movelist_pawn_push(const Bitboard* board,
                                              Movelist* movelist,
                                              uint64_t non_capture_mask,
                                              MoveGenMode m);
-static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist);
-static void move_generate_movelist_enpassant(Bitboard* board,
+static void move_generate_movelist_castle(const Bitboard* board,
+                                          Movelist* movelist);
+static void move_generate_movelist_enpassant(const Bitboard* board,
                                              Movelist* movelist,
                                              int in_single_check,
                                              uint64_t non_capture_mask);
-static Move move_generate_enpassant_move(Bitboard* board, uint8_t src);
+static Move move_generate_enpassant_move(const Bitboard* board, uint8_t src);
 
 #define make_move(src, dest, piece, to_move)           \
   ((unsigned)(src) << move_source_index_offset |       \
@@ -45,7 +46,7 @@ void move_init(void) {
   movemagic_init();
 }
 
-void move_generate_movelist(Bitboard* board,
+void move_generate_movelist(const Bitboard* board,
                             Movelist* movelist,
                             MoveGenMode m) {
   movelist->n = 0;
@@ -153,7 +154,7 @@ void move_generate_movelist(Bitboard* board,
   }
 }
 
-uint64_t move_generate_attacks(Bitboard* board,
+uint64_t move_generate_attacks(const Bitboard* board,
                                Piecetype piece,
                                Color color,
                                uint8_t index) {
@@ -182,7 +183,7 @@ uint64_t move_generate_attacks(Bitboard* board,
   }
 }
 
-int move_is_legal(Bitboard* board, Move m) {
+int move_is_legal(const Bitboard* board, Move m) {
   if (move_is_castle(m)) {
     // Do not allow castling through check.
     uint8_t src = move_source_index(m);
@@ -210,7 +211,7 @@ int move_is_legal(Bitboard* board, Move m) {
   }
 }
 
-uint64_t move_generate_pinned(Bitboard* board, Color color) {
+uint64_t move_generate_pinned(const Bitboard* board, Color color) {
   // We compute pinned pieces using an algorithm inspired by Stockfish:
   // - compute "snipers": the enemy sliding pieces which could hit the king if
   //   there were no other pieces in the way (empty occupancy to movemagic)
@@ -253,7 +254,7 @@ uint64_t move_generate_pinned(Bitboard* board, Color color) {
   return pinned;
 }
 
-uint64_t move_generate_attackers(Bitboard* board,
+uint64_t move_generate_attackers(const Bitboard* board,
                                  Color attacker,
                                  uint8_t square,
                                  uint64_t composite) {
@@ -269,7 +270,7 @@ uint64_t move_generate_attackers(Bitboard* board,
          (pawn_attacks[1 - attacker][square] & board->boards[attacker][PAWN]);
 }
 
-static void move_generate_movelist_pawn_push(Bitboard* board,
+static void move_generate_movelist_pawn_push(const Bitboard* board,
                                              Movelist* movelist,
                                              uint64_t non_capture_mask,
                                              MoveGenMode m) {
@@ -337,7 +338,8 @@ static void move_generate_movelist_pawn_push(Bitboard* board,
   }
 }
 
-static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
+static void move_generate_movelist_castle(const Bitboard* board,
+                                          Movelist* movelist) {
   // squares that must be clear for a castle: (along with the king not being in
   // check) W QS: empty 1 2 3, not attacked 2 3 W KS: empty 5 6, not attacked 5
   // 6 B QS: empty 57 58 59, not attacked 58 59 B KS: empty 61 62, not attacked
@@ -390,7 +392,7 @@ static void move_generate_movelist_castle(Bitboard* board, Movelist* movelist) {
   }
 }
 
-static void move_generate_movelist_enpassant(Bitboard* board,
+static void move_generate_movelist_enpassant(const Bitboard* board,
                                              Movelist* movelist,
                                              int in_single_check,
                                              uint64_t non_capture_mask) {
@@ -423,7 +425,7 @@ static void move_generate_movelist_enpassant(Bitboard* board,
   }
 }
 
-static Move move_generate_enpassant_move(Bitboard* board, uint8_t src) {
+static Move move_generate_enpassant_move(const Bitboard* board, uint8_t src) {
   Color color = board->to_move;
   if ((board->boards[color][PAWN] & (1ULL << src)) == 0)
     return MOVE_NULL;
