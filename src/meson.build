@@ -1,16 +1,30 @@
-core = ['bitboard.c', 'move.c', 'movemagic.c', move_h]
-all = core + ['evaluate.c', 'history.c', 'moveiter.c', 'search.c', 'statelist.c', 'timer.c', 'tt.c', evaluate_h]
+libcore = static_library(
+	'core',
+	['bitboard.c', 'move.c', 'movemagic.c', move_h],
+)
+
+libsearch = static_library(
+	'search',
+	['evaluate.c', 'history.c', 'moveiter.c', 'search.c', 'statelist.c', 'timer.c', 'tt.c', evaluate_h],
+)
+
+libperft = static_library(
+	'perft',
+	['perftfn.c'],
+)
 
 executable(
 	'perft',
-	core + 'perftfn.c' + 'perft.c',
+	'perft.c',
+	link_with: [libcore, libperft],
 )
 
 test(
 	'perft',
 	executable(
 		'test-perft',
-		core + 'perftfn.c' + 'test-perft.c',
+		'test-perft.c',
+		link_with: [libcore, libperft],
 	),
 	protocol: 'tap',
 	timeout: 120,
@@ -20,7 +34,8 @@ test(
 	'search',
 	executable(
 		'test-search',
-		all + 'test-search.c',
+		'test-search.c',
+		link_with: [libcore, libsearch],
 	),
 	protocol: 'tap',
 	timeout: 120,
@@ -28,15 +43,18 @@ test(
 
 executable(
 	'search-perf',
-	all + 'search-perf.c',
+	'search-perf.c',
+	link_with: [libcore, libsearch],
 )
 
 executable(
 	'console',
-	all + 'console.c',
+	'console.c',
+	link_with: [libcore, libsearch],
 )
 
 executable(
 	'xboard',
-	all + 'perftfn.c' + 'xboard.c',
+	'xboard.c',
+	link_with: [libcore, libsearch, libperft],
 )
