@@ -21,14 +21,12 @@ static void moveiter_qsort(Movelist* moves, Move tt_move, Move* killers);
 
 void moveiter_init(Moveiter* iter,
                    Movelist* list,
-                   int mode,
                    Move tt_move,
                    Move* killers) {
   iter->m = list->moves;
   list->moves[list->n] = MOVE_NULL;
 
-  if (mode == MOVEITER_SORT_FULL)
-    moveiter_qsort(list, tt_move, killers);
+  moveiter_qsort(list, tt_move, killers);
 }
 
 int moveiter_has_next(Moveiter* iter) {

@@ -11,7 +11,7 @@
 #include "statelist.h"
 #include "types.h"
 
-static Move get_human_move(Bitboard* board, Movelist* orig_moves);
+static Move get_human_move(Bitboard* board, const Movelist* moves);
 static Move get_computer_move(Bitboard* board);
 
 int main(void) {
@@ -29,12 +29,9 @@ int main(void) {
     Movelist moves;
     move_generate_movelist(test, &moves, MOVE_GEN_ALL);
 
-    Moveiter it;
-    moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL, NULL);
-
     int num_legal_moves = 0;
-    while (moveiter_has_next(&it)) {
-      Move move = moveiter_next(&it);
+    for (int i = 0; i < moves.n; i++) {
+      Move move = moves.moves[i];
       State s_tmp;
       board_do_move(test, move, &s_tmp);
       if (!board_in_check(test, 1 - test->to_move))
@@ -73,21 +70,16 @@ int main(void) {
   return 0;
 }
 
-static Move get_human_move(Bitboard* board, Movelist* orig_moves) {
+static Move get_human_move(Bitboard* board, const Movelist* moves) {
   char srcdest_form[6];
   char input_move[6];
 
   Move result = 0;
 
   State s;
-  Movelist moves;
-  Moveiter it;
 
-  memcpy(&moves, orig_moves, sizeof(Movelist));
-  moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL, NULL);
-
-  while (moveiter_has_next(&it)) {
-    Move move = moveiter_next(&it);
+  for (int i = 0; i < moves->n; i++) {
+    Move move = moves->moves[i];
     board_do_move(board, move, &s);
     if (!board_in_check(board, 1 - board->to_move)) {
       move_srcdest_form(move, srcdest_form);
@@ -101,11 +93,8 @@ static Move get_human_move(Bitboard* board, Movelist* orig_moves) {
     if (scanf("%5s", input_move) == EOF)
       return MOVE_NULL;
 
-    memcpy(&moves, orig_moves, sizeof(Movelist));
-    moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL, NULL);
-
-    while (moveiter_has_next(&it)) {
-      Move move = moveiter_next(&it);
+    for (int i = 0; i < moves->n; i++) {
+      Move move = moves->moves[i];
       move_srcdest_form(move, srcdest_form);
       if (!strcmp(input_move, srcdest_form)) {
         board_do_move(board, move, &s);

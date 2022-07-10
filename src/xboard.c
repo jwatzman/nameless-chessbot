@@ -22,10 +22,8 @@ static Move parse_move(Bitboard* board, char* possible_move) {
   move_generate_movelist(board, &moves, MOVE_GEN_ALL);
   char test[6];
 
-  Moveiter it;
-  moveiter_init(&it, &moves, MOVEITER_SORT_NONE, MOVE_NULL, NULL);
-  while (moveiter_has_next(&it)) {
-    Move m = moveiter_next(&it);
+  for (int i = 0; i < moves.n; i++) {
+    Move m = moveiter_next(moves.moves[i]);
     move_srcdest_form(m, test);
     if (!move_is_promotion(m) && !strncmp(test, possible_move, 4))
       return m;
@@ -104,12 +102,9 @@ int main(void) {
       Movelist all_moves;
       move_generate_movelist(board, &all_moves, MOVE_GEN_ALL);
 
-      Moveiter it;
-      moveiter_init(&it, &all_moves, MOVEITER_SORT_NONE, MOVE_NULL, NULL);
-
       char srcdest_form[6];
-      while (moveiter_has_next(&it)) {
-        Move m = moveiter_next(&it);
+      for (int i = 0; i < all_moves.n; i++) {
+        Move m = all_moves.moves[i];
         move_srcdest_form(m, srcdest_form);
         printf("%s ", srcdest_form);
 

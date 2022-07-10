@@ -216,8 +216,7 @@ static int search_alpha_beta(Bitboard* board,
   // save a full sort when we are likely to only need the first few moves. I
   // think it may actually do that but it increases the branch misses so much
   // that it's slower. Figure out a better way.
-  moveiter_init(&iter, &moves, MOVEITER_SORT_FULL, tt_move,
-                search_get_killers(ply));
+  moveiter_init(&iter, &moves, tt_move, search_get_killers(ply));
 
   /* since we generate only pseudolegal moves, we need to keep track if
      there actually are any legal moves at all */

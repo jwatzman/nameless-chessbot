@@ -4,9 +4,6 @@
 #include <stdint.h>
 #include "move.h"
 
-#define MOVEITER_SORT_NONE 0
-#define MOVEITER_SORT_FULL 1
-
 struct Moveiter {
   Move* m;
 };
@@ -14,11 +11,7 @@ struct Moveiter {
 typedef struct Moveiter Moveiter;
 
 // May modify the input list
-void moveiter_init(Moveiter* iter,
-                   Movelist* list,
-                   int mode,
-                   Move tt_move,
-                   Move* killers);
+void moveiter_init(Moveiter* iter, Movelist* list, Move tt_move, Move* killers);
 int moveiter_has_next(Moveiter* iter);
 Move moveiter_next(Moveiter* iter);
 
