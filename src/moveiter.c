@@ -3,6 +3,8 @@
 
 #include "moveiter.h"
 
+typedef int8_t Score;
+
 #define SCORE_TT SCHAR_MAX
 #define SCORE_CAPTURE 0
 #define SCORE_KILLER (SCHAR_MIN + 1)
@@ -14,7 +16,7 @@
 #define CLEAN_MOVE(move) ((move)&0x00ffffff)
 
 static int moveiter_comparator(const void* m1, const void* m2);
-static int8_t moveiter_score(Move m, Move tt_move, Move* killers);
+static Score moveiter_score(Move m, Move tt_move, Move* killers);
 static void moveiter_qsort(Movelist* moves, Move tt_move, Move* killers);
 
 void moveiter_init(Moveiter* iter,
@@ -40,13 +42,13 @@ Move moveiter_next(Moveiter* iter) {
 }
 
 static int moveiter_comparator(const void* p1, const void* p2) {
-  int8_t s1 = EXTRACT_SCORE(*(const Move*)p1);
-  int8_t s2 = EXTRACT_SCORE(*(const Move*)p2);
+  Score s1 = EXTRACT_SCORE(*(const Move*)p1);
+  Score s2 = EXTRACT_SCORE(*(const Move*)p2);
 
   return s2 - s1;
 }
 
-static int8_t moveiter_score(Move m, Move tt_move, Move* killers) {
+static Score moveiter_score(Move m, Move tt_move, Move* killers) {
   // Move ordering:
   // - Transposition table move
   // - Captures, MVV/LVA
@@ -70,7 +72,7 @@ static void moveiter_qsort(Movelist* list, Move tt_move, Move* killers) {
   uint8_t n = list->n;
   for (int i = 0; i < n; i++) {
     Move m = list->moves[i];
-    int8_t s = moveiter_score(m, tt_move, killers);
+    Score s = moveiter_score(m, tt_move, killers);
     list->moves[i] = INJECT_SCORE(m, s);
   }
 
