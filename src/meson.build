@@ -1,5 +1,5 @@
-core = ['bitboard.c', 'move.c', 'moveiter.c', 'movemagic.c', move_h]
-all = core + ['evaluate.c', 'history.c', 'search.c', 'statelist.c', 'timer.c', 'tt.c', evaluate_h]
+core = ['bitboard.c', 'move.c', 'movemagic.c', move_h]
+all = core + ['evaluate.c', 'history.c', 'moveiter.c', 'search.c', 'statelist.c', 'timer.c', 'tt.c', evaluate_h]
 
 executable(
 	'perft',
