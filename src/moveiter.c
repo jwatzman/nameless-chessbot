@@ -1,6 +1,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
+#include "history.h"
 #include "moveiter.h"
 
 typedef int8_t Score;
@@ -46,6 +47,18 @@ Move moveiter_next(Moveiter* iter) {
     if (s > best_s) {
       best_s = s;
       best_m = p;
+    } else if (s == best_s) {
+      // This is an incredibly ugly hacky way to deal with this -- history is
+      // "separate" from the score for not a terribly good reason (annoying to
+      // stuff it into the 8 bits available for score), and moveiter directly
+      // calls into history which is not great factoring. But it works and
+      // there's not a clear better way to deal with this right now?
+      uint16_t best_h = history_get(*best_m);
+      uint16_t h = history_get(*p);
+      if (h > best_h) {
+        best_s = s;
+        best_m = p;
+      }
     }
   }
 
