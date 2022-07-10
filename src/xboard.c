@@ -127,6 +127,8 @@ int main(void) {
         printf("Total: %" PRIu64 "\n", perft_tot);
       else
         printf("\n");
+    } else if (!strcmp("_searchonly\n", input)) {
+      search_find_move(board, NULL);
     } else if (input[0] >= 'a' && input[0] <= 'h' && input[1] >= '1' &&
                input[1] <= '8' && input[2] >= 'a' && input[2] <= 'h' &&
                input[3] >= '1' && input[3] <= '8') {
