@@ -93,8 +93,11 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
       beta = val + aspiration_window;
 
       if ((val >= MATE) || (val <= -MATE)) {
-        fprintf(stderr, "-> mate\n");
-        break;
+        fprintf(stderr, "-> mate");
+
+        // A bit of a hack: if we found a mate, don't break immediately, but try
+        // one more depth, in case a better one was lost by LMR or something.
+        max_depth = min((uint8_t)depth + 1, max_depth);
       }
 
       fprintf(stderr, "\n");
@@ -251,24 +254,20 @@ static int search_alpha_beta(Bitboard* board,
         // PV search failed
         search_completed = 0;
       }
-    }
-    // LMR disabled -- move ordering not smart enough?
-    /*
-    else if (legal_moves > 4 && depth > 2 && extensions == 0 &&
-             !move_is_promotion(move) && !move_is_capture(move) &&
-             move_piecetype(move) != PAWN && !in_check &&
-             !move_causes_check && !quiescent) {
+    } else if (legal_moves > 4 && depth > 2 && extensions == 0 &&
+               !move_is_promotion(move) && !move_is_capture(move) &&
+               move_piecetype(move) != PAWN && !in_check &&
+               !move_causes_check && !quiescent) {
       // LMR
       search_completed = 1;
-      recursive_value = -search_alpha_beta(board, -alpha - 1, -alpha,
-                                           depth - 2, ply + 1, pv + 1);
+      recursive_value = -search_alpha_beta(board, -alpha - 1, -alpha, depth - 2,
+                                           ply + 1, NULL);
 
       if (recursive_value > alpha) {
         // LMR failed
         search_completed = 0;
       }
     }
-    */
 
     if (!search_completed) {
       // normal search
