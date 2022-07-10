@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+#define max_possible_depth 30
+
 typedef struct {
   uint8_t maxDepth;
   const char* stopMove;

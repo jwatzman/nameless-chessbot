@@ -11,19 +11,17 @@
 
 #include "bitops.h"
 #include "evaluate.h"
+#include "history.h"
 #include "move.h"
 #include "moveiter.h"
 #include "timer.h"
 #include "tt.h"
 
-#define max_possible_depth 30
 #define max_quiescent_depth 50
 #define aspiration_window 30
 
 static volatile sig_atomic_t timeup;
 static uint64_t nodes_searched;
-
-static Move killers[max_possible_depth][2];
 
 // main search workhorse
 static int search_alpha_beta(Bitboard* board,
@@ -33,16 +31,12 @@ static int search_alpha_beta(Bitboard* board,
                              int8_t ply,
                              Move* pv);
 
-static void search_store_killer(Move m, int8_t ply);
-static Move* search_get_killers(int8_t ply);
-
 static void search_print_pv(Move* pv, int8_t depth);
 
 Move search_find_move(Bitboard* board, const SearchDebug* debug) {
   Move best_move = 0;
   nodes_searched = 0;
-  bzero(killers,
-        max_possible_depth * 2 * sizeof(Move));  // Assumes MOVE_NULL is 0!
+  history_clear();
 
   Move pv[max_possible_depth + 1];
 
@@ -216,7 +210,7 @@ static int search_alpha_beta(Bitboard* board,
   // save a full sort when we are likely to only need the first few moves. I
   // think it may actually do that but it increases the branch misses so much
   // that it's slower. Figure out a better way.
-  moveiter_init(&iter, &moves, tt_move, search_get_killers(ply));
+  moveiter_init(&iter, &moves, tt_move, history_get_killers(ply));
 
   /* since we generate only pseudolegal moves, we need to keep track if
      there actually are any legal moves at all */
@@ -289,7 +283,7 @@ static int search_alpha_beta(Bitboard* board,
       if (!timeup) {
         tt_put(board->state->zobrist, recursive_value, move, TRANSPOSITION_BETA,
                board->generation, depth);
-        search_store_killer(best_move, ply);
+        history_update(best_move, ply);
       }
 
       return recursive_value;
@@ -327,30 +321,9 @@ static int search_alpha_beta(Bitboard* board,
     // safe to store even if time is up right now.
     tt_put(board->state->zobrist, alpha, best_move, type, board->generation,
            depth);
-    search_store_killer(best_move, ply);
+    history_update(best_move, ply);
     return alpha;
   }
-}
-
-static void search_store_killer(Move m, int8_t ply) {
-  if (move_is_capture(m))
-    return;
-
-  Move* slot = search_get_killers(ply);
-
-  if (slot[0] == m || slot[1] == m)
-    return;
-
-  if (slot[0] == MOVE_NULL) {
-    slot[0] = m;
-  } else {
-    slot[1] = slot[0];
-    slot[0] = m;
-  }
-}
-
-static Move* search_get_killers(int8_t ply) {
-  return killers[ply - 1];  // Ply starts at 1
 }
 
 static void search_print_pv(Move* pv, int8_t depth) {
