@@ -23,7 +23,7 @@ static Move parse_move(Bitboard* board, char* possible_move) {
   char test[6];
 
   for (int i = 0; i < moves.n; i++) {
-    Move m = moveiter_next(moves.moves[i]);
+    Move m = moves.moves[i];
     move_srcdest_form(m, test);
     if (!move_is_promotion(m) && !strncmp(test, possible_move, 4))
       return m;
