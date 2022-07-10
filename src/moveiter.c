@@ -15,9 +15,10 @@ typedef int8_t Score;
 #define EXTRACT_SCORE(move) ((int32_t)(move) >> move_unused_offset)
 #define CLEAN_MOVE(move) ((move)&0x00ffffff)
 
-static int moveiter_comparator(const void* m1, const void* m2);
 static Score moveiter_score(Move m, Move tt_move, Move* killers);
-static void moveiter_qsort(Movelist* moves, Move tt_move, Move* killers);
+static void moveiter_inject_scores(Movelist* moves,
+                                   Move tt_move,
+                                   Move* killers);
 
 void moveiter_init(Moveiter* iter,
                    Movelist* list,
@@ -26,7 +27,7 @@ void moveiter_init(Moveiter* iter,
   iter->m = list->moves;
   list->moves[list->n] = MOVE_NULL;
 
-  moveiter_qsort(list, tt_move, killers);
+  moveiter_inject_scores(list, tt_move, killers);
 }
 
 int moveiter_has_next(Moveiter* iter) {
@@ -34,16 +35,29 @@ int moveiter_has_next(Moveiter* iter) {
 }
 
 Move moveiter_next(Moveiter* iter) {
-  Move m = *iter->m;
+  // Selection sort for next best move. Much slower than qsort if we need to
+  // sort the whole list, but the number of cases where we do that are so
+  // outweighed by the cases were we need part of a list that doing this is way
+  // faster.
+  Move* best_m = iter->m;
+  Score best_s = EXTRACT_SCORE(*best_m);
+  for (Move* p = iter->m + 1; *p != MOVE_NULL; p++) {
+    Score s = EXTRACT_SCORE(*p);
+    if (s > best_s) {
+      best_s = s;
+      best_m = p;
+    }
+  }
+
+  // Selection sort swaps the best with the first, but we only need to do half
+  // of that since we only make one pass through the list: write the first into
+  // the slot where the best was, and then return the best. (Do not bother to
+  // write the best back into the first slot, which we will never look at
+  // again.)
+  Move ret = CLEAN_MOVE(*best_m);
+  *best_m = *iter->m;
   iter->m++;
-  return CLEAN_MOVE(m);
-}
-
-static int moveiter_comparator(const void* p1, const void* p2) {
-  Score s1 = EXTRACT_SCORE(*(const Move*)p1);
-  Score s2 = EXTRACT_SCORE(*(const Move*)p2);
-
-  return s2 - s1;
+  return ret;
 }
 
 static Score moveiter_score(Move m, Move tt_move, Move* killers) {
@@ -66,13 +80,13 @@ static Score moveiter_score(Move m, Move tt_move, Move* killers) {
          (5 - move_piecetype(m));
 }
 
-static void moveiter_qsort(Movelist* list, Move tt_move, Move* killers) {
+static void moveiter_inject_scores(Movelist* list,
+                                   Move tt_move,
+                                   Move* killers) {
   uint8_t n = list->n;
   for (int i = 0; i < n; i++) {
     Move m = list->moves[i];
     Score s = moveiter_score(m, tt_move, killers);
     list->moves[i] = INJECT_SCORE(m, s);
   }
-
-  qsort(list->moves, n, sizeof(Move), moveiter_comparator);
 }
