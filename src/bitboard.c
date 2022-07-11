@@ -266,6 +266,11 @@ void board_do_move(Bitboard* board, Move move, State* state) {
     // common bits of doing and undoing moves (bulk of the logic in here)
     board_doundo_move_common(board, move);
   } else {
+    if (board->state->enpassant_index) {
+      board->state->zobrist ^=
+          board->zobrist_enpassant[board_col_of(board->state->enpassant_index)];
+      board->state->enpassant_index = 0;
+    }
     board->to_move = (1 - board->to_move);
     board->state->zobrist ^= board->zobrist_black;
   }

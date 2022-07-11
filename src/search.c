@@ -20,6 +20,9 @@
 #define max_quiescent_depth 50
 #define aspiration_window 30
 
+#define DISALLOW_NULL_MOVE 0
+#define ALLOW_NULL_MOVE 1
+
 static volatile sig_atomic_t timeup;
 static uint64_t nodes_searched;
 
@@ -29,7 +32,8 @@ static int search_alpha_beta(Bitboard* board,
                              int beta,
                              int8_t depth,
                              int8_t ply,
-                             Move* pv);
+                             Move* pv,
+                             uint8_t allow_null);
 
 static void search_print_pv(Move* pv, int8_t depth);
 
@@ -55,7 +59,8 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
                           : max_possible_depth;
   for (int8_t depth = 1; depth <= max_depth; depth++) {
     // here we go...
-    int val = search_alpha_beta(board, alpha, beta, depth, 1, pv);
+    int val =
+        search_alpha_beta(board, alpha, beta, depth, 1, pv, ALLOW_NULL_MOVE);
 
     struct timespec end_time;
     clock_gettime(CLOCK_MONOTONIC, &end_time);
@@ -130,7 +135,8 @@ static int search_alpha_beta(Bitboard* board,
                              int beta,
                              int8_t depth,
                              int8_t ply,
-                             Move* pv) {
+                             Move* pv,
+                             uint8_t allow_null) {
   Move localpv[max_possible_depth + 1];
 
   if (timeup)
@@ -200,6 +206,23 @@ static int search_alpha_beta(Bitboard* board,
     }
   }
 
+#if 0
+  // Null move pruning.
+  // XXX deal with zugswang.
+  if (!in_check && !quiescent && depth > 2 && ply > 1 && beta == alpha + 1 &&
+      allow_null == ALLOW_NULL_MOVE) {
+    State s;
+    board_do_move(board, MOVE_NULL, &s);
+    int null_value = -search_alpha_beta(board, -beta, -beta + 1, depth - 2,
+                                        ply + 1, NULL, DISALLOW_NULL_MOVE);
+    board_undo_move(board, MOVE_NULL);
+    if (null_value >= beta)
+      return null_value;
+  }
+#else
+  (void)allow_null;
+#endif
+
   // generate pseudolegal moves
   Movelist moves;
   move_generate_movelist(
@@ -246,9 +269,9 @@ static int search_alpha_beta(Bitboard* board,
     if (type == TRANSPOSITION_EXACT) {
       // PV search
       search_completed = 1;
-      recursive_value =
-          -search_alpha_beta(board, -alpha - 1, -alpha,
-                             (int8_t)(depth - 1 + extensions), ply + 1, NULL);
+      recursive_value = -search_alpha_beta(board, -alpha - 1, -alpha,
+                                           (int8_t)(depth - 1 + extensions),
+                                           ply + 1, NULL, ALLOW_NULL_MOVE);
 
       if ((recursive_value > alpha) && (recursive_value < beta)) {
         // PV search failed
@@ -261,7 +284,7 @@ static int search_alpha_beta(Bitboard* board,
       // LMR
       search_completed = 1;
       recursive_value = -search_alpha_beta(board, -alpha - 1, -alpha, depth - 2,
-                                           ply + 1, NULL);
+                                           ply + 1, NULL, ALLOW_NULL_MOVE);
 
       if (recursive_value > alpha) {
         // LMR failed
@@ -271,9 +294,9 @@ static int search_alpha_beta(Bitboard* board,
 
     if (!search_completed) {
       // normal search
-      recursive_value = -search_alpha_beta(board, -beta, -alpha,
-                                           (int8_t)(depth - 1 + extensions),
-                                           ply + 1, pv ? localpv : NULL);
+      recursive_value = -search_alpha_beta(
+          board, -beta, -alpha, (int8_t)(depth - 1 + extensions), ply + 1,
+          pv ? localpv : NULL, ALLOW_NULL_MOVE);
     }
 
     board_undo_move(board, move);
