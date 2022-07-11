@@ -147,7 +147,7 @@ static int search_alpha_beta(Bitboard* board,
 
   // 50-move rule
   if (board->state->halfmove_count == 100)
-    return 0;
+    return DRAW;
 
   /* only check for repetitions down at least 1 ply, since it results in a
      search termination without the game actually being over. Similarly, only
@@ -164,7 +164,7 @@ static int search_alpha_beta(Bitboard* board,
       if (!s)
         break;
       if (s->zobrist == board->state->zobrist)
-        return 0;
+        return DRAW;
     }
 
     // check transposition table for a useful value

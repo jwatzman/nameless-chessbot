@@ -24,6 +24,7 @@ typedef unsigned char Piecetype;
 
 #define INFINITY 1000000
 #define MATE 300000
+#define DRAW 0
 
 // moves are stored in 24 bits
 // from LSB to MSB:

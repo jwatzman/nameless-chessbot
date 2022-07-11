@@ -98,7 +98,7 @@ void tt_put(uint64_t zobrist,
   // scales down smoothly).
   // XXX try distinguishing between reps in a search (0 + 2 = draw) and reps in
   // the actual game continuation (1 + 2 = draw).
-  if (value >= MATE || value <= -MATE || value == 0) {
+  if (value >= MATE || value <= -MATE || value == DRAW) {
     type = TRANSPOSITION_ALPHA;
     value = INFINITY;
   }
