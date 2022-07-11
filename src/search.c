@@ -208,16 +208,20 @@ static int search_alpha_beta(Bitboard* board,
 
 #if 0
   // Null move pruning.
-  // XXX deal with zugswang.
   if (!in_check && !quiescent && depth > 2 && ply > 1 && beta == alpha + 1 &&
       allow_null == ALLOW_NULL_MOVE) {
-    State s;
-    board_do_move(board, MOVE_NULL, &s);
-    int null_value = -search_alpha_beta(board, -beta, -beta + 1, depth - 2,
-                                        ply + 1, NULL, DISALLOW_NULL_MOVE);
-    board_undo_move(board, MOVE_NULL);
-    if (null_value >= beta)
-      return null_value;
+    // XXX unify this definition against that in evaluate_board.
+    int endgame = popcnt(board->full_composite ^ board->boards[WHITE][PAWN] ^
+                         board->boards[BLACK][PAWN]) < 4;
+    if (!endgame) {
+      State s;
+      board_do_move(board, MOVE_NULL, &s);
+      int null_value = -search_alpha_beta(board, -beta, -beta + 1, depth - 2,
+                                          ply + 1, NULL, DISALLOW_NULL_MOVE);
+      board_undo_move(board, MOVE_NULL);
+      if (null_value >= beta)
+        return null_value;
+    }
   }
 #else
   (void)allow_null;
