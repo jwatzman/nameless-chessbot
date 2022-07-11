@@ -85,14 +85,23 @@ void tt_put(uint64_t zobrist,
             TranspositionType type,
             uint16_t generation,
             int8_t depth) {
-  /* we might not store in the transnposition table if:
-      - the depth is not deep enough to be useful
-      - the value is dependent upon the ply at which it was searched and the
-        depth to which it was searched (currently, only MATE moves)
-      - it would replace a deeper search of this node
-   */
-  if ((depth < 1) || (value >= MATE) || (value <= -MATE))
+  // XXX why is this here, shouldn't the table work for quiescent search too?
+  if (depth < 1)
     return;
+
+  // An incredibly hacky way of trying to deal with the GHI problem: don't store
+  // path-dependent scores in the table. (Swap the value/type to a pair that
+  // will never be used, but keep the best move.) This doesn't actually solve
+  // the problem, especially for draws, since other evaluations can be based on
+  // a false draw value. But it helps and is straightforward.
+  // XXX try multiplying the eval by <100% as we get closer to 50 move rule (so
+  // scales down smoothly).
+  // XXX try distinguishing between reps in a search (0 + 2 = draw) and reps in
+  // the actual game continuation (1 + 2 = draw).
+  if (value >= MATE || value <= -MATE || value == 0) {
+    type = TRANSPOSITION_ALPHA;
+    value = INFINITY;
+  }
 
   int index = TT_INDEX(zobrist);
   uint32_t zobrist_check = TT_ZOBRIST_CHECK(zobrist);
@@ -109,8 +118,8 @@ void tt_put(uint64_t zobrist,
       // Don't blow away a best_move if we already have one. Beyond that, you
       // would think that only overwriting if the new data is a bigger
       // generation or a deeper depth (otherwise keeping the original entry)
-      // would be good, but every variation I've tried to do that ends up being
-      // a big loss for some reason?
+      // would be good, but every variation I've tried to do that ends up
+      // being a big loss for some reason?
       if (best_move == MOVE_NULL)
         best_move = CLEAN_MOVE(target->best_move);
 
@@ -121,8 +130,8 @@ void tt_put(uint64_t zobrist,
   // XXX commenting this out might help too? Is it because it saves another
   // pass/read through the table? (Can we do this and the below check in one
   // pass?) Or because the replacement strategy is bad? Is *that* because
-  // generation is updated on every move and not just on "final" moves? (What is
-  // Stockfish's replacement strategy?)
+  // generation is updated on every move and not just on "final" moves? (What
+  // is Stockfish's replacement strategy?)
   if (!target) {
     int replace_depth = 999;
     for (int i = 0; i < TT_WIDTH; i++) {
