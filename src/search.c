@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "bitops.h"
+#include "config.h"
 #include "evaluate.h"
 #include "history.h"
 #include "move.h"
@@ -206,7 +207,7 @@ static int search_alpha_beta(Bitboard* board,
     }
   }
 
-#if 0
+#if ENABLE_NULL_MOVE_PRUNING
   // Null move pruning.
   if (!in_check && !quiescent && depth > 2 && ply > 1 && beta == alpha + 1 &&
       allow_null == ALLOW_NULL_MOVE) {
@@ -281,6 +282,7 @@ static int search_alpha_beta(Bitboard* board,
         // PV search failed
         search_completed = 0;
       }
+#if ENABLE_LMR
     } else if (legal_moves > 4 && depth > 2 && extensions == 0 &&
                !move_is_promotion(move) && !move_is_capture(move) &&
                move_piecetype(move) != PAWN && !in_check &&
@@ -294,6 +296,7 @@ static int search_alpha_beta(Bitboard* board,
         // LMR failed
         search_completed = 0;
       }
+#endif
     }
 
     if (!search_completed) {

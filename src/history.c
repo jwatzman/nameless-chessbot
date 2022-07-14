@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <strings.h>
 
+#include "config.h"
 #include "history.h"
 #include "move.h"
 #include "search.h"
@@ -21,10 +22,13 @@ void history_update(Move m, int8_t ply) {
   if (move_is_capture(m))
     return;
 
+#if ENABLE_HISTORY
   // XXX this should probably increment by depth*2 or depth << 2 or something,
   // and only record for depth > 2 or something.
   history[move_source_index(m)][move_destination_index(m)]++;
+#endif
 
+#if ENABLE_KILLERS
   Move* slot = (Move*)history_get_killers(ply);
 
   if (slot[0] == m || slot[1] == m)
@@ -36,6 +40,7 @@ void history_update(Move m, int8_t ply) {
     slot[1] = slot[0];
     slot[0] = m;
   }
+#endif
 }
 
 const Move* history_get_killers(int8_t ply) {

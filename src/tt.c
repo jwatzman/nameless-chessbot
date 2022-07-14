@@ -1,5 +1,6 @@
 #include <stdint.h>
 
+#include "config.h"
 #include "move.h"
 #include "tt.h"
 #include "types.h"
@@ -31,6 +32,7 @@ static TranspositionNode transposition_table[TT_ENTRIES][TT_WIDTH];
 #define TT_ZOBRIST_CHECK(zobrist) ((zobrist) >> 32)
 
 int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth) {
+#if ENABLE_TT_CUTOFFS
   int index = zobrist % TT_ENTRIES;
   uint32_t zobrist_check = TT_ZOBRIST_CHECK(zobrist);
 
@@ -58,11 +60,13 @@ int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth) {
         return val;
     }
   }
+#endif
 
   return INFINITY;
 }
 
 Move tt_get_best_move(uint64_t zobrist) {
+#if ENABLE_TT_MOVES
   int index = zobrist % TT_ENTRIES;
   uint32_t zobrist_check = TT_ZOBRIST_CHECK(zobrist);
 
@@ -75,6 +79,7 @@ Move tt_get_best_move(uint64_t zobrist) {
     if (node->zobrist_check == zobrist_check)
       return CLEAN_MOVE(node->best_move);
   }
+#endif
 
   return MOVE_NULL;
 }
@@ -85,6 +90,10 @@ void tt_put(uint64_t zobrist,
             TranspositionType type,
             uint16_t generation,
             int8_t depth) {
+#if !ENABLE_TT_CUTOFFS && !ENABLE_TT_MOVES
+  return;
+#endif
+
   // XXX why is this here, shouldn't the table work for quiescent search too?
   if (depth < 1)
     return;
