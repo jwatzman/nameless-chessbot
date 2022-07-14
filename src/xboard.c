@@ -8,6 +8,7 @@
 #include "evaluate.h"
 #include "move.h"
 #include "moveiter.h"
+#include "nnue.h"
 #include "perftfn.h"
 #include "search.h"
 #include "statelist.h"
@@ -49,6 +50,7 @@ int main(void) {
 
   srandom(time(NULL));
   move_init();
+  nnue_init();
 
   while (1) {
     if (game_on && got_move) {
