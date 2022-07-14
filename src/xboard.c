@@ -99,6 +99,7 @@ int main(void) {
 
       board_print(board);
       printf("Evaluation: %i\n", evaluate_board(board));
+      printf("NNUE: %d\n", nnue_evaluate(board));
       puts("Pseudolegal moves: ");
 
       Movelist all_moves;
