@@ -18,7 +18,7 @@
 int16_t input2hidden_weight[INPUT_LAYER][HIDDEN_LAYER];
 int16_t hidden_bias[HIDDEN_LAYER];
 int8_t hidden2output_weight[2 * HIDDEN_LAYER][OUTPUT_LAYER];
-int8_t output_bias[OUTPUT_LAYER];
+int32_t output_bias[OUTPUT_LAYER];
 
 static inline uint32_t read_u32(FILE* f) {
   int a = getc(f);
@@ -79,20 +79,18 @@ void nnue_init(void) {
   for (int i = 0; i < OUTPUT_LAYER; i++)
     output_bias[i] = read_i8(f);
 
-  printf("loaded\n");
-
   if (getc(f) != EOF)
     abort();
 
   fclose(f);
 }
 
-static void nnue_relu(int8_t* out, const int16_t* in, size_t sz) {
+static void nnue_relu(uint8_t* out, const int16_t* in, size_t sz) {
   for (size_t i = 0; i < sz; i++) {
     int16_t in_v = in[i];
     int16_t clamped =
         in_v > RELU_MAX ? RELU_MAX : (in_v < RELU_MIN ? RELU_MIN : in_v);
-    out[i] = (int8_t)clamped;
+    out[i] = (uint8_t)clamped;
   }
 }
 
@@ -130,12 +128,12 @@ int16_t nnue_evaluate(Bitboard* board) {
     }
   }
 
-  int8_t hidden_clipped[2][HIDDEN_LAYER];
+  uint8_t hidden_clipped[2][HIDDEN_LAYER];
   nnue_relu(hidden_clipped[0], hidden[board->to_move], HIDDEN_LAYER);
   nnue_relu(hidden_clipped[1], hidden[!board->to_move], HIDDEN_LAYER);
-  int8_t* hidden_clipped_p = &hidden_clipped[0][0];
+  uint8_t* hidden_clipped_p = &hidden_clipped[0][0];
 
-  int8_t output[OUTPUT_LAYER];
+  int32_t output[OUTPUT_LAYER];
   memcpy(output, output_bias, OUTPUT_LAYER * sizeof(int8_t));
   for (size_t i = 0; i < OUTPUT_LAYER; i++) {
     for (size_t j = 0; j < HIDDEN_LAYER * 2; j++) {
@@ -143,5 +141,5 @@ int16_t nnue_evaluate(Bitboard* board) {
     }
   }
 
-  return output[0] * SCALE / (255 * 64);
+  return (int16_t)(output[0] * SCALE / (255 * 64));
 }
