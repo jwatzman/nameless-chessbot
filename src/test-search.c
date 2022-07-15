@@ -6,6 +6,7 @@
 
 #include "bitboard.h"
 #include "move.h"
+#include "nnue.h"
 #include "search.h"
 #include "timer.h"
 
@@ -38,6 +39,7 @@ int main(void) {
   int ret = 0;
 
   move_init();
+  nnue_init();
   timer_init_secs(30);
   srandom(0);
 

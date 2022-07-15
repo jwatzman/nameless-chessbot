@@ -4,8 +4,16 @@
 #include "../gen/evaluate.h"
 #include "bitboard.h"
 #include "bitops.h"
+#include "config.h"
 #include "evaluate.h"
 #include "move.h"
+#include "nnue.h"
+
+#if ENABLE_NNUE
+int evaluate_board(Bitboard* board) {
+  return nnue_evaluate(board);
+}
+#else
 
 // clang-format off
 
@@ -164,3 +172,4 @@ int evaluate_board(Bitboard* board) {
 
   return result;
 }
+#endif

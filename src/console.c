@@ -7,6 +7,7 @@
 #include "evaluate.h"
 #include "move.h"
 #include "moveiter.h"
+#include "nnue.h"
 #include "search.h"
 #include "statelist.h"
 #include "types.h"
@@ -17,6 +18,7 @@ static Move get_computer_move(Bitboard* board);
 int main(void) {
   srandom(time(NULL));
   move_init();
+  nnue_init();
 
   Statelist* sl = statelist_alloc();
   Bitboard* test = malloc(sizeof(Bitboard));

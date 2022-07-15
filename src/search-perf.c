@@ -6,6 +6,7 @@
 #include "bitboard.h"
 #include "move.h"
 #include "moveiter.h"
+#include "nnue.h"
 #include "search.h"
 #include "statelist.h"
 #include "timer.h"
@@ -15,6 +16,7 @@ extern int optind;
 int main(int argc, char** argv) {
   srandom(0);
   move_init();
+  nnue_init();
 
   int keep_table = 0;
   int c;

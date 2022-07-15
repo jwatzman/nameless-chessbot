@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "bitops.h"
+#include "config.h"
 #include "nnue.h"
 #include "types.h"
 
@@ -15,10 +16,12 @@
 #define RELU_MAX 255
 #define SCALE 400
 
-int16_t input2hidden_weight[INPUT_LAYER][HIDDEN_LAYER];
-int16_t hidden_bias[HIDDEN_LAYER];
-int8_t hidden2output_weight[2 * HIDDEN_LAYER][OUTPUT_LAYER];
-int32_t output_bias[OUTPUT_LAYER];
+#if ENABLE_NNUE
+
+static int16_t input2hidden_weight[INPUT_LAYER][HIDDEN_LAYER];
+static int16_t hidden_bias[HIDDEN_LAYER];
+static int8_t hidden2output_weight[2 * HIDDEN_LAYER][OUTPUT_LAYER];
+static int32_t output_bias[OUTPUT_LAYER];
 
 static inline uint32_t read_u32(FILE* f) {
   int a = getc(f);
@@ -94,7 +97,7 @@ static void nnue_relu(uint8_t* out, const int16_t* in, size_t sz) {
   }
 }
 
-int pmap[6] = {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
+static int pmap[6] = {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
 int16_t nnue_evaluate(Bitboard* board) {
   uint8_t king_loc_white = bitscan(board->boards[WHITE][KING]);
   uint8_t king_loc_black = bitscan(board->boards[BLACK][KING]);
@@ -143,3 +146,10 @@ int16_t nnue_evaluate(Bitboard* board) {
 
   return (int16_t)(output[0] * SCALE / (255 * 64));
 }
+
+#else
+
+void nnue_init(void) {}
+// No nnue_evaluate -- force link error.
+
+#endif
