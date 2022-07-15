@@ -134,7 +134,7 @@ int16_t nnue_evaluate(Bitboard* board) {
   uint8_t* hidden_clipped_p = &hidden_clipped[0][0];
 
   int32_t output[OUTPUT_LAYER];
-  memcpy(output, output_bias, OUTPUT_LAYER * sizeof(int8_t));
+  memcpy(output, output_bias, OUTPUT_LAYER * sizeof(int32_t));
   for (size_t i = 0; i < OUTPUT_LAYER; i++) {
     for (size_t j = 0; j < HIDDEN_LAYER * 2; j++) {
       output[i] += hidden2output_weight[j][i] * hidden_clipped_p[j];
