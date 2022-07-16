@@ -471,7 +471,7 @@ void board_fen(const Bitboard* board, FILE* f) {
 
   // XXX we don't track the fullmove count, I don't think it matters for
   // anything we use these FENs for?
-  fprintf(f, " %d 0", board->state->halfmove_count);
+  fprintf(f, " %d 1", board->state->halfmove_count);
 }
 
 void board_print(const Bitboard* board) {
