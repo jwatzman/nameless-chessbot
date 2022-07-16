@@ -9,12 +9,6 @@
 #include "move.h"
 #include "nnue.h"
 
-#if ENABLE_NNUE
-int evaluate_board(Bitboard* board) {
-  return nnue_evaluate(board);
-}
-#else
-
 // clang-format off
 
 // position bonuses; remember that
@@ -105,7 +99,7 @@ static const int endgame_values[] = {175, 300, 300, 500, 1000, 0};
 
 #define doubled_pawn_penalty -10
 
-int evaluate_board(Bitboard* board) {
+int evaluate_traditional(Bitboard* board) {
   int result = 0;
   int endgame = popcnt(board->full_composite ^ board->boards[WHITE][PAWN] ^
                        board->boards[BLACK][PAWN]) < 8;
@@ -172,4 +166,11 @@ int evaluate_board(Bitboard* board) {
 
   return result;
 }
+
+int evaluate_board(Bitboard* board) {
+#if ENABLE_NNUE
+  return nnue_evaluate(board);
+#else
+  return evaluate_traditional(board);
 #endif
+}

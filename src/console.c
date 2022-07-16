@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include "bitboard.h"
+#include "config.h"
 #include "evaluate.h"
 #include "move.h"
 #include "moveiter.h"
@@ -26,7 +27,12 @@ int main(void) {
 
   while (1) {
     board_print(test);
+#if ENABLE_NNUE
+    printf("Traditional eval: %i\nNNUE eval: %i\n", evaluate_traditional(test),
+           nnue_evaluate(test));
+#else
     printf("Evaluation: %i\n", evaluate_board(test));
+#endif
 
     Movelist moves;
     move_generate_movelist(test, &moves, MOVE_GEN_ALL);

@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include "bitboard.h"
+#include "config.h"
 #include "evaluate.h"
 #include "move.h"
 #include "moveiter.h"
@@ -98,7 +99,12 @@ int main(void) {
       uint64_t perft_tot = 0;
 
       board_print(board);
+#if ENABLE_NNUE
+      printf("Traditional eval: %i\nNNUE eval: %i\n",
+             evaluate_traditional(board), nnue_evaluate(board));
+#else
       printf("Evaluation: %i\n", evaluate_board(board));
+#endif
       puts("Pseudolegal moves: ");
 
       Movelist all_moves;
