@@ -25,6 +25,8 @@ static void board_toggle_piece(Bitboard* board,
 static uint64_t board_gen_king_attackers(const Bitboard* board, Color color);
 static void board_update_expensive_state(Bitboard* board);
 
+static char board_sigil(int color, Piecetype type);
+
 void board_init(Bitboard* board, State* state) {
   board_init_with_fen(
       board, state, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
@@ -375,6 +377,103 @@ int board_in_check(const Bitboard* board, Color color) {
   return king_attackers > 0;
 }
 
+static char board_sigil(int color, Piecetype type) {
+  char sigil;
+  switch (type) {
+    case PAWN:
+      sigil = 'P';
+      break;
+    case BISHOP:
+      sigil = 'B';
+      break;
+    case KNIGHT:
+      sigil = 'N';
+      break;
+    case ROOK:
+      sigil = 'R';
+      break;
+    case QUEEN:
+      sigil = 'Q';
+      break;
+    case KING:
+      sigil = 'K';
+      break;
+    default:
+      sigil = '?';
+      break;
+  }
+
+  return color == WHITE ? sigil : (char)tolower(sigil);
+}
+
+void board_fen(const Bitboard* board, FILE* f) {
+  for (int row = 7; row >= 0; row--) {
+    int empty = 0;
+    for (int col = 0; col < 8; col++) {
+      uint8_t idx = (uint8_t)board_index_of(row, col);
+      uint64_t mask = 1ULL << idx;
+
+      if (board->full_composite & mask) {
+        if (empty > 0)
+          fprintf(f, "%d", empty);
+        empty = 0;
+
+        int color = board->composite_boards[WHITE] & mask ? WHITE : BLACK;
+        Piecetype type = board_piecetype_at_index(board, idx);
+        char sigil = board_sigil(color, type);
+        fputc(sigil, f);
+      } else {
+        empty++;
+      }
+    }
+
+    if (empty > 0)
+      fprintf(f, "%d", empty);
+
+    if (row > 0)
+      fputc('/', f);
+  }
+
+  fputc(' ', f);
+  fputc(board->to_move == WHITE ? 'w' : 'b', f);
+  fputc(' ', f);
+
+  if (board->state->castle_rights != 0) {
+    if (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, WHITE))
+      fputc('K', f);
+    if (board->state->castle_rights & CASTLE_R(CASTLE_R_QS, WHITE))
+      fputc('Q', f);
+    if (board->state->castle_rights & CASTLE_R(CASTLE_R_KS, BLACK))
+      fputc('k', f);
+    if (board->state->castle_rights & CASTLE_R(CASTLE_R_QS, BLACK))
+      fputc('q', f);
+  } else {
+    fputc('-', f);
+  }
+
+  fputc(' ', f);
+
+  if (board->state->enpassant_index != 0) {
+    uint8_t row = board_row_of(board->state->enpassant_index);
+    uint8_t col = board_col_of(board->state->enpassant_index);
+
+    // We store as square pawn moved to, FEN stores as square pawn jumped over.
+    if (board->to_move == WHITE)
+      row++;
+    else
+      row--;
+
+    fprintf(f, "%c%c", 'a' + col, '1' + row);
+
+  } else {
+    fputc('-', f);
+  }
+
+  // XXX we don't track the fullmove count, I don't think it matters for
+  // anything we use these FENs for?
+  fprintf(f, " %d 0", board->state->halfmove_count);
+}
+
 void board_print(const Bitboard* board) {
   char* separator = "-----------------";
   char* template = "| | | | | | | | |  ";
@@ -390,35 +489,8 @@ void board_print(const Bitboard* board) {
     strcpy(this_line, template);
 
     for (int color = 0; color <= 1; color++) {
-      for (int type = 0; type <= 5; type++) {
-        char sigil = 0;
-
-        switch (type) {
-          case PAWN:
-            sigil = 'P';
-            break;
-          case BISHOP:
-            sigil = 'B';
-            break;
-          case KNIGHT:
-            sigil = 'N';
-            break;
-          case ROOK:
-            sigil = 'R';
-            break;
-          case QUEEN:
-            sigil = 'Q';
-            break;
-          case KING:
-            sigil = 'K';
-            break;
-          default:
-            sigil = '?';
-            break;
-        }
-
-        if (color == BLACK)
-          sigil = (char)tolower(sigil);
+      for (Piecetype type = 0; type <= 5; type++) {
+        char sigil = board_sigil(color, type);
 
         int column = 0;
         uint8_t bits =
@@ -443,6 +515,10 @@ void board_print(const Bitboard* board) {
   puts(" a b c d e f g h ");
 
   free(this_line);
+
+  printf("\nFEN: ");
+  board_fen(board, stdout);
+  printf("\n");
 
   printf("Enpassant index: %x\tHalfmove count: %x\tCastle rights: %x\n",
          board->state->enpassant_index, board->state->halfmove_count,

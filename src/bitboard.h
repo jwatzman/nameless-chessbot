@@ -2,7 +2,9 @@
 #define _BITBOARD_H
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
+
 #include "types.h"
 
 // writes initial state to a board
@@ -17,6 +19,9 @@ void board_undo_move(Bitboard* board, Move move);
 
 // returns 1 if color's king is in check, 0 otherwise
 int board_in_check(const Bitboard* board, Color color);
+
+// Write board's FEN to f.
+void board_fen(const Bitboard* board, FILE* f);
 
 // dump a primitive printout of the board to stdout
 void board_print(const Bitboard* board);
