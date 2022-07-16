@@ -83,14 +83,35 @@ int main(int argc, char** argv) {
 
       Move best = search_find_move(&board, &debug);
 
-      if (score > MATE || score < -MATE || score == DRAW) {
-        if (score > MATE)
-          putchar('+');
-        if (score < -MATE)
-          putchar('-');
-        if (score == DRAW)
-          putchar('=');
+      if (score >= MATE) {
+        putchar('+');
         break;
+      }
+
+      if (score <= -MATE) {
+        putchar('-');
+        break;
+      }
+
+      if (board.state->halfmove_count == 100) {
+        putchar('=');
+        putchar('h');
+        break;
+      }
+
+      if (board.state->halfmove_count >= 4) {
+        int reps = 1;
+        State* s = board.state;
+        for (int back = board.state->halfmove_count - 2; back >= 0; back -= 2) {
+          s = s->prev->prev;
+          if (s->zobrist == board.state->zobrist)
+            reps++;
+        }
+        if (reps >= 3) {
+          putchar('=');
+          putchar('r');
+          break;
+        }
       }
 
       if (halfmoves > 0) {
