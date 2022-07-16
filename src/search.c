@@ -89,6 +89,8 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
        work. This is unforunate but won't really hurt anything */
     if (!timeup) {
       best_move = pv[0];
+      if (debug && debug->score)
+        *debug->score = val;
 
       fprintf(stderr, "%i\t%i\t%lu\t%" PRIu64 "\t", depth,
               board->to_move == WHITE ? val : -val, centiseconds_taken,

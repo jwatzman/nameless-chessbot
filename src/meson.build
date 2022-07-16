@@ -58,3 +58,9 @@ executable(
 	'xboard.c',
 	link_with: [libcore, libsearch, libperft],
 )
+
+executable(
+	'nnue-training-data',
+	'nnue-training-data.c',
+	link_with: [libcore, libsearch],
+)
