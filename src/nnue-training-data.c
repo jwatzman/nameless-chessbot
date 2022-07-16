@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
   Statelist* sl = statelist_alloc();
 
   for (unsigned game = 0; game < num_games; game++) {
-    printf("%u: ", game);
+    printf("%u: ", game + 1);
 
     int halfmoves = 0;
     statelist_clear(sl);
@@ -128,11 +128,10 @@ int main(int argc, char** argv) {
         Movelist ml;
         move_generate_movelist(&board, &ml, MOVE_GEN_ALL);
 
-        int i = random() % ml.n;
-        while (!move_is_legal(&board, ml.moves[i])) {
-          i++;
-          i %= ml.n;
-        }
+        int i;
+        do {
+          i = random() % ml.n;
+        } while (!move_is_legal(&board, ml.moves[i]));
 
         board_do_move(&board, ml.moves[i], statelist_new_state(sl));
       } else {
