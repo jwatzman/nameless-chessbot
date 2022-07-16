@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "bitboard.h"
 #include "config.h"
@@ -11,20 +13,54 @@
 #include "types.h"
 
 #define NUM_RANDOM_MOVES 6
-#define FIXED_DEPTH 5
+#define USAGE "Usage: nnue-training-data -d depth -g games -o output\n"
 
-int main(void) {
+extern char* optarg;
+
+int main(int argc, char** argv) {
 #if ENABLE_NNUE
   printf("Turn off ENABLE_NNUE.\n");
   return 1;
 #endif
+
   srandom(time(NULL));
   timer_init_secs(9999);
   move_init();
 
-  FILE* f = fopen("training.txt", "a");
-  if (!f)
-    abort();
+  char* filename = NULL;
+  unsigned num_games = 0;
+  uint8_t depth = 0;
+
+  int opt;
+
+  while ((opt = getopt(argc, argv, "d:g:o:")) != -1) {
+    switch (opt) {
+      case 'd':
+        depth = (uint8_t)strtoul(optarg, NULL, 0);
+        break;
+      case 'g':
+        num_games = strtoul(optarg, NULL, 0);
+        break;
+      case 'o':
+        filename = strdup(optarg);
+        break;
+      default:
+        printf(USAGE);
+        exit(1);
+    }
+  }
+
+  if (!filename || !num_games || !depth) {
+    printf(USAGE);
+    exit(1);
+  }
+
+  FILE* f = fopen(filename, "a");
+  if (!f) {
+    printf("Could not open %s\n", filename);
+    exit(1);
+  }
+
   setbuf(f, NULL);
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
@@ -32,7 +68,9 @@ int main(void) {
   Bitboard board;
   Statelist* sl = statelist_alloc();
 
-  while (1) {
+  for (unsigned game = 0; game < num_games; game++) {
+    printf("%u: ", game);
+
     int halfmoves = 0;
     statelist_clear(sl);
     board_init(&board, statelist_new_state(sl));
@@ -40,7 +78,7 @@ int main(void) {
     while (1) {
       int score;
       SearchDebug debug = {0};
-      debug.maxDepth = FIXED_DEPTH;
+      debug.maxDepth = depth;
       debug.score = &score;
 
       Move best = search_find_move(&board, &debug);
@@ -81,4 +119,8 @@ int main(void) {
 
     putchar('\n');
   }
+
+  statelist_free(sl);
+  fclose(f);
+  free(filename);
 }
