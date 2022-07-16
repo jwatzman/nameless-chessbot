@@ -12,6 +12,7 @@
 #include "timer.h"
 #include "types.h"
 
+#define MIN_MOVES 4
 #define NUM_RANDOM_MOVES 6
 #define USAGE "Usage: nnue-training-data -d depth -g games -o output\n"
 
@@ -114,10 +115,13 @@ int main(int argc, char** argv) {
         }
       }
 
-      if (halfmoves > 0) {
+      if (halfmoves > MIN_MOVES && !move_is_capture(best) &&
+          !move_is_enpassant(best) && !board_in_check(&board, board.to_move)) {
         board_fen(&board, f);
         fprintf(f, " | %d | 0\n", board.to_move == WHITE ? score : -score);
         putchar('.');
+      } else {
+        putchar('_');
       }
 
       if (halfmoves < NUM_RANDOM_MOVES) {
