@@ -85,12 +85,12 @@ int main(int argc, char** argv) {
       Move best = search_find_move(&board, &debug);
 
       if (score >= MATE) {
-        putchar('+');
+        putchar(board.to_move == WHITE ? '+' : '-');
         break;
       }
 
       if (score <= -MATE) {
-        putchar('-');
+        putchar(board.to_move == WHITE ? '-' : '+');
         break;
       }
 
@@ -167,4 +167,5 @@ int main(int argc, char** argv) {
   statelist_free(sl);
   fclose(f);
   free(filename);
+  return 0;
 }
