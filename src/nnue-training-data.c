@@ -94,6 +94,26 @@ int main(int argc, char** argv) {
         break;
       }
 
+      if (score == DRAW) {
+        int has_legal_move = 0;
+        Movelist ml;
+        move_generate_movelist(&board, &ml, MOVE_GEN_ALL);
+        for (int i = 0; i < ml.n; i++) {
+          if (move_is_legal(&board, ml.moves[i])) {
+            has_legal_move = 1;
+            break;
+          }
+        }
+
+        // No legal move means checkmate or stalemate; above cases catch
+        // checkmate.
+        if (!has_legal_move) {
+          putchar('=');
+          putchar('s');
+          break;
+        }
+      }
+
       if (board.state->halfmove_count == 100) {
         putchar('=');
         putchar('h');
