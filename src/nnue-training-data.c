@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
 
   setbuf(f, NULL);
   setbuf(stdout, NULL);
-  setbuf(stderr, NULL);
+  freopen("/dev/null", "w", stderr);  // Shut up search debug output.
 
   Bitboard board;
   Statelist* sl = statelist_alloc();
