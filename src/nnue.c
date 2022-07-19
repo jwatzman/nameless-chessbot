@@ -57,7 +57,7 @@ static inline int8_t read_i8(FILE* f) {
 }
 
 void nnue_init(void) {
-	// XXX embed/load weights, or at least make this less dumb.
+  // XXX embed/load weights, or at least make this less dumb.
   FILE* f = fopen("nnue.bin", "rb");
   if (!f)
     abort();
@@ -144,8 +144,8 @@ int16_t nnue_evaluate(Bitboard* board) {
   memcpy(output, output_bias, OUTPUT_LAYER * sizeof(int32_t));
   for (size_t i = 0; i < OUTPUT_LAYER; i++) {
     for (size_t j = 0; j < HIDDEN_LAYER * 2; j++) {
-			// XXX try flipping hidden2output_weight so we iterate in a more
-			// cache-friendly way.
+      // XXX try flipping hidden2output_weight so we iterate in a more
+      // cache-friendly way.
       output[i] += hidden2output_weight[j][i] * hidden_clipped_p[j];
     }
   }

@@ -1,0 +1,1 @@
+Compiled with the submodule'd marlinflow, run for 100 epochs
