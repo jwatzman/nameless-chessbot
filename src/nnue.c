@@ -14,6 +14,8 @@
 
 #define RELU_MIN 0
 #define RELU_MAX 255
+
+// Argument passed to training script.
 #define SCALE 400
 
 #if ENABLE_NNUE
@@ -55,6 +57,7 @@ static inline int8_t read_i8(FILE* f) {
 }
 
 void nnue_init(void) {
+	// XXX embed/load weights, or at least make this less dumb.
   FILE* f = fopen("nnue.bin", "rb");
   if (!f)
     abort();
@@ -107,6 +110,7 @@ int16_t nnue_evaluate(Bitboard* board) {
   memcpy(hidden[0], hidden_bias, HIDDEN_LAYER * sizeof(int16_t));
   memcpy(hidden[1], hidden_bias, HIDDEN_LAYER * sizeof(int16_t));
 
+  // XXX make this incremental.
   for (int color = WHITE; color <= BLACK; color++) {
     // Strict < KING, do not include king.
     for (int piece = PAWN; piece < KING; piece++) {
@@ -140,10 +144,14 @@ int16_t nnue_evaluate(Bitboard* board) {
   memcpy(output, output_bias, OUTPUT_LAYER * sizeof(int32_t));
   for (size_t i = 0; i < OUTPUT_LAYER; i++) {
     for (size_t j = 0; j < HIDDEN_LAYER * 2; j++) {
+			// XXX try flipping hidden2output_weight so we iterate in a more
+			// cache-friendly way.
       output[i] += hidden2output_weight[j][i] * hidden_clipped_p[j];
     }
   }
 
+  // I think this 255/64 are from here -- not sure, seems to work.
+  // https://github.com/dsekercioglu/marlinflow/blob/0f22ad6f0f1ac05e20e6edba1d181ca392c762a4/convert/src/main.rs#L12
   return (int16_t)(output[0] * SCALE / (255 * 64));
 }
 
