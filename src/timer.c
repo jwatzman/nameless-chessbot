@@ -1,22 +1,19 @@
 #include "timer.h"
 
-#include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <time.h>
 #include <unistd.h>
 
 static unsigned int secs = 0;
-static volatile sig_atomic_t* timeup;
+static time_t target;
 
-static void timer_timeup(int unused);
-static void timer_install_handler();
+static unsigned int timeup_calls;
 
 #define MOVE_WIGGLE_ROOM 2
 #define SECS_PER_MIN 60
 
-static void timer_timeup(int unused) {
-  (void)unused;
-  *timeup = 1;
-}
+#define TIMEUP_CALLS_PER_CHECK 10000
 
 void timer_init_xboard(char* level) {
   unsigned int moves, base, inc;
@@ -30,31 +27,37 @@ void timer_init_xboard(char* level) {
   } else {
     secs = 5;
   }
-
-  timer_install_handler();
 }
 
 void timer_init_secs(unsigned int n) {
   secs = n;
-  timer_install_handler();
 }
 
-static void timer_install_handler() {
-  struct sigaction sigalarm_action;
-  sigalarm_action.sa_handler = timer_timeup;
-  sigemptyset(&sigalarm_action.sa_mask);
-  sigalarm_action.sa_flags = 0;
-  sigaction(SIGALRM, &sigalarm_action, 0);
-}
-
-void timer_begin(volatile sig_atomic_t* i) {
+void timer_begin(void) {
   if (secs < 1)
     timer_init_secs(5);
 
-  timeup = i;
-  alarm(secs);
+  target = timer_get_centiseconds() + secs * 100;
+  timeup_calls = 0;
+}
+
+uint8_t timer_timeup(void) {
+  if (timeup_calls++ < TIMEUP_CALLS_PER_CHECK)
+    return 0;
+
+  timeup_calls = 0;
+  if (timer_get_centiseconds() > target)
+    return 1;
+  else
+    return 0;
 }
 
 void timer_end(void) {
-  alarm(0);
+  // Do nothing for now.
+}
+
+time_t timer_get_centiseconds(void) {
+  struct timespec t;
+  clock_gettime(CLOCK_MONOTONIC, &t);
+  return t.tv_sec * 100 + t.tv_nsec / 10000000;
 }

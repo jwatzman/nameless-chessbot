@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "bitops.h"
@@ -24,7 +23,7 @@
 #define DISALLOW_NULL_MOVE 0
 #define ALLOW_NULL_MOVE 1
 
-static volatile sig_atomic_t timeup;
+static int timeup;
 static uint64_t nodes_searched;
 
 // main search workhorse
@@ -45,11 +44,10 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
 
   Move pv[max_possible_depth + 1];
 
-  struct timespec start_time;
-  clock_gettime(CLOCK_MONOTONIC, &start_time);
+  time_t start_cs = timer_get_centiseconds();
 
   timeup = 0;
-  timer_begin(&timeup);
+  timer_begin();
 
   int alpha = -INFINITY;
   int beta = INFINITY;
@@ -63,11 +61,7 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
     int val =
         search_alpha_beta(board, alpha, beta, depth, 1, pv, ALLOW_NULL_MOVE);
 
-    struct timespec end_time;
-    clock_gettime(CLOCK_MONOTONIC, &end_time);
-    time_t centiseconds_taken =
-        100 * (end_time.tv_sec - start_time.tv_sec) +
-        (end_time.tv_nsec - start_time.tv_nsec) / 10000000;
+    time_t centiseconds_taken = timer_get_centiseconds() - start_cs;
 
     if (((val <= alpha) || (val >= beta)) && !timeup) {
       // aspiration window failure
@@ -80,13 +74,6 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
       continue;
     }
 
-    /* if we sucessfully completed a depth (i.e. did not early terminate
-       due to time), pull the first move off of the pv so that we can
-       return it later, and then print it. Note that there is a minor
-       race condition here: if we get the sigalarm after the very last
-       check in the search_alpha_beta recursive calls, but before we get
-       here, we can potentially throw away an entire depth's worth of
-       work. This is unforunate but won't really hurt anything */
     if (!timeup) {
       best_move = pv[0];
       if (debug && debug->score)
@@ -141,6 +128,9 @@ static int search_alpha_beta(Bitboard* board,
                              Move* pv,
                              uint8_t allow_null) {
   Move localpv[max_possible_depth + 1];
+
+  if (!timeup)
+    timeup = timer_timeup();
 
   if (timeup)
     return 0;
