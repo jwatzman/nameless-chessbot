@@ -20,6 +20,9 @@
 
 #if ENABLE_NNUE
 
+extern unsigned char nn_nnue_bin[];
+extern unsigned int nn_nnue_bin_len;
+
 static int16_t input2hidden_weight[INPUT_LAYER][HIDDEN_LAYER];
 static int16_t hidden_bias[HIDDEN_LAYER];
 static int8_t hidden2output_weight[2 * HIDDEN_LAYER][OUTPUT_LAYER];
@@ -57,8 +60,7 @@ static inline int8_t read_i8(FILE* f) {
 }
 
 void nnue_init(void) {
-  // XXX embed/load weights, or at least make this less dumb.
-  FILE* f = fopen("nnue.bin", "rb");
+  FILE* f = fmemopen(nn_nnue_bin, nn_nnue_bin_len, "rb");
   if (!f)
     abort();
 

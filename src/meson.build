@@ -5,7 +5,7 @@ libcore = static_library(
 
 libsearch = static_library(
 	'search',
-	['evaluate.c', 'history.c', 'moveiter.c', 'nnue.c', 'search.c', 'statelist.c', 'timer.c', 'tt.c', evaluate_h],
+	['evaluate.c', 'history.c', 'moveiter.c', 'nnue.c', 'search.c', 'statelist.c', 'timer.c', 'tt.c', nnue_bin_c, evaluate_h],
 )
 
 libperft = static_library(

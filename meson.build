@@ -31,4 +31,5 @@ add_project_arguments(project_args, language: 'c')
 incl_src = include_directories('src')
 
 subdir('gen')
+subdir('nn')
 subdir('src')
