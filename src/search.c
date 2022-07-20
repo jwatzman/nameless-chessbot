@@ -153,6 +153,7 @@ static int search_alpha_beta(Bitboard* board,
   int in_check = board_in_check(board, board->to_move);
 
   Move best_move = MOVE_NULL;
+  int best_score = -INFINITY;
 
   // 50-move rule
   if (board->state->halfmove_count == 100)
@@ -200,6 +201,7 @@ static int search_alpha_beta(Bitboard* board,
     pv = NULL;
 
     int stand_pat = evaluate_board(board);
+    best_score = stand_pat;
 
     if (stand_pat >= beta) {
       return stand_pat;
@@ -325,6 +327,9 @@ static int search_alpha_beta(Bitboard* board,
       return recursive_value;
     }
 
+    if (recursive_value > best_score)
+      best_score = recursive_value;
+
     if (recursive_value > alpha) {
       alpha = recursive_value;
       type = TRANSPOSITION_EXACT;
@@ -355,10 +360,10 @@ static int search_alpha_beta(Bitboard* board,
     // Do not need to check for timeup here since we do it a few lines above,
     // after which the search of this position is complete and so we are still
     // safe to store even if time is up right now.
-    tt_put(board->state->zobrist, alpha, best_move, type, board->generation,
-           depth);
+    tt_put(board->state->zobrist, best_score, best_move, type,
+           board->generation, depth);
     history_update(best_move, ply);
-    return alpha;
+    return best_score;
   }
 }
 

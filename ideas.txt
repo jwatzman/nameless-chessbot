@@ -24,7 +24,6 @@
 		- there's something where you make sure you aren't moving a queen to be attacked by a pawn (generally, lower-value piece)
 - alpha-beta
 	- move to separate qsearch function? easier to reason about at least
-	- I think I'm half-fail-soft -- go all the way? https://www.chessprogramming.org/Alpha-Beta#Outside_the_Bounds
 	- history heuristic: add points per depth; don't clear table every move but halve every value or something
 	- enable null move, see what's going on there
 		- better zugzwang detection?
