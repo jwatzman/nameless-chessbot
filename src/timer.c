@@ -16,17 +16,26 @@ static unsigned int timeup_calls;
 #define TIMEUP_CALLS_PER_CHECK 10000
 
 void timer_init_xboard(char* level) {
-  unsigned int moves, base, inc;
-  int ret = sscanf(level, "level %u %u %u", &moves, &base, &inc);
+  unsigned int moves, base_m, inc;
+  unsigned int base_s = 0;
 
-  if (ret == 3) {
-    if (moves == 0 || base == 0)
-      secs = inc;
-    else
-      secs = inc + (base * SECS_PER_MIN) / (moves - MOVE_WIGGLE_ROOM);
-  } else {
-    secs = 5;
+  int ret = sscanf(level, "level %u %u %u", &moves, &base_m, &inc);
+  if (ret != 3) {
+    int ret =
+        sscanf(level, "level %u %u:%u %u", &moves, &base_m, &base_s, &inc);
+
+    if (ret != 4) {
+      secs = 5;
+      return;
+    }
   }
+
+  base_s += SECS_PER_MIN * base_m;
+
+  if (moves == 0 || base_s == 0)
+    secs = inc;
+  else
+    secs = inc + base_s / (moves - MOVE_WIGGLE_ROOM);
 }
 
 void timer_init_secs(unsigned int n) {
