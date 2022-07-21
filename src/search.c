@@ -23,7 +23,8 @@
 #define DISALLOW_NULL_MOVE 0
 #define ALLOW_NULL_MOVE 1
 
-#define FUTILITY_MARGIN 75
+#define FUTILITY_MARGIN_D1 75
+#define FUTILITY_MARGIN_D2 500
 
 static int timeup;
 static uint64_t nodes_searched;
@@ -229,9 +230,10 @@ static int search_alpha_beta(Bitboard* board,
 
 #if ENABLE_FUTILITY
   int futile = 0;
-  if (depth == 1 && !in_check && !threat && alpha > -MATE) {
+  if ((depth == 1 || depth == 2) && !in_check && !threat && alpha > -MATE) {
     int eval = evaluate_board(board);
-    if (eval + FUTILITY_MARGIN < alpha)
+    int margin = depth == 1 ? FUTILITY_MARGIN_D1 : FUTILITY_MARGIN_D2;
+    if (eval + margin < alpha)
       futile = 1;
   }
 #endif
@@ -250,11 +252,8 @@ static int search_alpha_beta(Bitboard* board,
   }
 
   Moveiter iter;
-  // XXX using MOVEITER_SORT_ONDEMAND when alpha == beta - 1 was supposed to
-  // save a full sort when we are likely to only need the first few moves. I
-  // think it may actually do that but it increases the branch misses so much
-  // that it's slower. Figure out a better way.
-  moveiter_init(&iter, &moves, tt_move, history_get_killers(ply));
+  const Move* killer_moves = history_get_killers(ply);
+  moveiter_init(&iter, &moves, tt_move, killer_moves);
 
   /* since we generate only pseudolegal moves, we need to keep track if
      there actually are any legal moves at all */
@@ -289,9 +288,10 @@ static int search_alpha_beta(Bitboard* board,
     int is_pawn_to_prepromotion =
         move_piecetype(move) == PAWN &&
         (board_row_of(move_dest) == 1 || board_row_of(move_dest) == 6);
-    if (futile && extensions == 0 && !move_is_promotion(move) &&
-        !move_is_capture(move) && !move_causes_check &&
-        !is_pawn_to_prepromotion) {
+    if (futile && move != tt_move && move != killer_moves[0] &&
+        move != killer_moves[1] && extensions == 0 &&
+        !move_is_promotion(move) && !move_is_capture(move) &&
+        !move_causes_check && !is_pawn_to_prepromotion) {
       board_undo_move(board, move);
       continue;
     }
