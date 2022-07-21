@@ -315,7 +315,7 @@ static int search_alpha_beta(Bitboard* board,
       if (!timeup) {
         tt_put(board->state->zobrist, recursive_value, move, TRANSPOSITION_BETA,
                board->generation, depth);
-        history_update(best_move, ply);
+        history_update(move, ply);
       }
 
       return recursive_value;
