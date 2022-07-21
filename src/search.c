@@ -23,6 +23,8 @@
 #define DISALLOW_NULL_MOVE 0
 #define ALLOW_NULL_MOVE 1
 
+#define FUTILITY_MARGIN 75
+
 static int timeup;
 static uint64_t nodes_searched;
 
@@ -225,6 +227,15 @@ static int search_alpha_beta(Bitboard* board,
   (void)allow_null;
 #endif
 
+#if ENABLE_FUTILITY
+  int futile = 0;
+  if (depth == 1 && !in_check && !threat && alpha > -MATE) {
+    int eval = evaluate_board(board);
+    if (eval + FUTILITY_MARGIN < alpha)
+      futile = 1;
+  }
+#endif
+
   // generate pseudolegal moves
   Movelist moves;
   move_generate_movelist(
@@ -256,6 +267,8 @@ static int search_alpha_beta(Bitboard* board,
     if (!move_is_legal(board, move))
       continue;
 
+    legal_moves++;
+
     State s;
     board_do_move(board, move, &s);
 
@@ -267,6 +280,22 @@ static int search_alpha_beta(Bitboard* board,
 
     int move_causes_check = board_in_check(board, board->to_move);
     int extensions = move_causes_check;  // XXX try adding threat or 2*threat
+
+#if ENABLE_FUTILITY
+    // XXX using move_causes_check here means we need to actually do and undo
+    // the move. Can build a move_causes_check() function which doesn't involve
+    // doing the move?
+    int move_dest = move_destination_index(move);
+    int is_pawn_to_prepromotion =
+        move_piecetype(move) == PAWN &&
+        (board_row_of(move_dest) == 1 || board_row_of(move_dest) == 6);
+    if (futile && extensions == 0 && !move_is_promotion(move) &&
+        !move_is_capture(move) && !move_causes_check &&
+        !is_pawn_to_prepromotion) {
+      board_undo_move(board, move);
+      continue;
+    }
+#endif
 
     if (type == TRANSPOSITION_EXACT) {
       // PV search
@@ -280,7 +309,7 @@ static int search_alpha_beta(Bitboard* board,
         search_completed = 0;
       }
 #if ENABLE_LMR
-    } else if (legal_moves > 4 && depth > 2 && extensions == 0 &&
+    } else if (legal_moves > 5 && depth > 2 && extensions == 0 &&
                !move_is_promotion(move) && !move_is_capture(move) &&
                move_piecetype(move) != PAWN && !threat && !in_check &&
                !move_causes_check && !quiescent) {
@@ -332,8 +361,6 @@ static int search_alpha_beta(Bitboard* board,
         memcpy(pv + 1, localpv, (size_t)depth * sizeof(Move));
       }
     }
-
-    legal_moves++;
   }
 
   if (timeup)
@@ -350,6 +377,10 @@ static int search_alpha_beta(Bitboard* board,
     int eval = evaluate_board(board);
     return eval;
   } else {
+    // All moves pruned.
+    if (best_score == -INFINITY)
+      best_score = alpha;
+
     // Do not need to check for timeup here since we do it a few lines above,
     // after which the search of this position is complete and so we are still
     // safe to store even if time is up right now.
