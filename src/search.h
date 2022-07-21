@@ -7,6 +7,7 @@
 
 typedef struct {
   uint8_t maxDepth;
+  uint8_t continueOnMate;
   const char* stopMove;
   int* score;
 } SearchDebug;

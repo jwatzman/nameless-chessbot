@@ -90,9 +90,10 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
       if ((val >= MATE) || (val <= -MATE)) {
         fprintf(stderr, "-> mate");
 
-        // A bit of a hack: if we found a mate, don't break immediately, but try
-        // one more depth, in case a better one was lost by LMR or something.
-        max_depth = min((uint8_t)depth + 1, max_depth);
+        if (!(debug && debug->continueOnMate)) {
+          fprintf(stderr, "\n");
+          break;
+        }
       }
 
       fprintf(stderr, "\n");

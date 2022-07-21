@@ -55,6 +55,7 @@ int main(void) {
     board_init_with_fen(&board, &s, tcase->fen);
 
     SearchDebug debug = {0};
+    debug.continueOnMate = 1;
     debug.stopMove = tcase->move;
     Move m = search_find_move(&board, &debug);
 
