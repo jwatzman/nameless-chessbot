@@ -28,6 +28,9 @@ static const TestCase cases[] = {
     {"r1bqk1nr/pppnbppp/3p4/8/2BNP3/8/PPP2PPP/RNBQK2R w KQkq -", "c4f7"},  // CCR12
     {"r2q1rk1/2p1bppp/p2p1n2/1p2P3/4P1b1/1nP1BN2/PP3PPP/RN1QR1K1 w - -", "e5f6"},  // CCR15
 
+    // https://www.chessprogramming.org/Win_at_Chess
+    {"4r1k1/p1qr1p2/2pb1Bp1/1p5p/3P1n1R/1B3P2/PP3PK1/2Q4R w - -", "c1f4"}, // WAC141
+
     // http://www.talkchess.com/forum3/viewtopic.php?t=44167
     {"8/7k/1R6/R7/8/7P/8/1K6 w - - 98 200", "h3h4"},
 
