@@ -207,19 +207,18 @@ static int search_alpha_beta(Bitboard* board,
   // Null move pruning.
   if (!in_check && !quiescent && depth > 2 && ply > 1 && beta == alpha + 1 &&
       allow_null == ALLOW_NULL_MOVE) {
-    // XXX unify this definition against that in evaluate_board.
-    int endgame = popcnt(board->full_composite ^ board->boards[WHITE][PAWN] ^
-                         board->boards[BLACK][PAWN]) < 4;
-    if (!endgame) {
-      State s;
-      board_do_move(board, MOVE_NULL, &s);
-      int null_value = -search_alpha_beta(board, -beta, -beta + 1, depth - 2,
-                                          ply + 1, NULL, DISALLOW_NULL_MOVE);
-      board_undo_move(board, MOVE_NULL);
-      if (null_value >= beta)
-        return null_value;
-      else if (null_value <= -MATE)
-        threat = 1;
+    State s;
+    board_do_move(board, MOVE_NULL, &s);
+    int null_value = -search_alpha_beta(board, -beta, -beta + 1, depth - 2,
+                                        ply + 1, NULL, DISALLOW_NULL_MOVE);
+    board_undo_move(board, MOVE_NULL);
+    if (null_value >= beta) {
+      int verify = search_alpha_beta(board, beta - 1, beta, depth - 2, ply,
+                                     NULL, DISALLOW_NULL_MOVE);
+      if (verify >= beta)
+        return verify;
+    } else if (null_value <= -MATE) {
+      threat = 1;
     }
   }
 #else
