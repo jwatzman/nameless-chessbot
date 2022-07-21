@@ -202,6 +202,7 @@ static int search_alpha_beta(Bitboard* board,
     }
   }
 
+  int threat = 0;
 #if ENABLE_NULL_MOVE_PRUNING
   // Null move pruning.
   if (!in_check && !quiescent && depth > 2 && ply > 1 && beta == alpha + 1 &&
@@ -217,6 +218,8 @@ static int search_alpha_beta(Bitboard* board,
       board_undo_move(board, MOVE_NULL);
       if (null_value >= beta)
         return null_value;
+      else if (null_value <= -MATE)
+        threat = 1;
     }
   }
 #else
@@ -264,7 +267,7 @@ static int search_alpha_beta(Bitboard* board,
     int search_completed = 0;
 
     int move_causes_check = board_in_check(board, board->to_move);
-    int extensions = move_causes_check;
+    int extensions = move_causes_check;  // XXX try adding threat or 2*threat
 
     if (type == TRANSPOSITION_EXACT) {
       // PV search
@@ -280,7 +283,7 @@ static int search_alpha_beta(Bitboard* board,
 #if ENABLE_LMR
     } else if (legal_moves > 4 && depth > 2 && extensions == 0 &&
                !move_is_promotion(move) && !move_is_capture(move) &&
-               move_piecetype(move) != PAWN && !in_check &&
+               move_piecetype(move) != PAWN && !threat && !in_check &&
                !move_causes_check && !quiescent) {
       // LMR
       search_completed = 1;
