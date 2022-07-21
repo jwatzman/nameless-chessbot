@@ -20,6 +20,9 @@ static const TestCase cases[] = {
     // https://www.chessprogramming.org/Bill_Gosper#HAKMEM70
     {"5B2/6P1/1p6/8/1N6/kP6/2K5/8 w - -", "g7g8n"},
 
+    // https://www.chessprogramming.org/Null_Move_Test-Positions
+    {"8/6B1/p5p1/Pp4kp/1P5r/5P1Q/4q1PK/8 w - - 0 32", "h3h4"}, // zugzwang.004
+
     // https://www.chessprogramming.org/Lasker-Reichhelm_Position
     {"8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - -", "a1b1"},
 
