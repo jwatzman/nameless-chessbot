@@ -273,6 +273,19 @@ static int search_alpha_beta(Bitboard* board,
 
     legal_moves++;
 
+    int gives_check = move_gives_check(board, move);
+
+#if ENABLE_FUTILITY
+    int move_dest = move_destination_index(move);
+    int is_pawn_to_prepromotion =
+        move_piecetype(move) == PAWN &&
+        (board_row_of(move_dest) == 1 || board_row_of(move_dest) == 6);
+    if (futile && move != tt_move && move != killer_moves[0] &&
+        move != killer_moves[1] && !move_is_promotion(move) &&
+        !move_is_capture(move) && !gives_check && !is_pawn_to_prepromotion)
+      continue;
+#endif
+
     State s;
     board_do_move(board, move, &s);
 
@@ -282,25 +295,7 @@ static int search_alpha_beta(Bitboard* board,
     // keeps track of various re-search conditions
     int search_completed = 0;
 
-    int move_causes_check = board_in_check(board, board->to_move);
-    int extensions = move_causes_check;  // XXX try adding threat or 2*threat
-
-#if ENABLE_FUTILITY
-    // XXX using move_causes_check here means we need to actually do and undo
-    // the move. Can build a move_causes_check() function which doesn't involve
-    // doing the move?
-    int move_dest = move_destination_index(move);
-    int is_pawn_to_prepromotion =
-        move_piecetype(move) == PAWN &&
-        (board_row_of(move_dest) == 1 || board_row_of(move_dest) == 6);
-    if (futile && move != tt_move && move != killer_moves[0] &&
-        move != killer_moves[1] && extensions == 0 &&
-        !move_is_promotion(move) && !move_is_capture(move) &&
-        !move_causes_check && !is_pawn_to_prepromotion) {
-      board_undo_move(board, move);
-      continue;
-    }
-#endif
+    int extensions = gives_check;  // XXX try adding threat or 2*threat
 
     if (type == TRANSPOSITION_EXACT) {
       assert(pv_node);
@@ -318,7 +313,7 @@ static int search_alpha_beta(Bitboard* board,
     } else if (legal_moves > 5 && depth > 2 && extensions == 0 &&
                !move_is_promotion(move) && !move_is_capture(move) &&
                move_piecetype(move) != PAWN && !threat && !in_check &&
-               !move_causes_check && !quiescent) {
+               !gives_check && !quiescent) {
       // LMR
       search_completed = 1;
       recursive_value = -search_alpha_beta(board, -alpha - 1, -alpha, depth - 2,
