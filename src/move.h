@@ -41,6 +41,9 @@ uint64_t move_generate_attacks(const Bitboard* board,
 // move_generate_movelist.
 int move_is_legal(const Bitboard* board, Move m);
 
+// Will making this move give a check to the opponent?
+int move_gives_check(const Bitboard* board, Move m);
+
 // Which pieces are pinned to the king?
 uint64_t move_generate_pinned(const Bitboard* board, Color color);
 
@@ -62,12 +65,10 @@ uint64_t move_generate_pinned(const Bitboard* board, Color color);
 #define move_type_castle 2U
 #define move_type_enpassant 3U
 #define move_type_offset 16
-#define move_is_capture(move) \
-  ((((move) >> move_type_offset) & 0x03) == move_type_capture)
-#define move_is_castle(move) \
-  ((((move) >> move_type_offset) & 0x03) == move_type_castle)
-#define move_is_enpassant(move) \
-  ((((move) >> move_type_offset) & 0x03) == move_type_enpassant)
+#define move_type(move) (((move) >> move_type_offset) & 0x03)
+#define move_is_capture(move) (move_type(move) == move_type_capture)
+#define move_is_castle(move) (move_type(move) == move_type_castle)
+#define move_is_enpassant(move) (move_type(move) == move_type_enpassant)
 
 #define move_captured_piecetype_offset 18
 #define move_captured_piecetype(move) \

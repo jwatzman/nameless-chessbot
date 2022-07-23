@@ -10,6 +10,11 @@
 
 #define INSERT_MOVE(movelist, move) (movelist->moves[movelist->n++] = (move))
 
+static uint64_t move_generate_attacks_composite(uint64_t full_composite,
+                                                Piecetype piece,
+                                                Color color,
+                                                uint8_t index);
+
 static void move_generate_movelist_pawn_push(const Bitboard* board,
                                              Movelist* movelist,
                                              uint64_t non_capture_mask,
@@ -154,33 +159,41 @@ void move_generate_movelist(const Bitboard* board,
   }
 }
 
-uint64_t move_generate_attacks(const Bitboard* board,
-                               Piecetype piece,
-                               Color color,
-                               uint8_t index) {
+static uint64_t move_generate_attacks_composite(uint64_t full_composite,
+                                                Piecetype piece,
+                                                Color color,
+                                                uint8_t index) {
   switch (piece) {
     case PAWN:
       return pawn_attacks[color][index];
 
     case BISHOP:
-      return movemagic_bishop(index, board->full_composite);
+      return movemagic_bishop(index, full_composite);
 
     case KNIGHT:
       return knight_attacks[index];
 
     case ROOK:
-      return movemagic_rook(index, board->full_composite);
+      return movemagic_rook(index, full_composite);
 
     case QUEEN:
-      return movemagic_bishop(index, board->full_composite) |
-             movemagic_rook(index, board->full_composite);
+      return movemagic_bishop(index, full_composite) |
+             movemagic_rook(index, full_composite);
 
     case KING:
       return king_attacks[index];
 
     default:  // err...
-      return 0;
+      abort();
   }
+}
+
+uint64_t move_generate_attacks(const Bitboard* board,
+                               Piecetype piece,
+                               Color color,
+                               uint8_t index) {
+  return move_generate_attacks_composite(board->full_composite, piece, color,
+                                         index);
 }
 
 int move_is_legal(const Bitboard* board, Move m) {
@@ -209,6 +222,54 @@ int move_is_legal(const Bitboard* board, Move m) {
     // All of the other cases are dealt with when intially generating the moves.
     return 1;
   }
+}
+
+int move_gives_check(const Bitboard* board, Move m) {
+  Color to_move = board->to_move;
+  uint8_t src = move_source_index(m);
+  uint8_t dest = move_destination_index(m);
+
+  if (move_is_castle(m)) {
+    // Kings can't give check, so only need to see if the rook ends up in a
+    // position to give check.
+    int8_t dir = src < dest ? 1 : -1;
+
+    uint8_t rook_dest = (uint8_t)(dest - dir);
+    if (movemagic_rook(rook_dest, board->full_composite) &
+        board->boards[!to_move][KING])
+      return 1;
+  } else {
+    // Capture or no, there will no longer be a piece where we moved from and
+    // will always be a piece where we move to.
+    uint64_t adjusted_composite =
+        (board->full_composite & ~(1ULL << src)) | (1ULL << dest);
+
+    if (move_is_enpassant(m)) {
+      uint8_t ep_capture = to_move == WHITE ? dest - 8 : dest + 8;
+      adjusted_composite &= ~(1ULL << ep_capture);
+    }
+
+    // Do we directly attack the king?
+    Piecetype p =
+        move_is_promotion(m) ? move_promoted_piecetype(m) : move_piecetype(m);
+    if (p != KING) {
+      uint64_t attacks =
+          move_generate_attacks_composite(adjusted_composite, p, to_move, dest);
+      if (attacks & board->boards[!to_move][KING])
+        return 1;
+    }
+
+    // Did we allow a discovered check?
+    uint8_t king_loc = bitscan(board->boards[!to_move][KING]);
+    uint64_t bishop_attacks = movemagic_bishop(king_loc, adjusted_composite);
+    uint64_t rook_attacks = movemagic_rook(king_loc, adjusted_composite);
+    if (bishop_attacks & board->boards[to_move][BISHOP] ||
+        rook_attacks & board->boards[to_move][ROOK] ||
+        (bishop_attacks | rook_attacks) & board->boards[to_move][QUEEN])
+      return 1;
+  }
+
+  return 0;
 }
 
 uint64_t move_generate_pinned(const Bitboard* board, Color color) {

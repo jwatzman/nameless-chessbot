@@ -1,10 +1,10 @@
+#include <assert.h>
 #include <inttypes.h>
-
-#include "perftfn.h"
 
 #include "bitboard.h"
 #include "move.h"
 #include "moveiter.h"
+#include "perftfn.h"
 
 uint64_t perft(Bitboard* board, int depth) {
   if (depth == 0) {
@@ -25,7 +25,9 @@ uint64_t perft(Bitboard* board, int depth) {
     if (depth == 1) {
       nodes += 1;
     } else {
+      int gives_check = move_gives_check(board, m);
       board_do_move(board, m, &s);
+      assert(gives_check == board_in_check(board, board->to_move));
       nodes += perft(board, depth - 1);
       board_undo_move(board, m);
     }
