@@ -1,5 +1,6 @@
 #include "search.h"
 
+#include <assert.h>
 #include <inttypes.h>
 #include <signal.h>
 #include <stdio.h>
@@ -144,10 +145,13 @@ static int search_alpha_beta(Bitboard* board,
   TranspositionType type = TRANSPOSITION_ALPHA;
 
   int quiescent = depth <= 0;
+  int pv_node = beta > alpha + 1;
   int in_check = board_in_check(board, board->to_move);
 
   Move best_move = MOVE_NULL;
   int best_score = -INFINITY;
+
+  assert(alpha < beta);
 
   // 50-move rule
   if (board->state->halfmove_count == 100)
@@ -208,7 +212,7 @@ static int search_alpha_beta(Bitboard* board,
   int threat = 0;
 #if ENABLE_NULL_MOVE_PRUNING
   // Null move pruning.
-  if (!in_check && !quiescent && depth > 2 && ply > 1 && beta == alpha + 1 &&
+  if (!in_check && !quiescent && depth > 2 && ply > 1 && !pv_node &&
       allow_null == ALLOW_NULL_MOVE) {
     State s;
     board_do_move(board, MOVE_NULL, &s);
@@ -298,6 +302,7 @@ static int search_alpha_beta(Bitboard* board,
 #endif
 
     if (type == TRANSPOSITION_EXACT) {
+      assert(pv_node);
       // PV search
       search_completed = 1;
       recursive_value = -search_alpha_beta(board, -alpha - 1, -alpha,

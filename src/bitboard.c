@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <ctype.h>
 #include <inttypes.h>
 #include <stddef.h>
@@ -206,6 +207,11 @@ static void board_init_zobrist(Bitboard* board) {
 }
 
 void board_do_move(Bitboard* board, Move move, State* state) {
+  assert(
+      move == MOVE_NULL || move_is_capture(move) ||
+      (((1ULL << move_destination_index(move)) & board->full_composite) == 0));
+  assert(move_captured_piecetype(move) != KING);
+
   memcpy(state, board->state, sizeof(State));
   state->prev = board->state;
   board->state = state;
@@ -276,6 +282,9 @@ void board_do_move(Bitboard* board, Move move, State* state) {
     board->to_move = (1 - board->to_move);
     board->state->zobrist ^= board->zobrist_black;
   }
+
+  assert(popcnt(board->boards[WHITE][KING]) == 1);
+  assert(popcnt(board->boards[BLACK][KING]) == 1);
 
   board_update_expensive_state(board);
 }
