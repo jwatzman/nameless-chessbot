@@ -24,9 +24,7 @@
 #define DISALLOW_NULL_MOVE 0
 #define ALLOW_NULL_MOVE 1
 
-#define FUTILITY_MARGIN_D1 75
-#define FUTILITY_MARGIN_D2 500
-
+static const int futility_margins[] = {0, 75, 500};
 static int timeup;
 static uint64_t nodes_searched;
 
@@ -234,9 +232,12 @@ static int search_alpha_beta(Bitboard* board,
 
 #if ENABLE_FUTILITY
   int futile = 0;
-  if ((depth == 1 || depth == 2) && !in_check && !threat && alpha > -MATE) {
+  int depth_okay = depth == 1 || (ENABLE_RAZORING ? depth == 2 : 0);
+  if (depth_okay && !in_check && !threat && alpha > -MATE) {
     int eval = evaluate_board(board);
-    int margin = depth == 1 ? FUTILITY_MARGIN_D1 : FUTILITY_MARGIN_D2;
+    assert(depth > 0);
+    assert((size_t)depth < sizeof(futility_margins));
+    int margin = futility_margins[depth];
     if (eval + margin < alpha)
       futile = 1;
   }
