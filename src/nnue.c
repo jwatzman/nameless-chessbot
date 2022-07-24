@@ -23,7 +23,7 @@
 extern unsigned char nn_nnue_bin[];
 extern unsigned int nn_nnue_bin_len;
 
-int initalized = 0;
+static int initalized = 0;
 
 static int16_t input2hidden_weight[NNUE_INPUT_LAYER][NNUE_HIDDEN_LAYER];
 static int16_t hidden_bias[NNUE_HIDDEN_LAYER];
