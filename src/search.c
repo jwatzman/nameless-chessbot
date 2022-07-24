@@ -25,6 +25,11 @@
 #define ALLOW_NULL_MOVE 1
 
 static const int futility_margins[] = {0, 75, 500};
+
+#if ENABLE_REVERSE_FUTILITY_DEPTH > 0
+static const int reverse_futility_margins[] = {0, 300, 500};
+#endif
+
 static int timeup;
 static uint64_t nodes_searched;
 
@@ -206,6 +211,20 @@ static int search_alpha_beta(Bitboard* board,
       type = TRANSPOSITION_EXACT;
     }
   }
+
+#if ENABLE_REVERSE_FUTILITY_DEPTH > 0
+  static_assert(ENABLE_REVERSE_FUTILITY_DEPTH <
+                    sizeof(reverse_futility_margins) / sizeof(int),
+                "Margins unspecified");
+  if (!in_check && !quiescent && beta < MATE &&
+      depth <= ENABLE_REVERSE_FUTILITY_DEPTH && ply > 1 && !pv_node &&
+      allow_null == ALLOW_NULL_MOVE) {
+    int eval = evaluate_board(board);
+    int margin = reverse_futility_margins[depth];
+    if (eval - margin >= beta)
+      return eval;
+  }
+#endif
 
   int threat = 0;
 #if ENABLE_NULL_MOVE_PRUNING
