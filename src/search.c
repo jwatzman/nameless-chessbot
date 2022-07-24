@@ -24,7 +24,9 @@
 #define DISALLOW_NULL_MOVE 0
 #define ALLOW_NULL_MOVE 1
 
+#if ENABLE_FUTILITY_DEPTH > 0
 static const int futility_margins[] = {0, 75, 500};
+#endif
 
 #if ENABLE_REVERSE_FUTILITY_DEPTH > 0
 static const int reverse_futility_margins[] = {0, 300, 500};
@@ -249,13 +251,14 @@ static int search_alpha_beta(Bitboard* board,
   (void)allow_null;
 #endif
 
-#if ENABLE_FUTILITY
+#if ENABLE_FUTILITY_DEPTH > 0
+  static_assert(ENABLE_FUTILITY_DEPTH < sizeof(futility_margins) / sizeof(int),
+                "Margins unspecified");
   int futile = 0;
-  int depth_okay = depth == 1 || (ENABLE_RAZORING ? depth == 2 : 0);
-  if (depth_okay && !in_check && !threat && alpha > -MATE) {
+  // XXX and if !pv_node?
+  if (!quiescent && depth <= ENABLE_FUTILITY_DEPTH && !in_check && !threat &&
+      alpha > -MATE) {
     int eval = evaluate_board(board);
-    assert(depth > 0);
-    assert((size_t)depth < sizeof(futility_margins));
     int margin = futility_margins[depth];
     if (eval + margin < alpha)
       futile = 1;
@@ -294,7 +297,7 @@ static int search_alpha_beta(Bitboard* board,
 
     int gives_check = move_gives_check(board, move);
 
-#if ENABLE_FUTILITY
+#if ENABLE_FUTILITY_DEPTH > 0
     int move_dest = move_destination_index(move);
     int is_pawn_to_prepromotion =
         move_piecetype(move) == PAWN &&
