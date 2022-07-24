@@ -6,8 +6,6 @@
 		- need to be careful testing this, search-perf invalidates the table
 	- try to make tt node smaller
 - improve timer
-	- deal with "level x x:xx x" format
-	- check time every N nodes searched instead of alarm
 	- allows time to be increased, e.g., if hit aspiration failure
 	- allows computing remaining time, e.g., if about to start another ply but there's very little time left
 		- assume next ply will take AT LEAST twice current spent
@@ -25,8 +23,6 @@
 - alpha-beta
 	- move to separate qsearch function? easier to reason about at least
 	- history heuristic: add points per depth; don't clear table every move but halve every value or something
-	- enable null move, see what's going on there
-		- better zugzwang detection?
-		- test positions: https://www.chessprogramming.org/Null_Move_Test-Positions
-	- futility pruning
-	- threat detection https://www.chessprogramming.org/Null_Move_Pruning#ThreatDetection
+	- futility pruning to depth 2 at least
+	- reverse futility pruning to depth 2 at least
+	- improve expanding aspiration window
