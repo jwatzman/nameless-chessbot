@@ -9,7 +9,9 @@
 
 #include "bitboard.h"
 #include "bitops.h"
+#include "config.h"
 #include "move.h"
+#include "nnue.h"
 
 // generate a 64-bit random number
 static inline uint64_t board_rand64(void);
@@ -18,11 +20,14 @@ static inline uint64_t board_rand64(void);
 static void board_init_zobrist(Bitboard* board);
 
 // common bits of making and undoing moves that can be easily factored out
-static void board_doundo_move_common(Bitboard* board, Move move);
+static void board_doundo_move_common(Bitboard* board,
+                                     Move move,
+                                     int nnue_activate);
 static void board_toggle_piece(Bitboard* board,
                                Piecetype piece,
                                Color color,
-                               uint8_t loc);
+                               uint8_t loc,
+                               int nnue_activate);
 static uint64_t board_gen_king_attackers(const Bitboard* board, Color color);
 static void board_update_expensive_state(Bitboard* board);
 
@@ -177,6 +182,10 @@ void board_init_with_fen(Bitboard* board, State* state, const char* fen) {
   board->state->prev = NULL;
   board_update_expensive_state(board);
   board->generation = 0;
+
+#if ENABLE_NNUE
+  nnue_reset(board);
+#endif
 }
 
 static inline uint64_t board_rand64() {
@@ -272,7 +281,7 @@ void board_do_move(Bitboard* board, Move move, State* state) {
     }
 
     // common bits of doing and undoing moves (bulk of the logic in here)
-    board_doundo_move_common(board, move);
+    board_doundo_move_common(board, move, 1);
   } else {
     if (board->state->enpassant_index) {
       board->state->zobrist ^=
@@ -294,7 +303,7 @@ void board_undo_move(Bitboard* board, Move move) {
   uint64_t tmp_zobrist = board->state->zobrist;
 
   if (move != MOVE_NULL)
-    board_doundo_move_common(board, move);
+    board_doundo_move_common(board, move, -1);
   else
     board->to_move = (1 - board->to_move);
 
@@ -304,61 +313,80 @@ void board_undo_move(Bitboard* board, Move move) {
   board->state->zobrist = tmp_zobrist;
 }
 
-static void board_doundo_move_common(Bitboard* board, Move move) {
+static void board_doundo_move_common(Bitboard* board,
+                                     Move move,
+                                     int nnue_activate) {
   // extract basic data
   uint8_t src = move_source_index(move);
   uint8_t dest = move_destination_index(move);
   Piecetype piece = move_piecetype(move);
   Color color = move_color(move);
 
+  if (piece == KING)
+    nnue_activate = 0;
+
   // remove piece at source
-  board_toggle_piece(board, piece, color, src);
+  board_toggle_piece(board, piece, color, src, -nnue_activate);
 
   // add piece at destination
   if (!move_is_promotion(move))
-    board_toggle_piece(board, piece, color, dest);
+    board_toggle_piece(board, piece, color, dest, nnue_activate);
   else
-    board_toggle_piece(board, move_promoted_piecetype(move), color, dest);
+    board_toggle_piece(board, move_promoted_piecetype(move), color, dest,
+                       nnue_activate);
 
   // remove captured piece, if applicable
   if (move_is_capture(move))
-    board_toggle_piece(board, move_captured_piecetype(move), 1 - color, dest);
+    board_toggle_piece(board, move_captured_piecetype(move), 1 - color, dest,
+                       -nnue_activate);
 
   // Put the rook in the right place for a castle. The king is dealt with
   // as the main "piece" of the move.
   if (move_is_castle(move)) {
     if (board_col_of(dest) == 2)  // queenside castle
     {
-      board_toggle_piece(board, ROOK, color, dest - 2);
-      board_toggle_piece(board, ROOK, color, dest + 1);
+      board_toggle_piece(board, ROOK, color, dest - 2, -nnue_activate);
+      board_toggle_piece(board, ROOK, color, dest + 1, nnue_activate);
     } else  // kingside castle
     {
-      board_toggle_piece(board, ROOK, color, dest + 1);
-      board_toggle_piece(board, ROOK, color, dest - 1);
+      board_toggle_piece(board, ROOK, color, dest + 1, -nnue_activate);
+      board_toggle_piece(board, ROOK, color, dest - 1, nnue_activate);
     }
   }
 
   if (move_is_enpassant(move)) {
     if (color == WHITE)  // the captured pawn is one row behind
-      board_toggle_piece(board, PAWN, BLACK, dest - 8);
+      board_toggle_piece(board, PAWN, BLACK, dest - 8, -nnue_activate);
     else  // the captured pawn is one row up
-      board_toggle_piece(board, PAWN, WHITE, dest + 8);
+      board_toggle_piece(board, PAWN, WHITE, dest + 8, -nnue_activate);
   }
 
   board->to_move = (1 - board->to_move);
   board->state->zobrist ^= board->zobrist_black;
+
+#if ENABLE_NNUE
+  if (piece == KING)
+    nnue_reset(board);
+#endif
 }
 
 static void board_toggle_piece(Bitboard* board,
                                Piecetype piece,
                                Color color,
-                               uint8_t loc) {
+                               uint8_t loc,
+                               int nnue_activate) {
   // flip the bit in all of the copies of the board state
   // TODO: try recomputing composities instead of xor all the time
   board->boards[color][piece] ^= 1ULL << loc;
   board->composite_boards[color] ^= 1ULL << loc;
   board->full_composite ^= 1ULL << loc;
   board->state->zobrist ^= board->zobrist_pos[color][piece][loc];
+
+#if ENABLE_NNUE
+  nnue_toggle_piece(board, piece, color, loc, nnue_activate);
+#else
+  (void)nnue_activate;
+#endif
 }
 
 static uint64_t board_gen_king_attackers(const Bitboard* board, Color color) {

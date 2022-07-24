@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +10,6 @@
 #include "types.h"
 
 #define NNUE_INPUT_LAYER 64 * 2 * 5 * 64
-#define NNUE_HIDDEN_LAYER 128
 #define NNUE_OUTPUT_LAYER 1
 
 #define RELU_MIN 0
@@ -23,10 +23,14 @@
 extern unsigned char nn_nnue_bin[];
 extern unsigned int nn_nnue_bin_len;
 
+int initalized = 0;
+
 static int16_t input2hidden_weight[NNUE_INPUT_LAYER][NNUE_HIDDEN_LAYER];
 static int16_t hidden_bias[NNUE_HIDDEN_LAYER];
 static int8_t hidden2output_weight[2 * NNUE_HIDDEN_LAYER][NNUE_OUTPUT_LAYER];
 static int32_t output_bias[NNUE_OUTPUT_LAYER];
+
+static Piecetype pmap[6] = {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
 
 static inline uint32_t read_u32(FILE* f) {
   int a = getc(f);
@@ -91,6 +95,73 @@ void nnue_init(void) {
     abort();
 
   fclose(f);
+  initalized = 1;
+}
+
+static void nnue_toggle_piece_into(const Bitboard* board,
+                                   Piecetype piece,
+                                   Color color,
+                                   uint8_t loc,
+                                   int activate,
+                                   int16_t hidden[2][NNUE_HIDDEN_LAYER]) {
+  assert(activate >= -1 && activate <= 1);
+  if (activate == 0)
+    return;
+  assert(piece != KING);
+
+  uint8_t king_loc_white = bitscan(board->boards[WHITE][KING]);
+  uint8_t king_loc_black = bitscan(board->boards[BLACK][KING]);
+  uint8_t king_loc_black_swapped = king_loc_black ^ 56;
+
+  int mapped_piece = pmap[piece];
+  uint8_t loc_swapped = loc ^ 56;
+
+  int idx_white =
+      king_loc_white * 64 * 2 * 5 + (color * 5 + mapped_piece) * 64 + loc;
+  int idx_black = king_loc_black_swapped * 64 * 2 * 5 +
+                  (!color * 5 + mapped_piece) * 64 + loc_swapped;
+
+  for (size_t i = 0; i < NNUE_HIDDEN_LAYER; i++) {
+    if (activate > 0) {
+      hidden[WHITE][i] += input2hidden_weight[idx_white][i];
+      hidden[BLACK][i] += input2hidden_weight[idx_black][i];
+    } else {
+      hidden[WHITE][i] -= input2hidden_weight[idx_white][i];
+      hidden[BLACK][i] -= input2hidden_weight[idx_black][i];
+    }
+  }
+}
+
+void nnue_toggle_piece(Bitboard* board,
+                       Piecetype piece,
+                       Color color,
+                       uint8_t loc,
+                       int activate) {
+  nnue_toggle_piece_into(board, piece, color, loc, activate,
+                         board->nnue_hidden);
+}
+
+static void nnue_reset_into(const Bitboard* board,
+                            int16_t hidden[2][NNUE_HIDDEN_LAYER]) {
+  memcpy(hidden[0], hidden_bias, NNUE_HIDDEN_LAYER * sizeof(int16_t));
+  memcpy(hidden[1], hidden_bias, NNUE_HIDDEN_LAYER * sizeof(int16_t));
+
+  for (Color color = WHITE; color <= BLACK; color++) {
+    // Strict < KING, do not include king.
+    for (Piecetype piece = PAWN; piece < KING; piece++) {
+      uint64_t pieces = board->boards[color][piece];
+      while (pieces) {
+        uint8_t loc = bitscan(pieces);
+        pieces &= pieces - 1;
+        nnue_toggle_piece_into(board, piece, color, loc, 1, hidden);
+      }
+    }
+  }
+}
+
+void nnue_reset(Bitboard* board) {
+  assert(initalized);
+  nnue_reset_into(board, board->nnue_hidden);
 }
 
 static void nnue_relu(uint8_t* out, const int16_t* in, size_t sz) {
@@ -102,41 +173,8 @@ static void nnue_relu(uint8_t* out, const int16_t* in, size_t sz) {
   }
 }
 
-static int pmap[6] = {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
-int16_t nnue_evaluate(Bitboard* board) {
-  uint8_t king_loc_white = bitscan(board->boards[WHITE][KING]);
-  uint8_t king_loc_black = bitscan(board->boards[BLACK][KING]);
-  uint8_t king_loc_black_swapped = king_loc_black ^ 56;
-
-  int16_t hidden[2][NNUE_HIDDEN_LAYER];
-  memcpy(hidden[0], hidden_bias, NNUE_HIDDEN_LAYER * sizeof(int16_t));
-  memcpy(hidden[1], hidden_bias, NNUE_HIDDEN_LAYER * sizeof(int16_t));
-
-  // XXX make this incremental.
-  for (int color = WHITE; color <= BLACK; color++) {
-    // Strict < KING, do not include king.
-    for (int piece = PAWN; piece < KING; piece++) {
-      int mapped_piece = pmap[piece];
-
-      uint64_t pieces = board->boards[color][piece];
-      while (pieces) {
-        uint8_t loc = bitscan(pieces);
-        uint8_t loc_swapped = loc ^ 56;
-        pieces &= pieces - 1;
-
-        int idx_white =
-            king_loc_white * 64 * 2 * 5 + (color * 5 + mapped_piece) * 64 + loc;
-        int idx_black = king_loc_black_swapped * 64 * 2 * 5 +
-                        (!color * 5 + mapped_piece) * 64 + loc_swapped;
-
-        for (size_t i = 0; i < NNUE_HIDDEN_LAYER; i++) {
-          hidden[0][i] += input2hidden_weight[idx_white][i];
-          hidden[1][i] += input2hidden_weight[idx_black][i];
-        }
-      }
-    }
-  }
-
+static int16_t nnue_compute_output(const Bitboard* board,
+                                   const int16_t hidden[2][NNUE_HIDDEN_LAYER]) {
   uint8_t hidden_clipped[2][NNUE_HIDDEN_LAYER];
   nnue_relu(hidden_clipped[0], hidden[board->to_move], NNUE_HIDDEN_LAYER);
   nnue_relu(hidden_clipped[1], hidden[!board->to_move], NNUE_HIDDEN_LAYER);
@@ -157,9 +195,14 @@ int16_t nnue_evaluate(Bitboard* board) {
   return (int16_t)(output[0] * SCALE / (255 * 64));
 }
 
-#else
+int16_t nnue_debug_evaluate(const Bitboard* board) {
+  int16_t hidden[2][NNUE_HIDDEN_LAYER];
+  nnue_reset_into(board, hidden);
+  return nnue_compute_output(board, hidden);
+}
 
-void nnue_init(void) {}
-// No nnue_evaluate -- force link error.
+int16_t nnue_evaluate(const Bitboard* board) {
+  return nnue_compute_output(board, board->nnue_hidden);
+}
 
 #endif

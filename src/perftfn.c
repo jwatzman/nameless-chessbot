@@ -4,9 +4,14 @@
 #include "bitboard.h"
 #include "move.h"
 #include "moveiter.h"
+#include "nnue.h"
 #include "perftfn.h"
 
 uint64_t perft(Bitboard* board, int depth) {
+#if ENABLE_NNUE
+  assert(nnue_evaluate(board) == nnue_debug_evaluate(board));
+#endif
+
   if (depth == 0) {
     return 1;
   }

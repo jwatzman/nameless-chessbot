@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,7 +52,9 @@ int main(void) {
 
   srandom(time(NULL));
   move_init();
+#if ENABLE_NNUE
   nnue_init();
+#endif
 
   while (1) {
     if (game_on && got_move) {
@@ -100,8 +103,10 @@ int main(void) {
 
       board_print(board);
 #if ENABLE_NNUE
+      int nnue = nnue_evaluate(board);
       printf("Traditional eval: %i\nNNUE eval: %i\n",
-             evaluate_traditional(board), nnue_evaluate(board));
+             evaluate_traditional(board), nnue);
+      assert(nnue == nnue_debug_evaluate(board));
 #else
       printf("Evaluation: %i\n", evaluate_board(board));
 #endif

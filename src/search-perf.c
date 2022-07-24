@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "bitboard.h"
+#include "config.h"
 #include "move.h"
 #include "moveiter.h"
 #include "nnue.h"
@@ -16,7 +17,9 @@ extern int optind;
 int main(int argc, char** argv) {
   srandom(0);
   move_init();
+#if ENABLE_NNUE
   nnue_init();
+#endif
 
   int keep_table = 0;
   int c;

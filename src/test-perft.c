@@ -5,7 +5,9 @@
 #include <sys/time.h>
 
 #include "bitboard.h"
+#include "config.h"
 #include "move.h"
+#include "nnue.h"
 #include "perftfn.h"
 
 typedef struct {
@@ -71,6 +73,9 @@ int main(void) {
   int ret = 0;
 
   move_init();
+#if ENABLE_NNUE
+  nnue_init();
+#endif
   srandom(0);
 
   int num_tests = 0;

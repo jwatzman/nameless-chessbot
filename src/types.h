@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "config.h"
+
 typedef unsigned char Color;
 #define WHITE 0
 #define BLACK 1
@@ -37,6 +39,8 @@ typedef unsigned char Piecetype;
 // promoted type (3)
 // which leaves the eight MSB unused
 typedef uint32_t Move;
+
+#define NNUE_HIDDEN_LAYER 128
 
 /**
  * State represents the portion of the board state which is either impossible or
@@ -84,6 +88,10 @@ typedef struct {
 
   Color to_move;
   uint16_t generation;
+
+#if ENABLE_NNUE
+  int16_t nnue_hidden[2][NNUE_HIDDEN_LAYER];
+#endif
 
   uint64_t zobrist_pos[2][6][64];
   uint64_t zobrist_castle[256];

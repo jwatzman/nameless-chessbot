@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,6 +6,7 @@
 #include <sys/time.h>
 
 #include "bitboard.h"
+#include "config.h"
 #include "move.h"
 #include "nnue.h"
 #include "search.h"
@@ -45,7 +47,9 @@ int main(void) {
   int ret = 0;
 
   move_init();
+#if ENABLE_NNUE
   nnue_init();
+#endif
   timer_init_secs(30);
   srandom(0);
 
@@ -71,6 +75,10 @@ int main(void) {
              tcase->move, buf);
       ret = 1;
     }
+
+#if ENABLE_NNUE
+    assert(nnue_evaluate(&board) == nnue_debug_evaluate(&board));
+#endif
   }
 
   struct rusage usage;

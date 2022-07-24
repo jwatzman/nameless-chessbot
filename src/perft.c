@@ -7,7 +7,9 @@
 #include <unistd.h>
 
 #include "bitboard.h"
+#include "config.h"
 #include "move.h"
+#include "nnue.h"
 #include "perftfn.h"
 
 int main(int argc, char** argv) {
@@ -28,6 +30,9 @@ int main(int argc, char** argv) {
   }
 
   move_init();
+#if ENABLE_NNUE
+  nnue_init();
+#endif
   srandom(time(NULL));
   Bitboard* board = malloc(sizeof(Bitboard));
 
