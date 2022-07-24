@@ -8,9 +8,9 @@
 #include "nnue.h"
 #include "types.h"
 
-#define INPUT_LAYER 64 * 2 * 5 * 64
-#define HIDDEN_LAYER 128
-#define OUTPUT_LAYER 1
+#define NNUE_INPUT_LAYER 64 * 2 * 5 * 64
+#define NNUE_HIDDEN_LAYER 128
+#define NNUE_OUTPUT_LAYER 1
 
 #define RELU_MIN 0
 #define RELU_MAX 255
@@ -23,10 +23,10 @@
 extern unsigned char nn_nnue_bin[];
 extern unsigned int nn_nnue_bin_len;
 
-static int16_t input2hidden_weight[INPUT_LAYER][HIDDEN_LAYER];
-static int16_t hidden_bias[HIDDEN_LAYER];
-static int8_t hidden2output_weight[2 * HIDDEN_LAYER][OUTPUT_LAYER];
-static int32_t output_bias[OUTPUT_LAYER];
+static int16_t input2hidden_weight[NNUE_INPUT_LAYER][NNUE_HIDDEN_LAYER];
+static int16_t hidden_bias[NNUE_HIDDEN_LAYER];
+static int8_t hidden2output_weight[2 * NNUE_HIDDEN_LAYER][NNUE_OUTPUT_LAYER];
+static int32_t output_bias[NNUE_OUTPUT_LAYER];
 
 static inline uint32_t read_u32(FILE* f) {
   int a = getc(f);
@@ -64,27 +64,27 @@ void nnue_init(void) {
   if (!f)
     abort();
 
-  if (read_u32(f) != INPUT_LAYER)
+  if (read_u32(f) != NNUE_INPUT_LAYER)
     abort();
 
-  if (read_u32(f) != HIDDEN_LAYER)
+  if (read_u32(f) != NNUE_HIDDEN_LAYER)
     abort();
 
-  if (read_u32(f) != OUTPUT_LAYER)
+  if (read_u32(f) != NNUE_OUTPUT_LAYER)
     abort();
 
-  for (int i = 0; i < INPUT_LAYER; i++)
-    for (int j = 0; j < HIDDEN_LAYER; j++)
+  for (int i = 0; i < NNUE_INPUT_LAYER; i++)
+    for (int j = 0; j < NNUE_HIDDEN_LAYER; j++)
       input2hidden_weight[i][j] = read_i16(f);
 
-  for (int i = 0; i < HIDDEN_LAYER; i++)
+  for (int i = 0; i < NNUE_HIDDEN_LAYER; i++)
     hidden_bias[i] = read_i16(f);
 
-  for (int i = 0; i < 2 * HIDDEN_LAYER; i++)
-    for (int j = 0; j < OUTPUT_LAYER; j++)
+  for (int i = 0; i < 2 * NNUE_HIDDEN_LAYER; i++)
+    for (int j = 0; j < NNUE_OUTPUT_LAYER; j++)
       hidden2output_weight[i][j] = read_i8(f);
 
-  for (int i = 0; i < OUTPUT_LAYER; i++)
+  for (int i = 0; i < NNUE_OUTPUT_LAYER; i++)
     output_bias[i] = read_i16(f);
 
   if (getc(f) != EOF)
@@ -108,9 +108,9 @@ int16_t nnue_evaluate(Bitboard* board) {
   uint8_t king_loc_black = bitscan(board->boards[BLACK][KING]);
   uint8_t king_loc_black_swapped = king_loc_black ^ 56;
 
-  int16_t hidden[2][HIDDEN_LAYER];
-  memcpy(hidden[0], hidden_bias, HIDDEN_LAYER * sizeof(int16_t));
-  memcpy(hidden[1], hidden_bias, HIDDEN_LAYER * sizeof(int16_t));
+  int16_t hidden[2][NNUE_HIDDEN_LAYER];
+  memcpy(hidden[0], hidden_bias, NNUE_HIDDEN_LAYER * sizeof(int16_t));
+  memcpy(hidden[1], hidden_bias, NNUE_HIDDEN_LAYER * sizeof(int16_t));
 
   // XXX make this incremental.
   for (int color = WHITE; color <= BLACK; color++) {
@@ -129,7 +129,7 @@ int16_t nnue_evaluate(Bitboard* board) {
         int idx_black = king_loc_black_swapped * 64 * 2 * 5 +
                         (!color * 5 + mapped_piece) * 64 + loc_swapped;
 
-        for (size_t i = 0; i < HIDDEN_LAYER; i++) {
+        for (size_t i = 0; i < NNUE_HIDDEN_LAYER; i++) {
           hidden[0][i] += input2hidden_weight[idx_white][i];
           hidden[1][i] += input2hidden_weight[idx_black][i];
         }
@@ -137,15 +137,15 @@ int16_t nnue_evaluate(Bitboard* board) {
     }
   }
 
-  uint8_t hidden_clipped[2][HIDDEN_LAYER];
-  nnue_relu(hidden_clipped[0], hidden[board->to_move], HIDDEN_LAYER);
-  nnue_relu(hidden_clipped[1], hidden[!board->to_move], HIDDEN_LAYER);
+  uint8_t hidden_clipped[2][NNUE_HIDDEN_LAYER];
+  nnue_relu(hidden_clipped[0], hidden[board->to_move], NNUE_HIDDEN_LAYER);
+  nnue_relu(hidden_clipped[1], hidden[!board->to_move], NNUE_HIDDEN_LAYER);
   uint8_t* hidden_clipped_p = &hidden_clipped[0][0];
 
-  int32_t output[OUTPUT_LAYER];
-  memcpy(output, output_bias, OUTPUT_LAYER * sizeof(int32_t));
-  for (size_t i = 0; i < OUTPUT_LAYER; i++) {
-    for (size_t j = 0; j < HIDDEN_LAYER * 2; j++) {
+  int32_t output[NNUE_OUTPUT_LAYER];
+  memcpy(output, output_bias, NNUE_OUTPUT_LAYER * sizeof(int32_t));
+  for (size_t i = 0; i < NNUE_OUTPUT_LAYER; i++) {
+    for (size_t j = 0; j < NNUE_HIDDEN_LAYER * 2; j++) {
       // XXX try flipping hidden2output_weight so we iterate in a more
       // cache-friendly way.
       output[i] += hidden2output_weight[j][i] * hidden_clipped_p[j];
