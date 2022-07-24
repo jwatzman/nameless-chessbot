@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdint.h>
 
 #include "bitboard.h"
@@ -17,6 +18,8 @@ static uint64_t* bishop_attacks;
 
 static Entry rook_entries[64];
 static Entry bishop_entries[64];
+
+static int initalized = 0;
 
 static void movemagic_init_findsetbits(uint64_t board,
                                        uint8_t* setbits,
@@ -48,27 +51,18 @@ static uint64_t movemagic_init_nth_subset(uint64_t n,
   return ret;
 }
 
-static int8_t add_one(int8_t x) {
-  return x + 1;
-}
-static int8_t sub_one(int8_t x) {
-  return x - 1;
-}
-static int8_t add_zero(int8_t x) {
-  return x;
-}
 static uint64_t movemagic_init_compute_attacks(uint8_t pos,
                                                uint64_t occ,
-                                               int8_t (*row_incr)(int8_t),
-                                               int8_t (*col_incr)(int8_t)) {
+                                               int8_t row_incr,
+                                               int8_t col_incr) {
   uint64_t attacks = 0;
 
   int8_t init_row = (int8_t)board_row_of(pos);
   int8_t init_col = (int8_t)board_col_of(pos);
 
-  for (int8_t row = row_incr(init_row), col = col_incr(init_col);
+  for (int8_t row = init_row + row_incr, col = init_col + col_incr;
        row < 8 && col < 8 && row >= 0 && col >= 0;
-       row = row_incr(row), col = col_incr(col)) {
+       row = row + row_incr, col = col + col_incr) {
     uint64_t bit = 1ULL << board_index_of((uint8_t)row, (uint8_t)col);
     attacks |= bit;
     if (occ & bit)
@@ -79,17 +73,17 @@ static uint64_t movemagic_init_compute_attacks(uint8_t pos,
 }
 
 static uint64_t movemagic_init_rook_attacks(uint8_t pos, uint64_t occ) {
-  return movemagic_init_compute_attacks(pos, occ, add_one, add_zero) |
-         movemagic_init_compute_attacks(pos, occ, sub_one, add_zero) |
-         movemagic_init_compute_attacks(pos, occ, add_zero, add_one) |
-         movemagic_init_compute_attacks(pos, occ, add_zero, sub_one);
+  return movemagic_init_compute_attacks(pos, occ, 1, 0) |
+         movemagic_init_compute_attacks(pos, occ, -1, 0) |
+         movemagic_init_compute_attacks(pos, occ, 0, 1) |
+         movemagic_init_compute_attacks(pos, occ, 0, -1);
 }
 
 static uint64_t movemagic_init_bishop_attacks(uint8_t pos, uint64_t occ) {
-  return movemagic_init_compute_attacks(pos, occ, add_one, add_one) |
-         movemagic_init_compute_attacks(pos, occ, add_one, sub_one) |
-         movemagic_init_compute_attacks(pos, occ, sub_one, add_one) |
-         movemagic_init_compute_attacks(pos, occ, sub_one, sub_one);
+  return movemagic_init_compute_attacks(pos, occ, 1, 1) |
+         movemagic_init_compute_attacks(pos, occ, 1, -1) |
+         movemagic_init_compute_attacks(pos, occ, -1, 1) |
+         movemagic_init_compute_attacks(pos, occ, -1, -1);
 }
 
 static void movemagic_init_tables(void) {
@@ -151,15 +145,19 @@ void movemagic_init(void) {
       e->attacks[occ * e->magic >> e->shift] = attacks;
     }
   }
+
+  initalized = 1;
 }
 
 uint64_t movemagic_rook(uint8_t pos, uint64_t occ) {
+  assert(initalized);
   Entry* e = &rook_entries[pos];
   occ = occ & e->mask;
   return e->attacks[occ * e->magic >> e->shift];
 }
 
 uint64_t movemagic_bishop(uint8_t pos, uint64_t occ) {
+  assert(initalized);
   Entry* e = &bishop_entries[pos];
   occ = occ & e->mask;
   return e->attacks[occ * e->magic >> e->shift];
