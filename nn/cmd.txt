@@ -1,1 +1,1 @@
-$ python main.py --data-root data/ --train-id nameless --scale 400 --epochs 10000
+$ python main.py --data-root data/ --train-id nameless --scale 400 --epochs 10000 --save-epochs 100 --lr-drop 300 --lr 0.001

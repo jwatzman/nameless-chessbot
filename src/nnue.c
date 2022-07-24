@@ -85,7 +85,7 @@ void nnue_init(void) {
       hidden2output_weight[i][j] = read_i8(f);
 
   for (int i = 0; i < OUTPUT_LAYER; i++)
-    output_bias[i] = read_i8(f);
+    output_bias[i] = read_i16(f);
 
   if (getc(f) != EOF)
     abort();

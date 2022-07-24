@@ -1,3 +1,3 @@
 [submodule "marlinflow"]
-	path = marlinflow
+	path = nn/marlinflow
 	url = https://github.com/dsekercioglu/marlinflow.git
