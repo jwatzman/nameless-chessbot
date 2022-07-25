@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+#include <stdio.h>
+
 #define max_possible_depth 30
 
 typedef struct {
@@ -10,6 +12,7 @@ typedef struct {
   uint8_t continueOnMate;
   const char* stopMove;
   int* score;
+  FILE* out;
 } SearchDebug;
 
 Move search_find_move(Bitboard* board, const SearchDebug* debug);

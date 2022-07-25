@@ -44,9 +44,15 @@ static int search_alpha_beta(Bitboard* board,
                              Move* pv,
                              uint8_t allow_null);
 
-static void search_print_pv(Move* pv, int8_t depth);
+static void search_print_pv(Move* pv, int8_t depth, FILE* f);
 
 Move search_find_move(Bitboard* board, const SearchDebug* debug) {
+  FILE* f;
+  if (debug && debug->out)
+    f = debug->out;
+  else
+    f = stdout;
+
   Move best_move = 0;
   nodes_searched = 0;
   history_clear();
@@ -74,7 +80,7 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
 
     if (((val <= alpha) || (val >= beta)) && !timeup) {
       // aspiration window failure
-      fprintf(stderr, "%i\t%i\t%lu\t%" PRIu64 "\taspiration failure\n", depth,
+      fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\taspiration failure\n", depth,
               board->to_move == WHITE ? val : -val, centiseconds_taken,
               nodes_searched);
       alpha = -INFINITY;
@@ -88,24 +94,24 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
       if (debug && debug->score)
         *debug->score = val;
 
-      fprintf(stderr, "%i\t%i\t%lu\t%" PRIu64 "\t", depth,
+      fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\t", depth,
               board->to_move == WHITE ? val : -val, centiseconds_taken,
               nodes_searched);
-      search_print_pv(pv, depth);
+      search_print_pv(pv, depth, f);
 
       alpha = val - aspiration_window;
       beta = val + aspiration_window;
 
       if ((val >= MATE) || (val <= -MATE)) {
-        fprintf(stderr, "-> mate");
+        fprintf(f, "-> mate");
 
         if (!(debug && debug->continueOnMate)) {
-          fprintf(stderr, "\n");
+          fprintf(f, "\n");
           break;
         }
       }
 
-      fprintf(stderr, "\n");
+      fprintf(f, "\n");
 
       if (debug && debug->stopMove) {
         char buf[6];
@@ -113,12 +119,12 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
 
         int eval = evaluate_board(board);
         if (val > eval + 50 && !strcmp(buf, debug->stopMove)) {
-          fprintf(stderr, "Found stop-move.\n");
+          fprintf(f, "Found stop-move.\n");
           break;
         }
       }
     } else {
-      fprintf(stderr, "%i\t%i\t%lu\t%" PRIu64 "\ttimeup\n", depth, 0,
+      fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\ttimeup\n", depth, 0,
               centiseconds_taken, nodes_searched);
       break;
     }
@@ -414,12 +420,12 @@ static int search_alpha_beta(Bitboard* board,
   }
 }
 
-static void search_print_pv(Move* pv, int8_t depth) {
+static void search_print_pv(Move* pv, int8_t depth, FILE* f) {
   char buf[6];
 
   for (int i = 0; i < depth && pv[i] != MOVE_NULL; i++) {
     move_srcdest_form(pv[i], buf);
-    fprintf(stderr, "%s ", buf);
+    fprintf(f, "%s ", buf);
   }
 }
 

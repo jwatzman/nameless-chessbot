@@ -64,6 +64,7 @@ int main(void) {
     SearchDebug debug = {0};
     debug.continueOnMate = 1;
     debug.stopMove = tcase->move;
+    debug.out = stderr;
     Move m = search_find_move(&board, &debug);
 
     char buf[6];

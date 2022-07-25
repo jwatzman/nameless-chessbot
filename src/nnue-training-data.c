@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
 
   setbuf(f, NULL);
   setbuf(stdout, NULL);
-  freopen("/dev/null", "w", stderr);  // Shut up search debug output.
+  FILE* devnull = fopen("/dev/null", "w");  // Shut up search debug output.
 
   Bitboard board;
   Statelist* sl = statelist_alloc();
@@ -81,6 +81,7 @@ int main(int argc, char** argv) {
       SearchDebug debug = {0};
       debug.maxDepth = depth;
       debug.score = &score;
+      debug.out = devnull;
 
       Move best = search_find_move(&board, &debug);
 
