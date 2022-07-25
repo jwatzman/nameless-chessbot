@@ -57,13 +57,14 @@ int main(int argc, char** argv) {
 #endif
 
   if (argc == 2 && !strcmp(argv[1], "bench")) {
+    srandom(0);
     timer_init_secs(9999);
     time_t start_cs = timer_get_centiseconds();
     uint64_t nodes = search_benchmark();
     unsigned int duration_cs =
         (unsigned int)(timer_get_centiseconds() - start_cs);
 
-    printf("%" PRIu64 " nodes %" PRIu64 " nps\n", nodes,
+    printf("%" PRIu64 " nodes\n%" PRIu64 " nps\n", nodes,
            nodes * 100 / duration_cs);
     return 0;
   }
