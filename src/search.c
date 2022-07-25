@@ -80,9 +80,8 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
 
     if (((val <= alpha) || (val >= beta)) && !timeup) {
       // aspiration window failure
-      fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\taspiration failure\n", depth,
-              board->to_move == WHITE ? val : -val, centiseconds_taken,
-              nodes_searched);
+      fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\taspiration failure\n", depth, val,
+              centiseconds_taken, nodes_searched);
       alpha = -INFINITY;
       beta = INFINITY;
       depth--;
@@ -94,8 +93,7 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
       if (debug && debug->score)
         *debug->score = val;
 
-      fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\t", depth,
-              board->to_move == WHITE ? val : -val, centiseconds_taken,
+      fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\t", depth, val, centiseconds_taken,
               nodes_searched);
       search_print_pv(pv, depth, f);
 
