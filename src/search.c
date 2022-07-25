@@ -422,3 +422,24 @@ static void search_print_pv(Move* pv, int8_t depth) {
     fprintf(stderr, "%s ", buf);
   }
 }
+
+uint64_t search_benchmark(void) {
+  nodes_searched = 0;
+  timeup = 0;
+  history_clear();
+
+  Bitboard board;
+  State s;
+  board_init_with_fen(
+      &board, &s,
+      "r2q3k/pn2bprp/4pNp1/2p1PbQ1/3p1P2/5NR1/PPP3PP/2B2RK1 b - - 0 1");
+
+  timer_begin();
+  for (int8_t depth = 1; depth <= 8; depth++) {
+    search_alpha_beta(&board, -INFINITY, INFINITY, depth, 1, NULL,
+                      ALLOW_NULL_MOVE);
+  }
+  timer_end();
+
+  return nodes_searched;
+}

@@ -37,7 +37,7 @@ static Move parse_move(Bitboard* board, char* possible_move) {
   return 0;
 }
 
-int main(void) {
+int main(int argc, char** argv) {
   Color computer_player =
       (Color)-1;  // not WHITE or BLACK if we don't play either (e.g. -1)
   int game_on = 0;
@@ -55,6 +55,18 @@ int main(void) {
 #if ENABLE_NNUE
   nnue_init();
 #endif
+
+  if (argc == 2 && !strcmp(argv[1], "bench")) {
+    timer_init_secs(9999);
+    time_t start_cs = timer_get_centiseconds();
+    uint64_t nodes = search_benchmark();
+    unsigned int duration_cs =
+        (unsigned int)(timer_get_centiseconds() - start_cs);
+
+    printf("%" PRIu64 " nodes %" PRIu64 " nps\n", nodes,
+           nodes * 100 / duration_cs);
+    return 0;
+  }
 
   while (1) {
     if (game_on && got_move) {

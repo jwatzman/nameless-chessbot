@@ -14,4 +14,6 @@ typedef struct {
 
 Move search_find_move(Bitboard* board, const SearchDebug* debug);
 
+uint64_t search_benchmark(void);
+
 #endif
