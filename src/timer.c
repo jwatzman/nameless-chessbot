@@ -5,8 +5,8 @@
 #include <time.h>
 #include <unistd.h>
 
-static unsigned int secs = 0;
-static time_t target;
+static unsigned int secs_per_move = 0;
+static time_t target_cs;
 
 static unsigned int timeup_calls;
 
@@ -25,7 +25,7 @@ void timer_init_xboard(char* level) {
         sscanf(level, "level %u %u:%u %u", &moves, &base_m, &base_s, &inc);
 
     if (ret != 4) {
-      secs = 5;
+      secs_per_move = 5;
       return;
     }
   }
@@ -33,20 +33,20 @@ void timer_init_xboard(char* level) {
   base_s += SECS_PER_MIN * base_m;
 
   if (moves == 0 || base_s == 0)
-    secs = inc;
+    secs_per_move = inc;
   else
-    secs = inc + base_s / (moves - MOVE_WIGGLE_ROOM);
+    secs_per_move = inc + base_s / (moves - MOVE_WIGGLE_ROOM);
 }
 
 void timer_init_secs(unsigned int n) {
-  secs = n;
+  secs_per_move = n;
 }
 
 void timer_begin(void) {
-  if (secs < 1)
+  if (secs_per_move < 1)
     timer_init_secs(5);
 
-  target = timer_get_centiseconds() + secs * 100;
+  target_cs = timer_get_centiseconds() + secs_per_move * 100;
   timeup_calls = 0;
 }
 
@@ -55,7 +55,7 @@ uint8_t timer_timeup(void) {
     return 0;
 
   timeup_calls = 0;
-  if (timer_get_centiseconds() >= target)
+  if (timer_get_centiseconds() >= target_cs)
     return 1;
   else
     return 0;
