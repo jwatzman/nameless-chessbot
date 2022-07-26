@@ -35,7 +35,7 @@ void timer_init_xboard(char* level) {
   if (moves == 0 || base_s == 0)
     cs_per_move = inc * 100;
   else
-    cs_per_move = (inc + base_s / (moves - MOVE_WIGGLE_ROOM)) * 100;
+    cs_per_move = (inc + base_s / (moves + MOVE_WIGGLE_ROOM)) * 100;
 }
 
 void timer_init_secs(unsigned int n) {
