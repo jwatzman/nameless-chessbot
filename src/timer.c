@@ -55,7 +55,7 @@ uint8_t timer_timeup(void) {
     return 0;
 
   timeup_calls = 0;
-  if (timer_get_centiseconds() > target)
+  if (timer_get_centiseconds() >= target)
     return 1;
   else
     return 0;
