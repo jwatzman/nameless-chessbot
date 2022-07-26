@@ -8,6 +8,7 @@
 #include "evaluate.h"
 #include "move.h"
 #include "moveiter.h"
+#include "mt19937.h"
 #include "nnue.h"
 #include "search.h"
 #include "statelist.h"
@@ -17,7 +18,7 @@ static Move get_human_move(Bitboard* board, const Movelist* moves);
 static Move get_computer_move(Bitboard* board);
 
 int main(void) {
-  srandom(time(NULL));
+  mt_srandom((unsigned)time(NULL));
   move_init();
 #if ENABLE_NNUE
   nnue_init();

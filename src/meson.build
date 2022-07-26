@@ -1,6 +1,6 @@
 libcore = static_library(
 	'core',
-	['bitboard.c', 'move.c', 'movemagic.c', 'nnue.c', nnue_bin_c, move_h],
+	['bitboard.c', 'move.c', 'movemagic.c', 'mt19937ar.c', 'nnue.c', nnue_bin_c, move_h],
 )
 
 libsearch = static_library(

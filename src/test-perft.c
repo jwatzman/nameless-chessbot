@@ -7,6 +7,7 @@
 #include "bitboard.h"
 #include "config.h"
 #include "move.h"
+#include "mt19937.h"
 #include "nnue.h"
 #include "perftfn.h"
 
@@ -76,7 +77,7 @@ int main(void) {
 #if ENABLE_NNUE
   nnue_init();
 #endif
-  srandom(0);
+  mt_srandom(0);
 
   int num_tests = 0;
   Bitboard board;

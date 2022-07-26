@@ -9,6 +9,7 @@
 #include "bitboard.h"
 #include "config.h"
 #include "move.h"
+#include "mt19937.h"
 #include "nnue.h"
 #include "perftfn.h"
 
@@ -33,7 +34,7 @@ int main(int argc, char** argv) {
 #if ENABLE_NNUE
   nnue_init();
 #endif
-  srandom(time(NULL));
+  mt_srandom((unsigned)time(NULL));
   Bitboard* board = malloc(sizeof(Bitboard));
 
   State s;

@@ -8,6 +8,7 @@
 #include "bitboard.h"
 #include "config.h"
 #include "move.h"
+#include "mt19937.h"
 #include "nnue.h"
 #include "search.h"
 #include "timer.h"
@@ -51,7 +52,7 @@ int main(void) {
   nnue_init();
 #endif
   timer_init_secs(30);
-  srandom(0);
+  mt_srandom(0);
 
   int num_tests = 0;
   Bitboard board;

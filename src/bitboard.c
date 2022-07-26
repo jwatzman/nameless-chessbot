@@ -11,6 +11,7 @@
 #include "bitops.h"
 #include "config.h"
 #include "move.h"
+#include "mt19937.h"
 #include "nnue.h"
 
 // generate a 64-bit random number
@@ -190,7 +191,7 @@ void board_init_with_fen(Bitboard* board, State* state, const char* fen) {
 
 static inline uint64_t board_rand64() {
   // OR two 32-bit randoms together
-  return (((uint64_t)random()) << 32) | ((uint64_t)random());
+  return (((uint64_t)mt_random()) << 32) | ((uint64_t)mt_random());
 }
 
 static void board_init_zobrist(Bitboard* board) {

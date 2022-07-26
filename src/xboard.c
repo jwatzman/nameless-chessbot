@@ -10,6 +10,7 @@
 #include "evaluate.h"
 #include "move.h"
 #include "moveiter.h"
+#include "mt19937.h"
 #include "nnue.h"
 #include "perftfn.h"
 #include "search.h"
@@ -50,14 +51,14 @@ int main(int argc, char** argv) {
   setbuf(stderr, NULL);
   setbuf(stdout, NULL);
 
-  srandom(time(NULL));
+  mt_srandom((unsigned)time(NULL));
   move_init();
 #if ENABLE_NNUE
   nnue_init();
 #endif
 
   if (argc == 2 && !strcmp(argv[1], "bench")) {
-    srandom(0);
+    mt_srandom(0);
     timer_init_secs(9999);
     time_t start_cs = timer_get_centiseconds();
     uint64_t nodes = search_benchmark();

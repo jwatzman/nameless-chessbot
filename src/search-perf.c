@@ -7,6 +7,7 @@
 #include "config.h"
 #include "move.h"
 #include "moveiter.h"
+#include "mt19937.h"
 #include "nnue.h"
 #include "search.h"
 #include "statelist.h"
@@ -15,7 +16,7 @@
 extern int optind;
 
 int main(int argc, char** argv) {
-  srandom(0);
+  mt_srandom(0);
   move_init();
 #if ENABLE_NNUE
   nnue_init();
@@ -63,7 +64,7 @@ int main(int argc, char** argv) {
       // Invalidate the transposition table, so that we are perft-testing
       // a more complete search every time. Not doing this is fine for
       // corectness, but means the first N-1 ply are probably already cached.
-      board->state->zobrist = (uint64_t)random();
+      board->state->zobrist = (uint64_t)mt_random();
     }
 
     char move_srcdest[6];

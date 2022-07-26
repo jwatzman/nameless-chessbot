@@ -7,6 +7,7 @@
 #include "bitboard.h"
 #include "config.h"
 #include "move.h"
+#include "mt19937.h"
 #include "search.h"
 #include "statelist.h"
 #include "timer.h"
@@ -24,7 +25,7 @@ int main(int argc, char** argv) {
   return 1;
 #endif
 
-  srandom(time(NULL));
+  mt_srandom((unsigned)time(NULL));
   timer_init_secs(9999);
   move_init();
 
@@ -151,7 +152,7 @@ int main(int argc, char** argv) {
 
         int i;
         do {
-          i = random() % ml.n;
+          i = mt_random() % ml.n;
         } while (!move_is_legal(&board, ml.moves[i]));
 
         board_do_move(&board, ml.moves[i], statelist_new_state(sl));
