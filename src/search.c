@@ -259,9 +259,8 @@ static int search_alpha_beta(Bitboard* board,
   static_assert(ENABLE_FUTILITY_DEPTH < sizeof(futility_margins) / sizeof(int),
                 "Margins unspecified");
   int futile = 0;
-  // XXX and if !pv_node?
   if (!quiescent && depth <= ENABLE_FUTILITY_DEPTH && !in_check && !threat &&
-      alpha > -MATE) {
+      !pv_node && alpha > -MATE) {
     int eval = evaluate_board(board);
     int margin = futility_margins[depth];
     if (eval + margin < alpha)
