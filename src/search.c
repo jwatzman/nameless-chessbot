@@ -225,10 +225,18 @@ static int search_alpha_beta(Bitboard* board,
   if (!in_check && !quiescent && beta < MATE &&
       depth <= ENABLE_REVERSE_FUTILITY_DEPTH && ply > 1 && !pv_node &&
       allow_null == ALLOW_NULL_MOVE) {
-    int eval = evaluate_board(board);
-    int margin = reverse_futility_margins[depth];
-    if (eval - margin >= beta)
-      return eval;
+    // Need to deal with zug (since this prune is very similar to null move).
+    // Quick-and-dirty is to make sure there is non-pawn material for us to
+    // still move.
+    uint64_t non_pawn = board->composite_boards[board->to_move] ^
+                        board->boards[board->to_move][PAWN] ^
+                        board->boards[board->to_move][KING];
+    if (non_pawn) {
+      int eval = evaluate_board(board);
+      int margin = reverse_futility_margins[depth];
+      if (eval - margin >= beta)
+        return eval;
+    }
   }
 #endif
 
@@ -243,6 +251,8 @@ static int search_alpha_beta(Bitboard* board,
                                         ply + 1, NULL, DISALLOW_NULL_MOVE);
     board_undo_move(board, MOVE_NULL);
     if (null_value >= beta) {
+      // Verification search to deal with zug. (Literature unclear if this is
+      // actually a good solution but empirically it seems to work?)
       int verify = search_alpha_beta(board, beta - 1, beta, depth - 2, ply,
                                      NULL, DISALLOW_NULL_MOVE);
       if (verify >= beta)
