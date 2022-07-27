@@ -78,7 +78,13 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
 
     time_t centiseconds_taken = timer_get_centiseconds() - start_cs;
 
-    if (((val <= alpha) || (val >= beta)) && !timeup) {
+    if (timeup) {
+      fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\ttimeup\n", depth, 0,
+              centiseconds_taken, nodes_searched);
+      break;
+    }
+
+    if ((val <= alpha) || (val >= beta)) {
       // aspiration window failure
       fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\taspiration failure\n", depth, val,
               centiseconds_taken, nodes_searched);
@@ -88,43 +94,37 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
       continue;
     }
 
-    if (!timeup) {
-      best_move = pv[0];
-      if (debug && debug->score)
-        *debug->score = val;
+    best_move = pv[0];
+    if (debug && debug->score)
+      *debug->score = val;
 
-      fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\t", depth, val, centiseconds_taken,
-              nodes_searched);
-      search_print_pv(pv, depth, f);
+    fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\t", depth, val, centiseconds_taken,
+            nodes_searched);
+    search_print_pv(pv, depth, f);
 
-      alpha = val - aspiration_window;
-      beta = val + aspiration_window;
+    alpha = val - aspiration_window;
+    beta = val + aspiration_window;
 
-      if ((val >= MATE) || (val <= -MATE)) {
-        fprintf(f, "-> mate");
+    if ((val >= MATE) || (val <= -MATE)) {
+      fprintf(f, "-> mate");
 
-        if (!(debug && debug->continueOnMate)) {
-          fprintf(f, "\n");
-          break;
-        }
+      if (!(debug && debug->continueOnMate)) {
+        fprintf(f, "\n");
+        break;
       }
+    }
 
-      fprintf(f, "\n");
+    fprintf(f, "\n");
 
-      if (debug && debug->stopMove) {
-        char buf[6];
-        move_srcdest_form(best_move, buf);
+    if (debug && debug->stopMove) {
+      char buf[6];
+      move_srcdest_form(best_move, buf);
 
-        int eval = evaluate_board(board);
-        if (val > eval + 50 && !strcmp(buf, debug->stopMove)) {
-          fprintf(f, "Found stop-move.\n");
-          break;
-        }
+      int eval = evaluate_board(board);
+      if (val > eval + 50 && !strcmp(buf, debug->stopMove)) {
+        fprintf(f, "Found stop-move.\n");
+        break;
       }
-    } else {
-      fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\ttimeup\n", depth, 0,
-              centiseconds_taken, nodes_searched);
-      break;
     }
   }
 
