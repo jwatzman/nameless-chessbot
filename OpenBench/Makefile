@@ -1,4 +1,7 @@
 xboard:
+ifneq ($(EVALFILE),)
+	cp $(EVALFILE) ../nn/nnue.bin.zst
+endif
 	CC=$(CC) meson setup -Db_ndebug=true ../ build
 	ninja -C build src/xboard
 	cp build/src/xboard $(EXE)
