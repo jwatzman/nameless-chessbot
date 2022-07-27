@@ -1,10 +1,11 @@
-#include "timer.h"
-
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
+
+#include "config.h"
+#include "timer.h"
 
 static time_t start_cs;
 static time_t target_cs;
@@ -96,6 +97,23 @@ uint8_t timer_timeup(void) {
     return 1;
   else
     return 0;
+}
+
+uint8_t timer_stop_deepening(void) {
+#if ENABLE_TIMER_STOP_DEEPENING
+  time_t target_usage_cs = target_cs - start_cs;
+  time_t used_cs = timer_get_centiseconds() - start_cs;
+
+  // If we have used more than 3/5 of our allotted time, we have no chance of
+  // finishing the next depth before a timeup (due to the exponential growth of
+  // the tree) -- better to bank the time for later.
+  if (used_cs > 3 * target_usage_cs / 5)
+    return 1;
+  else
+    return 0;
+#else
+  return 0;
+#endif
 }
 
 void timer_end(void) {

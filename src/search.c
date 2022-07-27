@@ -126,6 +126,12 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
         break;
       }
     }
+
+    if (timer_stop_deepening()) {
+      fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\tstopping here\n", depth, val,
+              centiseconds_taken, nodes_searched);
+      break;
+    }
   }
 
   timer_end();
