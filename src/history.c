@@ -1,18 +1,21 @@
 #include <stdint.h>
 #include <strings.h>
 
+#include "assert.h"
 #include "config.h"
 #include "history.h"
 #include "move.h"
 #include "search.h"
 #include "types.h"
 
-static Move killers[MAX_POSSIBLE_DEPTH][2];
+#define MAX_HISTORY_PLY MAX_POSSIBLE_DEPTH
+
+static Move killers[MAX_HISTORY_PLY][2];
 static uint16_t history[64][64];
 
 void history_clear(void) {
   bzero(killers,
-        MAX_POSSIBLE_DEPTH * 2 * sizeof(Move));  // Assumes MOVE_NULL is 0!
+        MAX_HISTORY_PLY * 2 * sizeof(Move));  // Assumes MOVE_NULL is 0!
 
   // XXX should we keep this across searches? Halve every value upon new search?
   bzero(history, 64 * 64 * sizeof(uint16_t));
@@ -29,21 +32,26 @@ void history_update(Move m, int8_t ply) {
 #endif
 
 #if ENABLE_KILLERS
-  Move* slot = (Move*)history_get_killers(ply);
+  if (ply - 1 < MAX_HISTORY_PLY) {
+    Move* slot = (Move*)history_get_killers(ply);
+    assert(slot);
 
-  if (slot[0] == m || slot[1] == m)
-    return;
+    if (slot[0] == m || slot[1] == m)
+      return;
 
-  if (slot[0] == MOVE_NULL) {
-    slot[0] = m;
-  } else {
-    slot[1] = slot[0];
-    slot[0] = m;
+    if (slot[0] == MOVE_NULL) {
+      slot[0] = m;
+    } else {
+      slot[1] = slot[0];
+      slot[0] = m;
+    }
   }
 #endif
 }
 
 const Move* history_get_killers(int8_t ply) {
+  if (ply - 1 >= MAX_HISTORY_PLY)
+    return NULL;
   return killers[ply - 1];  // Ply starts at 1
 }
 

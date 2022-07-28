@@ -275,9 +275,11 @@ static int search_alpha_beta(Bitboard* board,
     int is_pawn_to_prepromotion =
         move_piecetype(move) == PAWN &&
         (board_row_of(move_dest) == 1 || board_row_of(move_dest) == 6);
-    if (futile && move != tt_move && move != killer_moves[0] &&
-        move != killer_moves[1] && !move_is_promotion(move) &&
-        !move_is_capture(move) && !gives_check && !is_pawn_to_prepromotion)
+    int move_is_killer =
+        killer_moves && (move == killer_moves[0] || move == killer_moves[1]);
+    if (futile && move != tt_move && !move_is_killer &&
+        !move_is_promotion(move) && !move_is_capture(move) && !gives_check &&
+        !is_pawn_to_prepromotion)
       continue;
 #endif
 
@@ -425,8 +427,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
                          in_check ? MOVE_GEN_ALL : MOVE_GEN_QUIET);
 
   Moveiter iter;
-  const Move* killer_moves = history_get_killers(ply);
-  moveiter_init(&iter, &moves, MOVE_NULL, killer_moves);
+  moveiter_init(&iter, &moves, MOVE_NULL, history_get_killers(ply));
 
   int legal_moves = 0;
 
