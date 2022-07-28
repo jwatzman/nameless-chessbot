@@ -30,7 +30,9 @@ uint64_t perft(Bitboard* board, int depth) {
     if (depth == 1) {
       nodes += 1;
     } else {
+#ifndef NDEBUG
       int gives_check = move_gives_check(board, m);
+#endif
       board_do_move(board, m, &s);
       assert(gives_check == board_in_check(board, board->to_move));
       nodes += perft(board, depth - 1);
