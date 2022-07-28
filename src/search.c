@@ -35,7 +35,6 @@ static const int reverse_futility_margins[] = {0, 300, 500};
 static int timeup;
 static uint64_t nodes_searched;
 
-// main search workhorse
 static int search_alpha_beta(Bitboard* board,
                              int alpha,
                              int beta,
@@ -43,6 +42,10 @@ static int search_alpha_beta(Bitboard* board,
                              int8_t ply,
                              Move* pv,
                              uint8_t allow_null);
+
+static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply);
+
+static int search_is_draw(const Bitboard* board, int8_t ply);
 
 static void search_print_pv(Move* pv, int8_t depth, FILE* f);
 
@@ -155,41 +158,23 @@ static int search_alpha_beta(Bitboard* board,
   if (timeup)
     return 0;
 
+  if (depth <= 0)
+    return search_qsearch(board, alpha, beta, ply);
+
+  assert(alpha < beta);
   nodes_searched++;
 
   TranspositionType type = TRANSPOSITION_ALPHA;
-
-  int quiescent = depth <= 0;
-  int pv_node = beta > alpha + 1;
-  int in_check = board_in_check(board, board->to_move);
+  const int pv_node = beta > alpha + 1;
+  const int in_check = board_in_check(board, board->to_move);
 
   Move best_move = MOVE_NULL;
   int best_score = -INFINITY;
 
-  assert(alpha < beta);
-
-  // 50-move rule
-  if (board->state->halfmove_count == 100)
+  if (search_is_draw(board, ply))
     return DRAW;
 
-  /* only check for repetitions down at least 1 ply, since it results in a
-     search termination without the game actually being over. Similarly, only
-     check the transposition table two at least 1 ply */
   if (ply > 1) {
-    // 3 repetition rule
-    // XXX is this right?
-    State* s = board->state;
-    for (int back = board->state->halfmove_count - 2; back >= 0; back -= 2) {
-      s = s->prev;
-      if (!s)
-        break;
-      s = s->prev;
-      if (!s)
-        break;
-      if (s->zobrist == board->state->zobrist)
-        return DRAW;
-    }
-
     // check transposition table for a useful value
     int table_val = tt_get_value(board->state->zobrist, alpha, beta, depth);
 
@@ -202,35 +187,12 @@ static int search_alpha_beta(Bitboard* board,
     }
   }
 
-  // leaf node
-  if (depth <= -max_quiescent_depth) {
-    int eval = evaluate_board(board);
-    return eval;
-  }
-
-  // Quiescent stand-pat: "you don't have to take". Disallow when in check
-  // since the position isn't "quiet" yet and there's no option to "do nothing".
-  if (quiescent && !in_check) {
-    pv = NULL;
-
-    int stand_pat = evaluate_board(board);
-    best_score = stand_pat;
-
-    if (stand_pat >= beta) {
-      return stand_pat;
-    } else if (stand_pat > alpha) {
-      alpha = stand_pat;
-      type = TRANSPOSITION_EXACT;
-    }
-  }
-
 #if ENABLE_REVERSE_FUTILITY_DEPTH > 0
   static_assert(ENABLE_REVERSE_FUTILITY_DEPTH <
                     sizeof(reverse_futility_margins) / sizeof(int),
                 "Margins unspecified");
-  if (!in_check && !quiescent && beta < MATE &&
-      depth <= ENABLE_REVERSE_FUTILITY_DEPTH && ply > 1 && !pv_node &&
-      allow_null == ALLOW_NULL_MOVE) {
+  if (!in_check && beta < MATE && depth <= ENABLE_REVERSE_FUTILITY_DEPTH &&
+      ply > 1 && !pv_node && allow_null == ALLOW_NULL_MOVE) {
     // Need to deal with zug (since this prune is very similar to null move).
     // Quick-and-dirty is to make sure there is non-pawn material for us to
     // still move.
@@ -249,7 +211,7 @@ static int search_alpha_beta(Bitboard* board,
   int threat = 0;
 #if ENABLE_NULL_MOVE_PRUNING
   // Null move pruning.
-  if (!in_check && !quiescent && depth > 2 && ply > 1 && !pv_node &&
+  if (!in_check && depth > 2 && ply > 1 && !pv_node &&
       allow_null == ALLOW_NULL_MOVE) {
     State s;
     board_do_move(board, MOVE_NULL, &s);
@@ -275,8 +237,8 @@ static int search_alpha_beta(Bitboard* board,
   static_assert(ENABLE_FUTILITY_DEPTH < sizeof(futility_margins) / sizeof(int),
                 "Margins unspecified");
   int futile = 0;
-  if (!quiescent && depth <= ENABLE_FUTILITY_DEPTH && !in_check && !threat &&
-      !pv_node && alpha > -MATE) {
+  if (depth <= ENABLE_FUTILITY_DEPTH && !in_check && !threat && !pv_node &&
+      alpha > -MATE) {
     int eval = evaluate_board(board);
     int margin = futility_margins[depth];
     if (eval + margin < alpha)
@@ -286,16 +248,9 @@ static int search_alpha_beta(Bitboard* board,
 
   // generate pseudolegal moves
   Movelist moves;
-  move_generate_movelist(
-      board, &moves, quiescent && !in_check ? MOVE_GEN_QUIET : MOVE_GEN_ALL);
+  move_generate_movelist(board, &moves, MOVE_GEN_ALL);
 
-  // grab move from transposition table for move ordering -- but don't bother
-  // for quiescent searches, since we don't write to the table for those and
-  // have a reduced search space anyway, the memory lookup isn't worth it
-  Move tt_move = MOVE_NULL;
-  if (!quiescent) {
-    tt_move = tt_get_best_move(board->state->zobrist);
-  }
+  Move tt_move = tt_get_best_move(board->state->zobrist);
 
   Moveiter iter;
   const Move* killer_moves = history_get_killers(ply);
@@ -354,7 +309,7 @@ static int search_alpha_beta(Bitboard* board,
     } else if (legal_moves > 5 && depth > 2 && extensions == 0 &&
                !move_is_promotion(move) && !move_is_capture(move) &&
                move_piecetype(move) != PAWN && !threat && !in_check &&
-               !gives_check && !quiescent) {
+               !gives_check) {
       // LMR
       search_completed = 1;
       recursive_value = -search_alpha_beta(board, -alpha - 1, -alpha, depth - 2,
@@ -408,16 +363,13 @@ static int search_alpha_beta(Bitboard* board,
   if (timeup)
     return 0;
 
-  if (legal_moves == 0 && !quiescent) {
+  if (legal_moves == 0) {
     // No legal moves. Either we are in stalemate or checkmate.
     // Prefer checkmates which are closer to the current game state.
     // Use ply not depth for that because depth is affected by
     // extensions/reductions. Offset by max_depth so a toplevel result >= MATE
     // check still works.
     return in_check ? -(MATE + max_possible_depth - ply) : 0;
-  } else if (legal_moves == 0 && quiescent) {
-    int eval = evaluate_board(board);
-    return eval;
   } else {
     // All moves pruned.
     if (best_score == -INFINITY)
@@ -431,6 +383,129 @@ static int search_alpha_beta(Bitboard* board,
     history_update(best_move, ply);
     return best_score;
   }
+}
+
+static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
+  if (!timeup)
+    timeup = timer_timeup();
+
+  if (timeup)
+    return 0;
+
+  assert(alpha < beta);
+  nodes_searched++;
+
+  int do_pv_search = 0;
+#ifndef NDEBUG
+  const int pv_node = beta > alpha + 1;
+#endif
+  const int in_check = board_in_check(board, board->to_move);
+
+  Move best_move = MOVE_NULL;
+  int best_score = -INFINITY;
+
+  if (search_is_draw(board, ply))
+    return DRAW;
+
+  // Quiescent stand-pat: "you don't have to take". Disallow when in check
+  // since the position isn't "quiet" yet and there's no option to "do nothing".
+  if (!in_check) {
+    int stand_pat = evaluate_board(board);
+    best_score = stand_pat;
+
+    if (stand_pat >= beta) {
+      return stand_pat;
+    } else if (stand_pat > alpha) {
+      alpha = stand_pat;
+      do_pv_search = 1;
+    }
+  }
+
+  Movelist moves;
+  move_generate_movelist(board, &moves,
+                         in_check ? MOVE_GEN_ALL : MOVE_GEN_QUIET);
+
+  Moveiter iter;
+  const Move* killer_moves = history_get_killers(ply);
+  moveiter_init(&iter, &moves, MOVE_NULL, killer_moves);
+
+  int legal_moves = 0;
+
+  while (moveiter_has_next(&iter)) {
+    Move move = moveiter_next(&iter);
+    if (!move_is_legal(board, move))
+      continue;
+
+    legal_moves++;
+
+    State s;
+    board_do_move(board, move, &s);
+
+    int recursive_value;
+    if (do_pv_search) {
+      assert(pv_node);
+      recursive_value = -search_qsearch(board, -alpha - 1, -alpha, ply + 1);
+      if (recursive_value > alpha && recursive_value < beta)
+        recursive_value = -search_qsearch(board, -beta, -alpha, ply + 1);
+    } else {
+      recursive_value = -search_qsearch(board, -beta, -alpha, ply + 1);
+    }
+
+    board_undo_move(board, move);
+
+    if (recursive_value >= beta) {
+      if (!timeup)
+        history_update(move, ply);
+      return recursive_value;
+    }
+
+    if (recursive_value > best_score)
+      best_score = recursive_value;
+
+    if (recursive_value > alpha) {
+      alpha = recursive_value;
+      do_pv_search = 1;
+      best_move = move;
+    }
+  }
+
+  if (timeup)
+    return 0;
+
+  if (legal_moves == 0) {
+    return evaluate_board(board);
+  } else {
+    if (best_score == -INFINITY)
+      best_score = alpha;
+
+    history_update(best_move, ply);
+    return best_score;
+  }
+}
+
+static int search_is_draw(const Bitboard* board, int8_t ply) {
+  // 50-move rule
+  if (board->state->halfmove_count == 100)
+    return 1;
+
+  // only check for repetitions down at least 1 ply, since it results in a
+  // search termination without the game actually being over.
+  if (ply > 1) {
+    // 3 repetition rule
+    State* s = board->state;
+    for (int back = board->state->halfmove_count - 2; back >= 0; back -= 2) {
+      s = s->prev;
+      if (!s)
+        break;
+      s = s->prev;
+      if (!s)
+        break;
+      if (s->zobrist == board->state->zobrist)
+        return 1;
+    }
+  }
+
+  return 0;
 }
 
 static void search_print_pv(Move* pv, int8_t depth, FILE* f) {
