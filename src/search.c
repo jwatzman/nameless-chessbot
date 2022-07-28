@@ -19,7 +19,8 @@
 #include "tt.h"
 
 #define max_quiescent_depth 50
-#define aspiration_window 30
+#define DEFAULT_ASPIRATION_WINDOW 15
+#define ASPIRATION_FAILURE_MULTIPLIER 2
 
 #define DISALLOW_NULL_MOVE 0
 #define ALLOW_NULL_MOVE 1
@@ -64,8 +65,9 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
   timeup = 0;
   timer_begin();
 
-  int alpha = -INFINITY;
-  int beta = INFINITY;
+  int prev_val = 0;
+  int alpha_window = DEFAULT_ASPIRATION_WINDOW;
+  int beta_window = DEFAULT_ASPIRATION_WINDOW;
 
   // for each depth, call the main workhorse, search_alpha_beta
   uint8_t max_depth = debug && debug->maxDepth > 0
@@ -73,6 +75,8 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
                           : max_possible_depth;
   for (int8_t depth = 1; depth <= max_depth; depth++) {
     // here we go...
+    const int alpha = depth == 1 ? -INFINITY : prev_val - alpha_window;
+    const int beta = depth == 1 ? INFINITY : prev_val + beta_window;
     int val =
         search_alpha_beta(board, alpha, beta, depth, 1, pv, ALLOW_NULL_MOVE);
 
@@ -88,8 +92,17 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
       // aspiration window failure
       fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\taspiration failure\n", depth, val,
               centiseconds_taken, nodes_searched);
-      alpha = -INFINITY;
-      beta = INFINITY;
+      if (val <= alpha) {
+        if (val <= -MATE)
+          alpha_window = INFINITY;
+        else
+          alpha_window *= ASPIRATION_FAILURE_MULTIPLIER;
+      } else {
+        if (val >= MATE)
+          beta_window = INFINITY;
+        else
+          beta_window *= ASPIRATION_FAILURE_MULTIPLIER;
+      }
       depth--;
       continue;
     }
@@ -102,8 +115,7 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
             nodes_searched);
     search_print_pv(pv, depth, f);
 
-    alpha = val - aspiration_window;
-    beta = val + aspiration_window;
+    prev_val = val;
 
     if ((val >= MATE) || (val <= -MATE)) {
       fprintf(f, "-> mate");
