@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 
-#define max_possible_depth 30
+#define MAX_POSSIBLE_DEPTH 30
 
 typedef struct {
   uint8_t maxDepth;

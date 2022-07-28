@@ -7,12 +7,12 @@
 #include "search.h"
 #include "types.h"
 
-static Move killers[max_possible_depth][2];
+static Move killers[MAX_POSSIBLE_DEPTH][2];
 static uint16_t history[64][64];
 
 void history_clear(void) {
   bzero(killers,
-        max_possible_depth * 2 * sizeof(Move));  // Assumes MOVE_NULL is 0!
+        MAX_POSSIBLE_DEPTH * 2 * sizeof(Move));  // Assumes MOVE_NULL is 0!
 
   // XXX should we keep this across searches? Halve every value upon new search?
   bzero(history, 64 * 64 * sizeof(uint16_t));

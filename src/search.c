@@ -18,8 +18,7 @@
 #include "timer.h"
 #include "tt.h"
 
-#define max_quiescent_depth 50
-#define aspiration_window 30
+#define ASPIRATION_WINDOW 30
 
 #define DISALLOW_NULL_MOVE 0
 #define ALLOW_NULL_MOVE 1
@@ -60,7 +59,7 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
   nodes_searched = 0;
   history_clear();
 
-  Move pv[max_possible_depth + 1];
+  Move pv[MAX_POSSIBLE_DEPTH + 1];
 
   time_t start_cs = timer_get_centiseconds();
 
@@ -72,8 +71,8 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
 
   // for each depth, call the main workhorse, search_alpha_beta
   uint8_t max_depth = debug && debug->maxDepth > 0
-                          ? min(debug->maxDepth, max_possible_depth)
-                          : max_possible_depth;
+                          ? min(debug->maxDepth, MAX_POSSIBLE_DEPTH)
+                          : MAX_POSSIBLE_DEPTH;
   for (int8_t depth = 1; depth <= max_depth; depth++) {
     // here we go...
     int val =
@@ -105,8 +104,8 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
             nodes_searched);
     search_print_pv(pv, depth, f);
 
-    alpha = val - aspiration_window;
-    beta = val + aspiration_window;
+    alpha = val - ASPIRATION_WINDOW;
+    beta = val + ASPIRATION_WINDOW;
 
     if ((val >= MATE) || (val <= -MATE)) {
       fprintf(f, "-> mate");
@@ -150,7 +149,7 @@ static int search_alpha_beta(Bitboard* board,
                              int8_t ply,
                              Move* pv,
                              uint8_t allow_null) {
-  Move localpv[max_possible_depth + 1];
+  Move localpv[MAX_POSSIBLE_DEPTH + 1];
 
   if (!timeup)
     timeup = timer_timeup();
@@ -369,7 +368,7 @@ static int search_alpha_beta(Bitboard* board,
     // Use ply not depth for that because depth is affected by
     // extensions/reductions. Offset by max_depth so a toplevel result >= MATE
     // check still works.
-    return in_check ? -(MATE + max_possible_depth - ply) : 0;
+    return in_check ? -(MATE + MAX_POSSIBLE_DEPTH - ply) : 0;
   } else {
     // All moves pruned.
     if (best_score == -INFINITY)
