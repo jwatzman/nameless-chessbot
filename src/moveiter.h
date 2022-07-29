@@ -6,7 +6,7 @@
 #include "move.h"
 #include "types.h"
 
-typedef int8_t MoveScore;
+typedef int32_t MoveScore;
 
 typedef struct {
   Movelist* list;

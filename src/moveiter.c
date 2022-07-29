@@ -1,13 +1,14 @@
+#include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
 
 #include "history.h"
 #include "moveiter.h"
 
-#define SCORE_TT SCHAR_MAX
-#define SCORE_CAPTURE 0
-#define SCORE_KILLER (SCHAR_MIN + 1)
-#define SCORE_OTHER SCHAR_MIN
+#define SCORE_TT INT_MAX
+#define SCORE_CAPTURE 1
+#define SCORE_KILLER 0
+#define SCORE_OTHER INT_MIN
 
 static MoveScore moveiter_score(Move m, Move tt_move, const Move* killers);
 
@@ -27,6 +28,8 @@ int moveiter_has_next(Moveiter* iter) {
 }
 
 Move moveiter_next(Moveiter* iter) {
+  assert(moveiter_has_next(iter));
+
   // Selection sort for next best move. Much slower than qsort if we need to
   // sort the whole list, but the number of cases where we do that are so
   // outweighed by the cases were we need part of a list that doing this is way
@@ -41,19 +44,6 @@ Move moveiter_next(Moveiter* iter) {
       best_s = s;
       best_m = m;
       best_i = i;
-    } else if (s == best_s) {
-      // This is an incredibly ugly hacky way to deal with this -- history is
-      // "separate" from the score for not a terribly good reason (annoying to
-      // stuff it into the 8 bits available for score), and moveiter directly
-      // calls into history which is not great factoring. But it works and
-      // there's not a clear better way to deal with this right now?
-      uint16_t best_h = history_get(best_m);
-      uint16_t h = history_get(m);
-      if (h > best_h) {
-        best_s = s;
-        best_m = m;
-        best_i = i;
-      }
     }
   }
 
@@ -78,12 +68,24 @@ static MoveScore moveiter_score(Move m, Move tt_move, const Move* killers) {
   if (m == tt_move)
     return SCORE_TT;
 
-  if (killers && (m == killers[0] || m == killers[1]))
+  if (move_is_capture(m)) {
+    MoveScore s = SCORE_CAPTURE + 6 * move_captured_piecetype(m) +
+                  (5 - move_piecetype(m));
+    assert(s > SCORE_KILLER);
+    assert(s < SCORE_TT);
+    return s;
+  }
+
+  if (killers && (m == killers[0] || m == killers[1])) {
+    assert(!move_is_capture(m));
     return SCORE_KILLER;
+  }
 
-  if (!move_is_capture(m))
-    return SCORE_OTHER;
-
-  return SCORE_CAPTURE + 6 * move_captured_piecetype(m) +
-         (5 - move_piecetype(m));
+  // Having moveiter call directly into history here isn't fantastic
+  // factoring...
+  // XXX in the past history was consulted during moveiter_next instead of in
+  // one pass beforehand here. Is that better? (It's certainly very messy...)
+  MoveScore s = SCORE_OTHER + history_get(m);
+  assert(s < SCORE_KILLER);
+  return s;
 }
