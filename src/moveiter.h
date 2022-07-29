@@ -2,13 +2,17 @@
 #define _MOVEITER_H
 
 #include <stdint.h>
+
 #include "move.h"
+#include "types.h"
 
-struct Moveiter {
-  Move* m;
-};
+typedef int8_t MoveScore;
 
-typedef struct Moveiter Moveiter;
+typedef struct {
+  Movelist* list;
+  uint8_t n;
+  MoveScore scores[MAX_MOVES];
+} Moveiter;
 
 // May modify the input list
 void moveiter_init(Moveiter* iter,
