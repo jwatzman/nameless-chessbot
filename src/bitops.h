@@ -19,6 +19,10 @@ static inline uint8_t min(uint8_t a, uint8_t b) {
   return a < b ? a : b;
 }
 
+static inline int16_t min16(int16_t a, int16_t b) {
+  return a < b ? a : b;
+}
+
 static inline uint8_t max(uint8_t a, uint8_t b) {
   return a > b ? a : b;
 }
