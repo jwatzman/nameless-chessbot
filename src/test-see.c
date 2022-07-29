@@ -16,6 +16,15 @@ typedef struct {
 
 // clang-format off
 static const TestCase cases[] = {
+  {"k7/8/8/8/5p2/8/8/K1B5 w - - 0 1", "c1f4", 100},
+  {"k4r2/8/8/8/5p2/8/8/K1B5 w - - 0 1", "c1f4", -200},
+  {"k4r2/8/8/8/5p2/8/8/K1B2Q2 w - - 0 1", "c1f4", 100},
+  {"k4r2/8/8/8/5p2/8/4N3/K4R2 w - - 0 1", "e2f4", 100},
+  {"k4r2/5r2/8/8/5p2/8/4N3/K4R2 w - - 0 1", "e2f4", -200},
+  {"k4r2/5r2/8/6p1/5p2/6P1/4N2B/K4R2 w - - 0 1", "g3f4", 100},
+  {"k4r2/5r2/5q2/6p1/5p2/6P1/K3N2B/5R2 w - - 0 1", "g3f4", 100},
+  {"k4r2/2q2r2/8/6p1/5p2/6P1/4N2B/K4R2 w - - 0 1", "g3f4", 0},
+
   // http://www.open-aurec.com/wbforum/viewtopic.php?t=6104#p29316
   {"6k1/7p/8/7R/4B3/8/7r/4K3 w - - 0 1", "e4h7", 42}, // XXX what should this be?
   {"6k1/7p/8/7r/4B3/8/7R/4K3 w - - 0 1", "e4h7", -200},
