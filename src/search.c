@@ -253,7 +253,7 @@ static int search_alpha_beta(Bitboard* board,
 
   Moveiter iter;
   const Move* killer_moves = history_get_killers(ply);
-  moveiter_init(&iter, &moves, tt_move, killer_moves);
+  moveiter_init(&iter, board, &moves, tt_move, killer_moves);
 
   /* since we generate only pseudolegal moves, we need to keep track if
      there actually are any legal moves at all */
@@ -427,7 +427,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
                          in_check ? MOVE_GEN_ALL : MOVE_GEN_QUIET);
 
   Moveiter iter;
-  moveiter_init(&iter, &moves, MOVE_NULL, history_get_killers(ply));
+  moveiter_init(&iter, board, &moves, MOVE_NULL, history_get_killers(ply));
 
   int legal_moves = 0;
 

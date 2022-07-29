@@ -2,17 +2,24 @@
 #include <limits.h>
 #include <stdlib.h>
 
+#include "config.h"
+#include "evaluate.h"
 #include "history.h"
 #include "moveiter.h"
+#include "types.h"
 
 #define SCORE_TT INT_MAX
-#define SCORE_CAPTURE 1
-#define SCORE_KILLER 0
+#define SCORE_CAPTURE 0
+#define SCORE_KILLER SHRT_MIN
 #define SCORE_OTHER INT_MIN
 
-static MoveScore moveiter_score(Move m, Move tt_move, const Move* killers);
+static MoveScore moveiter_score(const Bitboard* board,
+                                Move m,
+                                Move tt_move,
+                                const Move* killers);
 
 void moveiter_init(Moveiter* iter,
+                   const Bitboard* board,
                    Movelist* list,
                    Move tt_move,
                    const Move* killers) {
@@ -20,7 +27,7 @@ void moveiter_init(Moveiter* iter,
   iter->n = 0;
 
   for (uint8_t i = 0; i < list->n; i++)
-    iter->scores[i] = moveiter_score(list->moves[i], tt_move, killers);
+    iter->scores[i] = moveiter_score(board, list->moves[i], tt_move, killers);
 }
 
 int moveiter_has_next(Moveiter* iter) {
@@ -58,22 +65,31 @@ Move moveiter_next(Moveiter* iter) {
   return best_m;
 }
 
-static MoveScore moveiter_score(Move m, Move tt_move, const Move* killers) {
+static MoveScore moveiter_score(const Bitboard* board,
+                                Move m,
+                                Move tt_move,
+                                const Move* killers) {
   // Move ordering:
   // - Transposition table move
-  // - Captures, MVV/LVA
-  // - Killer moves (empirically seems to work better *after* captures)
+  // - Captures, MVV/LVA or SEE
+  // - Killer moves (empirically seems to work better *after* captures -- XXX
+  //   losing captures too?)
   // - Everything else (XXX including promotions?)
 
   if (m == tt_move)
     return SCORE_TT;
 
   if (move_is_capture(m)) {
+#if ENABLE_SEE_SORTING
+    return SCORE_CAPTURE + evaluate_see(board, m);
+#else
+    (void)board;
     MoveScore s = SCORE_CAPTURE + 6 * move_captured_piecetype(m) +
                   (5 - move_piecetype(m));
     assert(s > SCORE_KILLER);
     assert(s < SCORE_TT);
     return s;
+#endif
   }
 
   if (killers && (m == killers[0] || m == killers[1])) {

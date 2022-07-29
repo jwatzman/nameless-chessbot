@@ -16,6 +16,7 @@ typedef struct {
 
 // May modify the input list
 void moveiter_init(Moveiter* iter,
+                   const Bitboard* board,
                    Movelist* list,
                    Move tt_move,
                    const Move* killers);
