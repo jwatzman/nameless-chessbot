@@ -27,7 +27,6 @@ test(
 		link_with: [libcore, libperft],
 	),
 	protocol: 'tap',
-	timeout: 120,
 )
 
 test(
@@ -38,7 +37,16 @@ test(
 		link_with: [libcore, libsearch],
 	),
 	protocol: 'tap',
-	timeout: 120,
+)
+
+test(
+	'see',
+	executable(
+		'test-see',
+		'test-see.c',
+		link_with: [libcore, libsearch],
+	),
+	protocol: 'tap',
 )
 
 executable(

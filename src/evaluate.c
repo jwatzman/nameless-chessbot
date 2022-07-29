@@ -99,7 +99,7 @@ static const int endgame_values[] = {175, 300, 300, 500, 1000, 0};
 
 #define doubled_pawn_penalty -10
 
-int evaluate_traditional(Bitboard* board) {
+int evaluate_traditional(const Bitboard* board) {
   int result = 0;
   int endgame = popcnt(board->full_composite ^ board->boards[WHITE][PAWN] ^
                        board->boards[BLACK][PAWN]) < 8;
@@ -167,10 +167,14 @@ int evaluate_traditional(Bitboard* board) {
   return result;
 }
 
-int evaluate_board(Bitboard* board) {
+int evaluate_board(const Bitboard* board) {
 #if ENABLE_NNUE
   return nnue_evaluate(board);
 #else
   return evaluate_traditional(board);
 #endif
+}
+
+int16_t evaluate_see(const Bitboard* board, Move m) {
+  return 0;
 }

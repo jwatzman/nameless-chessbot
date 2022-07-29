@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/resource.h>
-#include <sys/time.h>
 
 #include "bitboard.h"
 #include "config.h"
@@ -11,6 +9,7 @@
 #include "mt19937.h"
 #include "nnue.h"
 #include "search.h"
+#include "testlib.h"
 #include "timer.h"
 
 typedef struct {
@@ -83,13 +82,8 @@ int main(void) {
 #endif
   }
 
-  struct rusage usage;
-  getrusage(RUSAGE_SELF, &usage);
-  double elapsed_time =
-      (double)(usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) +
-      (1.0e-6) * (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec);
   fprintf(stderr, "%s in %0.2f seconds\n", ret == 0 ? "Completed" : "FAILED",
-          elapsed_time);
+          test_elapsed_time());
 
   printf("1..%d\n", num_tests);
 

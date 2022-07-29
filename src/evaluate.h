@@ -3,7 +3,8 @@
 
 #include "types.h"
 
-int evaluate_board(Bitboard* board);
-int evaluate_traditional(Bitboard* board);
+int evaluate_board(const Bitboard* board);
+int evaluate_traditional(const Bitboard* board);
+int16_t evaluate_see(const Bitboard* board, Move m);
 
 #endif
