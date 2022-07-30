@@ -6,6 +6,7 @@
 #include "evaluate.h"
 #include "history.h"
 #include "moveiter.h"
+#include "see.h"
 #include "types.h"
 
 #define SCORE_TT INT_MAX
@@ -81,7 +82,7 @@ static MoveScore moveiter_score(const Bitboard* board,
 
   if (move_is_capture(m)) {
 #if ENABLE_SEE_SORTING
-    return SCORE_CAPTURE + evaluate_see(board, m);
+    return SCORE_CAPTURE + see_see(board, m);
 #else
     (void)board;
     MoveScore s = SCORE_CAPTURE + 6 * move_captured_piecetype(m) +

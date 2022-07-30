@@ -5,6 +5,7 @@
 #include "evaluate.h"
 #include "move.h"
 #include "mt19937.h"
+#include "see.h"
 #include "testlib.h"
 #include "types.h"
 
@@ -68,7 +69,7 @@ int main(void) {
       continue;
     }
 
-    int16_t see = evaluate_see(&board, m);
+    int16_t see = see_see(&board, m);
     if (see != tcase->see) {
       printf("not ok %d - %s move %s expected %d got %d\n", num_tests,
              tcase->fen, tcase->movestr, tcase->see, see);
