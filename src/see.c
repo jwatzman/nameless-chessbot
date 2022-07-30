@@ -51,8 +51,17 @@ int16_t see_see(const Bitboard* board, Move m) {
     uint64_t to_capture_board = board->boards[to_move][to_capture] & attackers;
     composite ^= (to_capture_board & -to_capture_board);
     to_move = !to_move;
+
+    // It seems inefficient to recompute this every time around, and I guess it
+    // is? It seems it should be better to update incrementally: if we move a
+    // piece which can reveal a slider behind (anything but knight and king),
+    // then we can recompute movemagic with the new composite and see if there
+    // are any discovered attackers. (This does require either two attacker
+    // boards for each color, or better a combined composite attacker board we
+    // can compare against to_move composite.) But actually implementing that,
+    // empirically it's a bit slower (or, at best, equal but much more complex
+    // code)? Weird.
     attackers =
-        // XXX we can do better than recomputing this every time.
         move_generate_attackers(board, to_move, dest, composite) & composite;
   }
 
