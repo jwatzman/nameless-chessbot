@@ -440,7 +440,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
     // Ugh, this is really awful coupling -- relying on moveiter scoring
     // captures at 0 by default, so this is a working check for losing captures.
     // Definitely need a better factoring here!
-    if (!in_check && score < 0)
+    if (!in_check && move_is_capture(move) && score < 0)
       continue;
 #else
     Move move = moveiter_next(&iter, NULL);
