@@ -35,7 +35,7 @@ int moveiter_has_next(Moveiter* iter) {
   return iter->n < iter->list->n;
 }
 
-Move moveiter_next(Moveiter* iter) {
+Move moveiter_next(Moveiter* iter, MoveScore* s_out) {
   assert(moveiter_has_next(iter));
 
   // Selection sort for next best move. Much slower than qsort if we need to
@@ -63,6 +63,8 @@ Move moveiter_next(Moveiter* iter) {
   iter->list->moves[best_i] = iter->list->moves[iter->n];
   iter->scores[best_i] = iter->scores[iter->n];
   iter->n++;
+  if (s_out)
+    *s_out = best_s;
   return best_m;
 }
 

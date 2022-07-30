@@ -21,6 +21,6 @@ void moveiter_init(Moveiter* iter,
                    Move tt_move,
                    const Move* killers);
 int moveiter_has_next(Moveiter* iter);
-Move moveiter_next(Moveiter* iter);
+Move moveiter_next(Moveiter* iter, MoveScore* s_out);
 
 #endif

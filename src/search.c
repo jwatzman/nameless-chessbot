@@ -261,7 +261,7 @@ static int search_alpha_beta(Bitboard* board,
 
   // loop thru all moves
   while (moveiter_has_next(&iter)) {
-    Move move = moveiter_next(&iter);
+    Move move = moveiter_next(&iter, NULL);
 
     if (!move_is_legal(board, move))
       continue;
@@ -432,7 +432,20 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
   int legal_moves = 0;
 
   while (moveiter_has_next(&iter)) {
-    Move move = moveiter_next(&iter);
+#if ENABLE_SEE_Q_PRUNE_LOSING_CAPTURES
+    static_assert(ENABLE_SEE_SORTING, "Requires SEE enabled");
+    MoveScore score;
+    Move move = moveiter_next(&iter, &score);
+
+    // Ugh, this is really awful coupling -- relying on moveiter scoring
+    // captures at 0 by default, so this is a working check for losing captures.
+    // Definitely need a better factoring here!
+    if (!in_check && score < 0)
+      continue;
+#else
+    Move move = moveiter_next(&iter, NULL);
+#endif
+
     if (!move_is_legal(board, move))
       continue;
 
