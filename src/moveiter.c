@@ -9,10 +9,13 @@
 #include "see.h"
 #include "types.h"
 
+// NB: any move with a negative score may be reduced by LMR and pruned by
+// qsearch.
 #define SCORE_TT INT_MAX
-#define SCORE_CAPTURE 0
-#define SCORE_KILLER SHRT_MIN
-#define SCORE_OTHER INT_MIN
+#define SCORE_WINNING_CAPTURE 1
+#define SCORE_KILLER 0
+#define SCORE_OTHER 2 * SHRT_MIN - 1
+#define SCORE_LOSING_CAPTURE SCORE_OTHER - 1
 
 static MoveScore moveiter_score(const Bitboard* board,
                                 Move m,
@@ -74,20 +77,31 @@ static MoveScore moveiter_score(const Bitboard* board,
                                 const Move* killers) {
   // Move ordering:
   // - Transposition table move
-  // - Captures, MVV/LVA or SEE
-  // - Killer moves (empirically seems to work better *after* captures -- XXX
-  //   losing captures too?)
-  // - Everything else (XXX including promotions?)
+  // - Winning and equal captures
+  // - Killer moves
+  // - Non-captures (XXX including promotions?)
+  // - Losing captures
 
   if (m == tt_move)
     return SCORE_TT;
 
   if (move_is_capture(m)) {
 #if ENABLE_SEE_SORTING
-    return SCORE_CAPTURE + see_see(board, m);
+    int16_t see = see_see(board, m);
+    MoveScore s;
+    if (see >= 0) {
+      s = SCORE_WINNING_CAPTURE + see;
+      assert(s > SCORE_KILLER);
+    } else {
+      s = SCORE_LOSING_CAPTURE + see;
+      assert(s < SCORE_KILLER);
+      assert(s < SCORE_OTHER);
+    }
+    assert(s < SCORE_TT);
+    return s;
 #else
     (void)board;
-    MoveScore s = SCORE_CAPTURE + 6 * move_captured_piecetype(m) +
+    MoveScore s = SCORE_WINNING_CAPTURE + 6 * move_captured_piecetype(m) +
                   (5 - move_piecetype(m));
     assert(s > SCORE_KILLER);
     assert(s < SCORE_TT);

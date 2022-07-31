@@ -261,7 +261,8 @@ static int search_alpha_beta(Bitboard* board,
 
   // loop thru all moves
   while (moveiter_has_next(&iter)) {
-    Move move = moveiter_next(&iter, NULL);
+    MoveScore score;
+    Move move = moveiter_next(&iter, &score);
 
     if (!move_is_legal(board, move))
       continue;
@@ -308,7 +309,7 @@ static int search_alpha_beta(Bitboard* board,
       }
 #if ENABLE_LMR
     } else if (legal_moves > 5 && depth > 2 && extensions == 0 &&
-               !move_is_promotion(move) && !move_is_capture(move) &&
+               !move_is_promotion(move) && score < 0 &&
                move_piecetype(move) != PAWN && !threat && !in_check &&
                !gives_check) {
       // LMR
