@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <immintrin.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -177,11 +178,31 @@ static int16_t nnue_compute_output(const Bitboard* board,
   nnue_relu(hidden_clipped[1], hidden[!board->to_move], NNUE_HIDDEN_LAYER);
   uint8_t* hidden_clipped_p = &hidden_clipped[0][0];
 
+#if ENABLE_NNUE_SIMD
+  static_assert((NNUE_HIDDEN_LAYER * 2) % 32 == 0, "Not correct multiple");
+  __m256i accum = _mm256_set1_epi64x(0);
+  for (size_t i = 0; i < NNUE_HIDDEN_LAYER * 2; i += 32) {
+    __m256i hidden_vec = _mm256_load_si256(hidden_clipped_p + i);
+    __m256i weight_vec = _mm256_load_si256(hidden2output_weight + i);
+    __m256i v32s = _mm256_madd_epi16(
+        _mm256_maddubs_epi16(hidden_vec, weight_vec), _mm256_set1_epi16(1));
+    accum = _mm256_add_epi32(accum, v32s);
+  }
+
+  // There are smarter ways to do this horizontal sum, but thankfully clang at
+  // least turns this into that.
+  __m128i sum = _mm_add_epi32(_mm256_extracti128_si256(accum, 0),
+                              _mm256_extracti128_si256(accum, 1));
+  int32_t output = _mm_extract_epi32(sum, 0) + _mm_extract_epi32(sum, 1) +
+                   _mm_extract_epi32(sum, 2) + _mm_extract_epi32(sum, 3) +
+                   output_bias;
+#else
   int32_t output;
   output = output_bias;
   for (size_t i = 0; i < NNUE_HIDDEN_LAYER * 2; i++) {
     output += hidden2output_weight[i] * hidden_clipped_p[i];
   }
+#endif
 
   // I think this 255/64 are from here -- not sure, seems to work.
   // https://github.com/dsekercioglu/marlinflow/blob/0f22ad6f0f1ac05e20e6edba1d181ca392c762a4/convert/src/main.rs#L12
