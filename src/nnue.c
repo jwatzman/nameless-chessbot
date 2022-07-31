@@ -10,7 +10,6 @@
 #include "types.h"
 
 #define NNUE_INPUT_LAYER 64 * 2 * 5 * 64
-#define NNUE_OUTPUT_LAYER 1
 
 #define RELU_MIN 0
 #define RELU_MAX 255
@@ -27,8 +26,8 @@ static int initalized = 0;
 
 static int16_t input2hidden_weight[NNUE_INPUT_LAYER][NNUE_HIDDEN_LAYER];
 static int16_t hidden_bias[NNUE_HIDDEN_LAYER];
-static int8_t hidden2output_weight[2 * NNUE_HIDDEN_LAYER][NNUE_OUTPUT_LAYER];
-static int32_t output_bias[NNUE_OUTPUT_LAYER];
+static int8_t hidden2output_weight[2 * NNUE_HIDDEN_LAYER];
+static int32_t output_bias;
 
 static Piecetype pmap[6] = {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
 
@@ -74,7 +73,7 @@ void nnue_init(void) {
   if (read_u32(f) != NNUE_HIDDEN_LAYER)
     abort();
 
-  if (read_u32(f) != NNUE_OUTPUT_LAYER)
+  if (read_u32(f) != 1)
     abort();
 
   for (int i = 0; i < NNUE_INPUT_LAYER; i++)
@@ -85,11 +84,9 @@ void nnue_init(void) {
     hidden_bias[i] = read_i16(f);
 
   for (int i = 0; i < 2 * NNUE_HIDDEN_LAYER; i++)
-    for (int j = 0; j < NNUE_OUTPUT_LAYER; j++)
-      hidden2output_weight[i][j] = read_i8(f);
+    hidden2output_weight[i] = read_i8(f);
 
-  for (int i = 0; i < NNUE_OUTPUT_LAYER; i++)
-    output_bias[i] = read_i16(f);
+  output_bias = read_i16(f);
 
   if (getc(f) != EOF)
     abort();
@@ -180,19 +177,15 @@ static int16_t nnue_compute_output(const Bitboard* board,
   nnue_relu(hidden_clipped[1], hidden[!board->to_move], NNUE_HIDDEN_LAYER);
   uint8_t* hidden_clipped_p = &hidden_clipped[0][0];
 
-  int32_t output[NNUE_OUTPUT_LAYER];
-  memcpy(output, output_bias, NNUE_OUTPUT_LAYER * sizeof(int32_t));
-  for (size_t i = 0; i < NNUE_OUTPUT_LAYER; i++) {
-    for (size_t j = 0; j < NNUE_HIDDEN_LAYER * 2; j++) {
-      // XXX try flipping hidden2output_weight so we iterate in a more
-      // cache-friendly way.
-      output[i] += hidden2output_weight[j][i] * hidden_clipped_p[j];
-    }
+  int32_t output;
+  output = output_bias;
+  for (size_t i = 0; i < NNUE_HIDDEN_LAYER * 2; i++) {
+    output += hidden2output_weight[i] * hidden_clipped_p[i];
   }
 
   // I think this 255/64 are from here -- not sure, seems to work.
   // https://github.com/dsekercioglu/marlinflow/blob/0f22ad6f0f1ac05e20e6edba1d181ca392c762a4/convert/src/main.rs#L12
-  return (int16_t)(output[0] * SCALE / (255 * 64));
+  return (int16_t)(output * SCALE / (255 * 64));
 }
 
 int16_t nnue_debug_evaluate(const Bitboard* board) {
