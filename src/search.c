@@ -66,8 +66,8 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
   timeup = 0;
   timer_begin();
 
-  int alpha = -INFINITY;
-  int beta = INFINITY;
+  int alpha = -NFINITY;
+  int beta = NFINITY;
 
   // for each depth, call the main workhorse, search_alpha_beta
   uint8_t max_depth = debug && debug->maxDepth > 0
@@ -90,8 +90,8 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
       // aspiration window failure
       fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\taspiration failure\n", depth, val,
               centiseconds_taken, nodes_searched);
-      alpha = -INFINITY;
-      beta = INFINITY;
+      alpha = -NFINITY;
+      beta = NFINITY;
       depth--;
       continue;
     }
@@ -168,7 +168,7 @@ static int search_alpha_beta(Bitboard* board,
   const int in_check = board_in_check(board, board->to_move);
 
   Move best_move = MOVE_NULL;
-  int best_score = -INFINITY;
+  int best_score = -NFINITY;
 
   if (search_is_draw(board, ply))
     return DRAW;
@@ -177,7 +177,7 @@ static int search_alpha_beta(Bitboard* board,
     // check transposition table for a useful value
     int table_val = tt_get_value(board->state->zobrist, alpha, beta, depth);
 
-    if (table_val != INFINITY) {
+    if (table_val != NFINITY) {
       if (pv) {
         pv[0] = tt_get_best_move(board->state->zobrist);
         pv[1] = MOVE_NULL;  // We don't store pv in the table.
@@ -374,7 +374,7 @@ static int search_alpha_beta(Bitboard* board,
     return in_check ? -(MATE + MAX_POSSIBLE_DEPTH - ply) : 0;
   } else {
     // All moves pruned.
-    if (best_score == -INFINITY)
+    if (best_score == -NFINITY)
       best_score = alpha;
 
     // Do not need to check for timeup here since we do it a few lines above,
@@ -404,7 +404,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
   const int in_check = board_in_check(board, board->to_move);
 
   Move best_move = MOVE_NULL;
-  int best_score = -INFINITY;
+  int best_score = -NFINITY;
 
   if (search_is_draw(board, ply))
     return DRAW;
@@ -489,7 +489,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
   if (legal_moves == 0) {
     return evaluate_board(board);
   } else {
-    if (best_score == -INFINITY)
+    if (best_score == -NFINITY)
       best_score = alpha;
 
     history_update(best_move, ply);
@@ -544,7 +544,7 @@ uint64_t search_benchmark(void) {
 
   timer_begin();
   for (int8_t depth = 1; depth <= 10; depth++) {
-    search_alpha_beta(&board, -INFINITY, INFINITY, depth, 1, NULL,
+    search_alpha_beta(&board, -NFINITY, NFINITY, depth, 1, NULL,
                       ALLOW_NULL_MOVE);
   }
   timer_end();

@@ -25,7 +25,7 @@ typedef unsigned char Piecetype;
 
 #define MAX_MOVES 256
 
-#define INFINITY 1000000
+#define NFINITY 1000000
 #define MATE 300000
 #define DRAW 0
 

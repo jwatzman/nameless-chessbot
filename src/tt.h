@@ -11,7 +11,7 @@
 typedef uint8_t TranspositionType;
 
 /* asks the transposition table if we already know a good value for this
-   position. If we do, return it. Otherwise, return INFINITY but adjust
+   position. If we do, return it. Otherwise, return NFINITY but adjust
    *alpha and *beta if we know better bounds for them */
 int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth);
 

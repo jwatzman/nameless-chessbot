@@ -37,7 +37,7 @@ int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth) {
   uint32_t zobrist_check = TT_ZOBRIST_CHECK(zobrist);
 
   if (depth < 1)
-    return INFINITY;
+    return NFINITY;
 
   for (int i = 0; i < TT_WIDTH; i++)
     __builtin_prefetch(&transposition_table[index][i]);
@@ -62,7 +62,7 @@ int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth) {
   }
 #endif
 
-  return INFINITY;
+  return NFINITY;
 }
 
 Move tt_get_best_move(uint64_t zobrist) {
@@ -109,7 +109,7 @@ void tt_put(uint64_t zobrist,
   // the actual game continuation (1 + 2 = draw).
   if (value >= MATE || value <= -MATE || value == DRAW) {
     type = TRANSPOSITION_ALPHA;
-    value = INFINITY;
+    value = NFINITY;
   }
 
   int index = TT_INDEX(zobrist);
