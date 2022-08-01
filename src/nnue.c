@@ -11,7 +11,7 @@
 #include "types.h"
 
 #if ENABLE_NNUE_SIMD
-#include "simde/x86/avx2.h"
+#include <immintrin.h>
 #endif
 
 #define NNUE_INPUT_LAYER 64 * 2 * 5 * 64
@@ -181,7 +181,7 @@ static int16_t nnue_compute_output(const Bitboard* board,
                                    const int16_t hidden[2][NNUE_HIDDEN_LAYER]) {
 #if ENABLE_NNUE_SIMD
   static_assert(NNUE_HIDDEN_LAYER % 32 == 0, "Not correct multiple");
-  simde__m256i accum = simde_mm256_set1_epi64x(0);
+  __m256i accum = _mm256_set1_epi64x(0);
   for (size_t i = 0; i < NNUE_HIDDEN_LAYER * 2; i += 32) {
     int idx1 = board->to_move;
     int idx2 = i;
@@ -190,28 +190,26 @@ static int16_t nnue_compute_output(const Bitboard* board,
       idx2 -= NNUE_HIDDEN_LAYER;
     }
 
-    simde__m256i hidden1 =
-        simde_mm256_load_si256((const simde__m256i*)&hidden[idx1][idx2]);
-    simde__m256i hidden2 =
-        simde_mm256_load_si256((const simde__m256i*)&hidden[idx1][idx2 + 16]);
-    simde__m256i hidden_relu_vec = simde_mm256_permute4x64_epi64(
-        simde_mm256_packus_epi16(hidden1, hidden2), 0xd8);
-    simde__m256i weight_vec =
-        simde_mm256_load_si256((const simde__m256i*)(hidden2output_weight + i));
-    simde__m256i v32s = simde_mm256_madd_epi16(
-        simde_mm256_maddubs_epi16(hidden_relu_vec, weight_vec),
-        simde_mm256_set1_epi16(1));
-    accum = simde_mm256_add_epi32(accum, v32s);
+    __m256i hidden1 = _mm256_load_si256((const __m256i*)&hidden[idx1][idx2]);
+    __m256i hidden2 =
+        _mm256_load_si256((const __m256i*)&hidden[idx1][idx2 + 16]);
+    __m256i hidden_relu_vec =
+        _mm256_permute4x64_epi64(_mm256_packus_epi16(hidden1, hidden2), 0xd8);
+    __m256i weight_vec =
+        _mm256_load_si256((const __m256i*)(hidden2output_weight + i));
+    __m256i v32s =
+        _mm256_madd_epi16(_mm256_maddubs_epi16(hidden_relu_vec, weight_vec),
+                          _mm256_set1_epi16(1));
+    accum = _mm256_add_epi32(accum, v32s);
   }
 
   // There are smarter ways to do this horizontal sum, but thankfully clang at
   // least turns this into that.
-  __m128i sum = simde_mm_add_epi32(simde_mm256_extracti128_si256(accum, 0),
-                                   simde_mm256_extracti128_si256(accum, 1));
-  int32_t output = simde_mm_extract_epi32(sum, 0) +
-                   simde_mm_extract_epi32(sum, 1) +
-                   simde_mm_extract_epi32(sum, 2) +
-                   simde_mm_extract_epi32(sum, 3) + output_bias;
+  __m128i sum = _mm_add_epi32(_mm256_extracti128_si256(accum, 0),
+                              _mm256_extracti128_si256(accum, 1));
+  int32_t output = _mm_extract_epi32(sum, 0) + _mm_extract_epi32(sum, 1) +
+                   _mm_extract_epi32(sum, 2) + _mm_extract_epi32(sum, 3) +
+                   output_bias;
 #else
   uint8_t hidden_clipped[2][NNUE_HIDDEN_LAYER];
   nnue_relu(hidden_clipped[0], hidden[board->to_move], NNUE_HIDDEN_LAYER);
