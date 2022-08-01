@@ -342,7 +342,7 @@ static int search_alpha_beta(Bitboard* board,
       if (!timeup) {
         tt_put(board->state->zobrist, recursive_value, move, TRANSPOSITION_BETA,
                board->generation, depth);
-        history_update(move, ply);
+        history_update(move, depth, ply);
       }
 
       return recursive_value;
@@ -382,7 +382,7 @@ static int search_alpha_beta(Bitboard* board,
     // safe to store even if time is up right now.
     tt_put(board->state->zobrist, best_score, best_move, type,
            board->generation, depth);
-    history_update(best_move, ply);
+    history_update(best_move, depth, ply);
     return best_score;
   }
 }
@@ -469,7 +469,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
 
     if (recursive_value >= beta) {
       if (!timeup)
-        history_update(move, ply);
+        history_update(move, 0, ply);
       return recursive_value;
     }
 
@@ -492,7 +492,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
     if (best_score == -NFINITY)
       best_score = alpha;
 
-    history_update(best_move, ply);
+    history_update(best_move, 0, ply);
     return best_score;
   }
 }

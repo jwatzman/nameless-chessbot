@@ -21,14 +21,13 @@ void history_clear(void) {
   bzero(history, 64 * 64 * sizeof(uint16_t));
 }
 
-void history_update(Move m, int8_t ply) {
+void history_update(Move m, int8_t depth, int8_t ply) {
   if (move_is_capture(m))
     return;
 
 #if ENABLE_HISTORY
-  // XXX this should probably increment by depth*2 or depth << 2 or something,
-  // and only record for depth > 2 or something.
-  history[move_source_index(m)][move_destination_index(m)]++;
+  if (depth > 2)
+    history[move_source_index(m)][move_destination_index(m)] += depth * 2;
 #endif
 
 #if ENABLE_KILLERS
