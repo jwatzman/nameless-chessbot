@@ -190,11 +190,13 @@ static int16_t nnue_compute_output(const Bitboard* board,
       idx2 -= NNUE_HIDDEN_LAYER;
     }
 
-    __m256i hidden1 = _mm256_load_si256(&hidden[idx1][idx2]);
-    __m256i hidden2 = _mm256_load_si256(&hidden[idx1][idx2 + 16]);
-    __m256i hidden_relu_vec = _mm256_permute4x64_epi64(
-        _mm256_packus_epi16(hidden1, hidden2), 0b11011000);
-    __m256i weight_vec = _mm256_load_si256(hidden2output_weight + i);
+    __m256i hidden1 = _mm256_load_si256((const __m256i*)&hidden[idx1][idx2]);
+    __m256i hidden2 =
+        _mm256_load_si256((const __m256i*)&hidden[idx1][idx2 + 16]);
+    __m256i hidden_relu_vec =
+        _mm256_permute4x64_epi64(_mm256_packus_epi16(hidden1, hidden2), 0xd8);
+    __m256i weight_vec =
+        _mm256_load_si256((const __m256i*)(hidden2output_weight + i));
     __m256i v32s =
         _mm256_madd_epi16(_mm256_maddubs_epi16(hidden_relu_vec, weight_vec),
                           _mm256_set1_epi16(1));
