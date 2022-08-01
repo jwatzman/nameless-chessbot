@@ -1,7 +1,7 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
-#define ENABLE_FUTILITY_DEPTH 1  // TODO: switch to at least 2
+#define ENABLE_FUTILITY_DEPTH 4
 #define ENABLE_HISTORY 1
 #define ENABLE_KILLERS 1
 #define ENABLE_LMR 1
