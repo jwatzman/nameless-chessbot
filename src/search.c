@@ -28,7 +28,7 @@ static const int futility_margins[] = {0, 75, 500};
 #endif
 
 #if ENABLE_REVERSE_FUTILITY_DEPTH > 0
-static const int reverse_futility_margins[] = {0, 300, 500};
+#define REVERSE_FUTILITY_MARGIN(d) (90 * d)
 #endif
 
 static int timeup;
@@ -187,9 +187,6 @@ static int search_alpha_beta(Bitboard* board,
   }
 
 #if ENABLE_REVERSE_FUTILITY_DEPTH > 0
-  static_assert(ENABLE_REVERSE_FUTILITY_DEPTH <
-                    sizeof(reverse_futility_margins) / sizeof(int),
-                "Margins unspecified");
   if (!in_check && beta < MATE && depth <= ENABLE_REVERSE_FUTILITY_DEPTH &&
       ply > 1 && !pv_node && allow_null == ALLOW_NULL_MOVE) {
     // Need to deal with zug (since this prune is very similar to null move).
@@ -200,7 +197,7 @@ static int search_alpha_beta(Bitboard* board,
                         board->boards[board->to_move][KING];
     if (non_pawn) {
       int eval = evaluate_board(board);
-      int margin = reverse_futility_margins[depth];
+      int margin = REVERSE_FUTILITY_MARGIN(depth);
       if (eval - margin >= beta)
         return eval;
     }
