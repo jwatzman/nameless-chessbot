@@ -1,6 +1,7 @@
 #ifndef _TYPES_H
 #define _TYPES_H
 
+#include <stdalign.h>
 #include <stdint.h>
 
 #include "config.h"
@@ -90,7 +91,7 @@ typedef struct {
   uint16_t generation;
 
 #if ENABLE_NNUE
-  int16_t nnue_hidden[2][NNUE_HIDDEN_LAYER];
+  int16_t alignas(32) nnue_hidden[2][NNUE_HIDDEN_LAYER];
 #endif
 
   uint64_t zobrist_pos[2][6][64];

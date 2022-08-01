@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdalign.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,7 +31,7 @@ static int initalized = 0;
 
 static int16_t input2hidden_weight[NNUE_INPUT_LAYER][NNUE_HIDDEN_LAYER];
 static int16_t hidden_bias[NNUE_HIDDEN_LAYER];
-static int8_t hidden2output_weight[2 * NNUE_HIDDEN_LAYER];
+static alignas(32) int8_t hidden2output_weight[2 * NNUE_HIDDEN_LAYER];
 static int32_t output_bias;
 
 static Piecetype pmap[6] = {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
@@ -189,8 +190,8 @@ static int16_t nnue_compute_output(const Bitboard* board,
       idx2 -= NNUE_HIDDEN_LAYER;
     }
 
-    __m256i hidden1 = _mm256_loadu_si256(&hidden[idx1][idx2]);
-    __m256i hidden2 = _mm256_loadu_si256(&hidden[idx1][idx2 + 16]);
+    __m256i hidden1 = _mm256_load_si256(&hidden[idx1][idx2]);
+    __m256i hidden2 = _mm256_load_si256(&hidden[idx1][idx2 + 16]);
     __m256i hidden_relu_vec = _mm256_permute4x64_epi64(
         _mm256_packus_epi16(hidden1, hidden2), 0b11011000);
     __m256i weight_vec = _mm256_load_si256(hidden2output_weight + i);
@@ -226,7 +227,7 @@ static int16_t nnue_compute_output(const Bitboard* board,
 }
 
 int16_t nnue_debug_evaluate(const Bitboard* board) {
-  int16_t hidden[2][NNUE_HIDDEN_LAYER];
+  int16_t alignas(32) hidden[2][NNUE_HIDDEN_LAYER];
   nnue_reset_into(board, hidden);
   return nnue_compute_output(board, hidden);
 }
