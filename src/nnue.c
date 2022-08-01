@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <immintrin.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +8,10 @@
 #include "config.h"
 #include "nnue.h"
 #include "types.h"
+
+#if ENABLE_NNUE_SIMD
+#include <immintrin.h>
+#endif
 
 #define NNUE_INPUT_LAYER 64 * 2 * 5 * 64
 
@@ -162,6 +165,7 @@ void nnue_reset(Bitboard* board) {
   nnue_reset_into(board, board->nnue_hidden);
 }
 
+#if !ENABLE_NNUE_SIMD
 static void nnue_relu(uint8_t* out, const int16_t* in, size_t sz) {
   for (size_t i = 0; i < sz; i++) {
     int16_t in_v = in[i];
@@ -170,22 +174,29 @@ static void nnue_relu(uint8_t* out, const int16_t* in, size_t sz) {
     out[i] = (uint8_t)clamped;
   }
 }
+#endif
 
 static int16_t nnue_compute_output(const Bitboard* board,
                                    const int16_t hidden[2][NNUE_HIDDEN_LAYER]) {
-  uint8_t hidden_clipped[2][NNUE_HIDDEN_LAYER];
-  nnue_relu(hidden_clipped[0], hidden[board->to_move], NNUE_HIDDEN_LAYER);
-  nnue_relu(hidden_clipped[1], hidden[!board->to_move], NNUE_HIDDEN_LAYER);
-  uint8_t* hidden_clipped_p = &hidden_clipped[0][0];
-
 #if ENABLE_NNUE_SIMD
-  static_assert((NNUE_HIDDEN_LAYER * 2) % 32 == 0, "Not correct multiple");
+  static_assert(NNUE_HIDDEN_LAYER % 32 == 0, "Not correct multiple");
   __m256i accum = _mm256_set1_epi64x(0);
   for (size_t i = 0; i < NNUE_HIDDEN_LAYER * 2; i += 32) {
-    __m256i hidden_vec = _mm256_load_si256(hidden_clipped_p + i);
+    int idx1 = board->to_move;
+    int idx2 = i;
+    if (i >= NNUE_HIDDEN_LAYER) {
+      idx1 = !idx1;
+      idx2 -= NNUE_HIDDEN_LAYER;
+    }
+
+    __m256i hidden1 = _mm256_loadu_si256(&hidden[idx1][idx2]);
+    __m256i hidden2 = _mm256_loadu_si256(&hidden[idx1][idx2 + 16]);
+    __m256i hidden_relu_vec = _mm256_permute4x64_epi64(
+        _mm256_packus_epi16(hidden1, hidden2), 0b11011000);
     __m256i weight_vec = _mm256_load_si256(hidden2output_weight + i);
-    __m256i v32s = _mm256_madd_epi16(
-        _mm256_maddubs_epi16(hidden_vec, weight_vec), _mm256_set1_epi16(1));
+    __m256i v32s =
+        _mm256_madd_epi16(_mm256_maddubs_epi16(hidden_relu_vec, weight_vec),
+                          _mm256_set1_epi16(1));
     accum = _mm256_add_epi32(accum, v32s);
   }
 
@@ -197,6 +208,11 @@ static int16_t nnue_compute_output(const Bitboard* board,
                    _mm_extract_epi32(sum, 2) + _mm_extract_epi32(sum, 3) +
                    output_bias;
 #else
+  uint8_t hidden_clipped[2][NNUE_HIDDEN_LAYER];
+  nnue_relu(hidden_clipped[0], hidden[board->to_move], NNUE_HIDDEN_LAYER);
+  nnue_relu(hidden_clipped[1], hidden[!board->to_move], NNUE_HIDDEN_LAYER);
+  uint8_t* hidden_clipped_p = &hidden_clipped[0][0];
+
   int32_t output;
   output = output_bias;
   for (size_t i = 0; i < NNUE_HIDDEN_LAYER * 2; i++) {
