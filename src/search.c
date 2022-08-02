@@ -24,7 +24,7 @@
 #define ALLOW_NULL_MOVE 1
 
 #if ENABLE_FUTILITY_DEPTH > 0
-static const int futility_margins[] = {0, 75, 500};
+#define FUTILITY_MARGIN(d) (90 * d)
 #endif
 
 #if ENABLE_REVERSE_FUTILITY_DEPTH > 0
@@ -230,15 +230,14 @@ static int search_alpha_beta(Bitboard* board,
 #endif
 
 #if ENABLE_FUTILITY_DEPTH > 0
-  static_assert(ENABLE_FUTILITY_DEPTH < sizeof(futility_margins) / sizeof(int),
-                "Margins unspecified");
   int futile = 0;
   if (depth <= ENABLE_FUTILITY_DEPTH && !in_check && !threat && !pv_node &&
       alpha > -MATE) {
     int eval = evaluate_board(board);
-    int margin = futility_margins[depth];
-    if (eval + margin < alpha)
-      futile = 1;
+    int margin = FUTILITY_MARGIN(depth);
+    // eval + margin + see < alpha
+    // see < alpha - eval - margin
+    futile = alpha - eval - margin;
   }
 #endif
 
@@ -276,9 +275,12 @@ static int search_alpha_beta(Bitboard* board,
     int move_is_killer =
         killer_moves && (move == killer_moves[0] || move == killer_moves[1]);
     if (futile && move != tt_move && !move_is_killer &&
-        !move_is_promotion(move) && !move_is_capture(move) && !gives_check &&
-        !is_pawn_to_prepromotion)
-      continue;
+        !move_is_promotion(move) && !gives_check && !is_pawn_to_prepromotion) {
+      if (!move_is_capture(move) && 0 < futile)
+        continue;
+      else if (move_is_capture(move) && moveiter_score_to_see(score) < futile)
+        continue;
+    }
 #endif
 
     State s;
@@ -435,10 +437,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
     MoveScore score;
     Move move = moveiter_next(&iter, &score);
 
-    // Ugh, this is really awful coupling -- relying on moveiter scoring
-    // captures at 0 by default, so this is a working check for losing captures.
-    // Definitely need a better factoring here!
-    if (!in_check && move_is_capture(move) && score < 0)
+    if (!in_check && move_is_capture(move) && moveiter_score_to_see(score) < 0)
       continue;
 #else
     Move move = moveiter_next(&iter, NULL);
