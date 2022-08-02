@@ -165,7 +165,6 @@ static int search_alpha_beta(Bitboard* board,
 
   TranspositionType type = TRANSPOSITION_ALPHA;
   const int pv_node = beta > alpha + 1;
-  const int in_check = board_in_check(board, board->to_move);
 
   Move best_move = MOVE_NULL;
   int best_score = -NFINITY;
@@ -186,6 +185,7 @@ static int search_alpha_beta(Bitboard* board,
     }
   }
 
+  const int in_check = board_in_check(board, board->to_move);
 #if ENABLE_REVERSE_FUTILITY_DEPTH > 0
   if (!in_check && beta < MATE && depth <= ENABLE_REVERSE_FUTILITY_DEPTH &&
       ply > 1 && !pv_node && allow_null == ALLOW_NULL_MOVE) {
@@ -400,7 +400,6 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
 #ifndef NDEBUG
   const int pv_node = beta > alpha + 1;
 #endif
-  const int in_check = board_in_check(board, board->to_move);
 
 #if ENABLE_TT_QSEARCH
   int table_val = tt_get_value(board->state->zobrist, alpha, beta, 0);
@@ -413,6 +412,8 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
 
   if (search_is_draw(board, ply))
     return DRAW;
+
+  const int in_check = board_in_check(board, board->to_move);
 
   // Quiescent stand-pat: "you don't have to take". Disallow when in check
   // since the position isn't "quiet" yet and there's no option to "do nothing".
