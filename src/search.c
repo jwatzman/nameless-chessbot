@@ -396,11 +396,17 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
   assert(alpha < beta);
   nodes_searched++;
 
-  int do_pv_search = 0;
+  TranspositionType type = TRANSPOSITION_ALPHA;
 #ifndef NDEBUG
   const int pv_node = beta > alpha + 1;
 #endif
   const int in_check = board_in_check(board, board->to_move);
+
+#if ENABLE_TT_QSEARCH
+  int table_val = tt_get_value(board->state->zobrist, alpha, beta, 0);
+  if (table_val != NFINITY)
+    return table_val;
+#endif
 
   Move best_move = MOVE_NULL;
   int best_score = -NFINITY;
@@ -418,7 +424,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
       return stand_pat;
     } else if (stand_pat > alpha) {
       alpha = stand_pat;
-      do_pv_search = 1;
+      type = TRANSPOSITION_EXACT;
     }
   }
 
@@ -427,7 +433,12 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
                          in_check ? MOVE_GEN_ALL : MOVE_GEN_QUIET);
 
   Moveiter iter;
-  moveiter_init(&iter, board, &moves, MOVE_NULL, history_get_killers(ply));
+#if ENABLE_TT_QSEARCH
+  Move tt_move = tt_get_best_move(board->state->zobrist);
+#else
+  Move tt_move = MOVE_NULL;
+#endif
+  moveiter_init(&iter, board, &moves, tt_move, history_get_killers(ply));
 
   int legal_moves = 0;
 
@@ -452,7 +463,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
     board_do_move(board, move, &s);
 
     int recursive_value;
-    if (do_pv_search) {
+    if (type == TRANSPOSITION_EXACT) {
       assert(pv_node);
       recursive_value = -search_qsearch(board, -alpha - 1, -alpha, ply + 1);
       if (recursive_value > alpha && recursive_value < beta)
@@ -464,8 +475,13 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
     board_undo_move(board, move);
 
     if (recursive_value >= beta) {
-      if (!timeup)
+      if (!timeup) {
+#if ENABLE_TT_QSEARCH
+        tt_put(board->state->zobrist, recursive_value, move, TRANSPOSITION_BETA,
+               board->generation, 0);
+#endif
         history_update(move, 0, ply);
+      }
       return recursive_value;
     }
 
@@ -474,7 +490,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
 
     if (recursive_value > alpha) {
       alpha = recursive_value;
-      do_pv_search = 1;
+      type = TRANSPOSITION_EXACT;
       best_move = move;
     }
   }
@@ -488,6 +504,10 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
     if (best_score == -NFINITY)
       best_score = alpha;
 
+#if ENABLE_TT_QSEARCH
+    tt_put(board->state->zobrist, best_score, best_move, type,
+           board->generation, 0);
+#endif
     history_update(best_move, 0, ply);
     return best_score;
   }

@@ -36,9 +36,6 @@ int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth) {
   int index = zobrist % TT_ENTRIES;
   uint32_t zobrist_check = TT_ZOBRIST_CHECK(zobrist);
 
-  if (depth < 1)
-    return NFINITY;
-
   for (int i = 0; i < TT_WIDTH; i++)
     __builtin_prefetch(&transposition_table[index][i]);
 
@@ -93,10 +90,6 @@ void tt_put(uint64_t zobrist,
 #if !ENABLE_TT_CUTOFFS && !ENABLE_TT_MOVES
   return;
 #endif
-
-  // XXX why is this here, shouldn't the table work for quiescent search too?
-  if (depth < 1)
-    return;
 
   // An incredibly hacky way of trying to deal with the GHI problem: don't store
   // path-dependent scores in the table. (Swap the value/type to a pair that
