@@ -6,6 +6,7 @@
 
 #include "bitboard.h"
 #include "config.h"
+#include "history.h"
 #include "move.h"
 #include "mt19937.h"
 #include "search.h"
@@ -74,6 +75,7 @@ int main(int argc, char** argv) {
     printf("%u: ", game + 1);
 
     int halfmoves = 0;
+    history_clear();
     statelist_clear(sl);
     board_init(&board, statelist_new_state(sl));
 

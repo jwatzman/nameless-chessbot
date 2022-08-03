@@ -5,6 +5,7 @@
 
 #include "bitboard.h"
 #include "config.h"
+#include "history.h"
 #include "move.h"
 #include "mt19937.h"
 #include "nnue.h"
@@ -57,6 +58,8 @@ int main(void) {
   Bitboard board;
   for (const TestCase* tcase = cases; tcase->fen != NULL; tcase++) {
     num_tests++;
+
+    history_clear();
 
     State s;
     board_init_with_fen(&board, &s, tcase->fen);

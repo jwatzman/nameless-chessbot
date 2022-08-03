@@ -5,6 +5,7 @@
 
 #include "bitboard.h"
 #include "config.h"
+#include "history.h"
 #include "move.h"
 #include "moveiter.h"
 #include "mt19937.h"
@@ -48,6 +49,7 @@ int main(int argc, char** argv) {
       board, statelist_new_state(sl),
       "r2q3k/pn2bprp/4pNp1/2p1PbQ1/3p1P2/5NR1/PPP3PP/2B2RK1 b - - 0 1");
 
+  history_clear();
   timer_init_secs(180);
   SearchDebug debug = {0};
   debug.maxDepth = (uint8_t)atoi(argv[0]);
@@ -63,7 +65,9 @@ int main(int argc, char** argv) {
     if (!keep_table) {
       // Invalidate the transposition table, so that we are perft-testing
       // a more complete search every time. Not doing this is fine for
-      // corectness, but means the first N-1 ply are probably already cached.
+      // corectness, but means the first N-1 ply are probably already cached. We
+      // don't bother to clear history, since that doesn't cause a degenerate
+      // search as easily.
       board->state->zobrist = (uint64_t)mt_random();
     }
 
