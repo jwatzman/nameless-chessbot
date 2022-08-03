@@ -48,10 +48,6 @@ int main(int argc, char** argv) {
   Move last_move = 0;
   int got_move = 0;
 
-#if RANDOM_FIRST_MOVE
-  int random_next_move = 0;
-#endif
-
   setbuf(stderr, NULL);
   setbuf(stdout, NULL);
 
@@ -81,20 +77,7 @@ int main(int argc, char** argv) {
     }
 
     if (game_on && computer_player == board->to_move) {
-#if RANDOM_FIRST_MOVE
-      if (random_next_move) {
-        Movelist moves;
-        move_generate_movelist(board, &moves, MOVE_GEN_ALL);
-        do {
-          last_move = moves.moves[mt_random() % moves.n];
-        } while (!move_is_legal(board, last_move));
-        random_next_move = 0;
-      } else {
-        last_move = search_find_move(board, NULL);
-      }
-#else
       last_move = search_find_move(board, NULL);
-#endif
       move_srcdest_form(last_move, input);
       printf("move %s\n", input);
       board_do_move(board, last_move, statelist_new_state(sl));
@@ -114,9 +97,6 @@ int main(int argc, char** argv) {
       board_init(board, statelist_new_state(sl));
       computer_player = BLACK;
       game_on = 1;
-#if RANDOM_FIRST_MOVE
-      random_next_move = 1;
-#endif
     } else if (!strcmp("quit\n", input)) {
       break;
     } else if (!strcmp("force\n", input)) {
