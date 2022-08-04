@@ -6,7 +6,6 @@
 #include "bitboard.h"
 #include "config.h"
 #include "evaluate.h"
-#include "history.h"
 #include "move.h"
 #include "moveiter.h"
 #include "mt19937.h"
@@ -21,7 +20,6 @@ static Move get_computer_move(Bitboard* board);
 int main(void) {
   mt_srandom((unsigned)time(NULL));
   move_init();
-  history_clear();
 #if ENABLE_NNUE
   nnue_init();
 #endif

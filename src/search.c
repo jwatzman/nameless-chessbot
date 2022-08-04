@@ -57,12 +57,7 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
 
   Move best_move = 0;
   nodes_searched = 0;
-
-#if ENABLE_PERSISTENT_HISTORY
-  history_next_search();
-#else
   history_clear();
-#endif
 
   Move pv[MAX_POSSIBLE_DEPTH + 1];
 

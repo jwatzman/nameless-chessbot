@@ -8,7 +8,6 @@
 #include "bitboard.h"
 #include "config.h"
 #include "evaluate.h"
-#include "history.h"
 #include "move.h"
 #include "moveiter.h"
 #include "mt19937.h"
@@ -59,7 +58,6 @@ int main(int argc, char** argv) {
 #endif
 
   if (argc == 2 && !strcmp(argv[1], "bench")) {
-    history_clear();
     mt_srandom(0);
     timer_init_secs(9999);
     time_t start_cs = timer_get_centiseconds();
@@ -95,7 +93,6 @@ int main(int argc, char** argv) {
           "feature colors=0 setboard=1 time=0 sigint=0 sigterm=0 "
           "variants=\"normal\" myname=\"nameless\" done=1\n");
     } else if (!strcmp("new\n", input)) {
-      history_clear();
       statelist_clear(sl);
       board_init(board, statelist_new_state(sl));
       computer_player = BLACK;
@@ -107,7 +104,6 @@ int main(int argc, char** argv) {
     } else if (!strcmp("go\n", input)) {
       computer_player = board->to_move;
     } else if (!strncmp("setboard ", input, 9)) {
-      history_clear();
       statelist_clear(sl);
       board_init_with_fen(board, statelist_new_state(sl), input + 9);
     } else if (!strncmp("result", input, 6)) {
@@ -159,9 +155,7 @@ int main(int argc, char** argv) {
       else
         printf("\n");
     } else if (!strcmp("_searchonly\n", input)) {
-      history_clear();
       search_find_move(board, NULL);
-      history_clear();
     } else if (input[0] >= 'a' && input[0] <= 'h' && input[1] >= '1' &&
                input[1] <= '8' && input[2] >= 'a' && input[2] <= 'h' &&
                input[3] >= '1' && input[3] <= '8') {
