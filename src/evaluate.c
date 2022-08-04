@@ -100,6 +100,7 @@ static const int values[] = {100, 300, 300, 500, 900, 0};
 static const int endgame_values[] = {175, 300, 300, 500, 1000, 0};
 
 #define doubled_pawn_penalty -10
+#define pawn_shield_bonus 7
 
 int evaluate_traditional(const Bitboard* board) {
   int result = 0;
@@ -127,9 +128,23 @@ int evaluate_traditional(const Bitboard* board) {
         uint8_t flipped_loc = color == WHITE ? FLIP(loc) : loc;
         pieces &= pieces - 1;
 
-        if (piece == PAWN)
+        if (piece == PAWN) {
           if ((front_spans[color][loc] & board->boards[1 - color][PAWN]) == 0)
             color_result += passed_pawn_bonus[flipped_loc];
+        } else if (piece == KING) {
+#if ENABLE_KING_SHIELD
+          uint8_t row = board_row_of(loc);
+          if ((color == WHITE && row == 0) || (color == BLACK && row == 7)) {
+            // Take the two rows in front of the king (suitably shifted up for
+            // black). Intersect that with front spans to find useful spots for
+            // pawn shields.
+            uint64_t shield_rows = 0x0000000000ffff00ULL << (32 * color);
+            uint64_t shield = front_spans[color][loc] & shield_rows;
+            color_result +=
+                pawn_shield_bonus * popcnt(shield & board->boards[color][PAWN]);
+          }
+#endif
+        }
 
         const int* table =
             endgame ? endgame_pos_tables[piece] : pos_tables[piece];
