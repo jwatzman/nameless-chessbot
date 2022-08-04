@@ -9,10 +9,15 @@
 #include "move.h"
 #include "nnue.h"
 
-// clang-format off
+// Horizontal reflection (B2 <-> B7 etc).
+#define FLIP(x) (56 ^ x)
 
-// position bonuses; remember that
-// since a1 is the first number, it is in the upper left
+// For ease of reading, these tables are written as you are "used to", from
+// white's perspective, with A1 in the lower-left corner. It turns out this is
+// the correct orientation for black, but we need to do a flip for white --
+// which is a horizontal reflection, not a 180 rotation.
+
+// clang-format off
 static const int rook_pos[] = {
 0, 3, 7,  8,  8, 7, 3, 0,
 0, 3, 7,  8,  8, 7, 3, 0,
@@ -46,31 +51,28 @@ static const int knight_pos[] = {
 -10, -7, -5, -5, -5, -5, -7,-10
 };
 
-// pawns aren't hoizontally symmetric;
-// this needs to be special-cased, see below
 static const int pawn_pos[] = {
 0,  0,  0,  0,  0,  0,  0,  0,
-0,  0,  0, -9, -9,  0,  0,  0,
-0,  2,  3,  5,  5,  3,  2,  0,
-0,  4,  6, 15, 15,  6,  4,  0,
-0,  6,  9, 10, 10,  9,  6,  0,
-4,  8, 12, 16, 16, 12,  8,  4,
 15,15, 20, 25, 25, 20, 15, 15,
-0,  0,  0,  0,  0,  0,  0,  0
+4,  8, 12, 16, 16, 12,  8,  4,
+0,  6,  9, 10, 10,  9,  6,  0,
+0,  4,  6, 15, 15,  6,  4,  0,
+0,  2,  3,  5,  5,  3,  2,  0,
+0,  0,  0, -9, -9,  0,  0,  0,
+0,  0,  0,  0,  0,  0,  0,  0,
 };
 
 static const int passed_pawn_bonus[] = {
   0,  0,  0,  0,  0,  0,  0,  0,
- 10, 10, 10, 10, 10, 10, 10, 10,
- 15, 15, 15, 15, 15, 15, 15, 15,
- 25, 25, 25, 25, 25, 25, 25, 25,
- 50, 50, 50, 50, 50, 50, 50, 50,
- 65, 65, 65, 65, 65, 65, 65, 65,
  80, 80, 80, 80, 80, 80, 80, 80,
-  0,  0,  0,  0,  0,  0,  0,  0
+ 65, 65, 65, 65, 65, 65, 65, 65,
+ 50, 50, 50, 50, 50, 50, 50, 50,
+ 25, 25, 25, 25, 25, 25, 25, 25,
+ 15, 15, 15, 15, 15, 15, 15, 15,
+ 10, 10, 10, 10, 10, 10, 10, 10,
+  0,  0,  0,  0,  0,  0,  0,  0,
 };
 
-// endgame only
 static const int king_endgame_pos[] = {
 0,  0,  1,  3,  3,  1,  0,  0,
 0,  5,  5,  5,  5,  5,  5,  0,
@@ -81,7 +83,6 @@ static const int king_endgame_pos[] = {
 0,  5,  5,  5,  5,  5,  5,  0,
 0,  0,  1,  3,  3,  1,  0,  0
 };
-
 // clang-format on
 
 // metatables
@@ -106,7 +107,6 @@ int evaluate_traditional(const Bitboard* board) {
   Color to_move = board->to_move;
 
   for (Color color = 0; color < 2; color++) {
-    // add values for the current player, and subtract them for the opponent
     int color_result = 0;
 
     // XXX bring back has-castled bonus? (10)
@@ -123,29 +123,17 @@ int evaluate_traditional(const Bitboard* board) {
       uint64_t pieces = board->boards[color][piece];
       while (pieces) {
         uint8_t loc = bitscan(pieces);
+        uint8_t flipped_loc = color == WHITE ? FLIP(loc) : loc;
         pieces &= pieces - 1;
 
-        // pawns have some special stuff done to them
-        if (piece == PAWN) {
-          // passed pawn; do this before the location swap below
-          int passed_pawn = 0;
+        if (piece == PAWN)
           if ((front_spans[color][loc] & board->boards[1 - color][PAWN]) == 0)
-            passed_pawn = 1;
+            color_result += passed_pawn_bonus[flipped_loc];
 
-          // since the pawn table is not hoizontally symmetric,
-          // we need to flip it for black
-          if (color == BLACK)
-            loc = 63 - loc;
-
-          if (passed_pawn)
-            color_result += passed_pawn_bonus[loc];
-        }
-
-        // add in piece intrinsic value, and bonus for its location
         const int* table =
             endgame ? endgame_pos_tables[piece] : pos_tables[piece];
         if (table)
-          color_result += table[loc];
+          color_result += table[flipped_loc];
         color_result += (endgame ? endgame_values[piece] : values[piece]);
 
         // add in a bonus for every square that this piece can attack
