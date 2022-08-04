@@ -7,6 +7,7 @@
 #include "config.h"
 #include "evaluate.h"
 #include "move.h"
+#include "movemagic.h"
 #include "nnue.h"
 
 // Horizontal reflection (B2 <-> B7 etc).
@@ -139,10 +140,10 @@ int evaluate_traditional(const Bitboard* board) {
         // add in a bonus for every square that this piece can attack
         // only do this for bishops and rooks; knights are sufficiently taken
         // care of by positional bonus, and this will emphasize queens too much
-        if (piece == BISHOP || piece == ROOK) {
-          uint64_t attacks = move_generate_attacks(board, piece, color, loc);
-          color_result += popcnt(attacks);
-        }
+        if (piece == BISHOP)
+          color_result += popcnt(movemagic_bishop(loc, board->full_composite));
+        if (piece == ROOK)
+          color_result += popcnt(movemagic_rook(loc, board->full_composite));
       }
     }
 
