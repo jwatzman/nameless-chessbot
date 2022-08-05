@@ -12,10 +12,12 @@
 // NB: any move with a negative score may be reduced by LMR and pruned by
 // qsearch.
 #define SCORE_TT INT_MAX
+#define SCORE_QUEEN_PROMOTION (SCORE_TT - 1)
 #define SCORE_WINNING_CAPTURE 1
 #define SCORE_KILLER 0
 #define SCORE_OTHER (2 * SHRT_MIN - 1)
 #define SCORE_LOSING_CAPTURE (SCORE_OTHER - 1)
+#define SCORE_UNDERPROMOTION INT_MIN
 
 static MoveScore moveiter_score(const Bitboard* board,
                                 Move m,
@@ -77,10 +79,12 @@ static MoveScore moveiter_score(const Bitboard* board,
                                 const Move* killers) {
   // Move ordering:
   // - Transposition table move
+  // - Queen promotions
   // - Winning and equal captures
   // - Killer moves
-  // - Non-captures (XXX including promotions?)
+  // - Non-captures
   // - Losing captures
+  // - Underpromotions
 
   if (m == tt_move)
     return SCORE_TT;
@@ -98,6 +102,13 @@ static MoveScore moveiter_score(const Bitboard* board,
     }
     assert(s < SCORE_TT);
     return s;
+  }
+
+  if (move_is_promotion(m)) {
+    if (move_promoted_piecetype(m) == QUEEN)
+      return SCORE_QUEEN_PROMOTION;
+    else
+      return SCORE_UNDERPROMOTION;
   }
 
   if (killers && (m == killers[0] || m == killers[1])) {

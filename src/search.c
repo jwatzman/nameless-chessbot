@@ -437,7 +437,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
     MoveScore score;
     Move move = moveiter_next(&iter, &score);
 
-    if (!in_check && move_is_capture(move) && moveiter_score_to_see(score) < 0)
+    if (!in_check && score < 0)
       continue;
 #else
     Move move = moveiter_next(&iter, NULL);
