@@ -19,6 +19,7 @@
 #include "tt.h"
 
 #define ASPIRATION_WINDOW 30
+#define ASPIRATION_TIMER_EXTENSION_MIN_DEPTH 6
 
 #define DISALLOW_NULL_MOVE 0
 #define ALLOW_NULL_MOVE 1
@@ -90,7 +91,10 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
       // aspiration window failure
       fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\taspiration failure\n", depth, val,
               centiseconds_taken, nodes_searched);
-      timer_aspiration_failure(depth);
+#if ENABLE_TIMER_ASPIRATION_FAILURE
+      if (depth >= ASPIRATION_TIMER_EXTENSION_MIN_DEPTH)
+        timer_extend();
+#endif
       alpha = -NFINITY;
       beta = NFINITY;
       depth--;

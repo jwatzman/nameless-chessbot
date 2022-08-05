@@ -32,8 +32,6 @@ static unsigned int timeup_calls;
 
 #define TIMEUP_CALLS_PER_CHECK 10000
 
-#define TIMER_ASPIRATION_FAILURE_MIN_DEPTH 6
-
 void timer_init_xboard(char* level) {
   unsigned int base_m;
   unsigned int base_s = 0;
@@ -114,17 +112,10 @@ uint8_t timer_stop_deepening(void) {
     return 0;
 }
 
-void timer_aspiration_failure(int8_t depth) {
-#if ENABLE_TIMER_ASPIRATION_FAILURE
-  if (depth < TIMER_ASPIRATION_FAILURE_MIN_DEPTH)
-    return;
-
+void timer_extend(void) {
   // Give ourselves 25% more time.
   time_t target_usage_cs = target_cs - start_cs;
   target_cs = start_cs + (target_usage_cs * 5 / 4);
-#else
-  (void)depth;
-#endif
 }
 
 void timer_end(void) {
