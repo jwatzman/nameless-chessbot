@@ -14,6 +14,7 @@ static time_t hard_stop_cs;
 static unsigned int moves;
 static time_t base_cs;
 static time_t inc_cs;
+static unsigned int extension_factor;
 
 static unsigned int remaining_moves;  // Moves until next time control.
 static time_t remaining_cs;           // How much time left on our clock.
@@ -29,6 +30,9 @@ static unsigned int timeup_calls;
 
 #define MOVES_IN_OPENING 3
 #define MOVES_ASSUMED_INCREMENTAL 50
+
+#define EXTENSION_FACTOR_MIN 4
+#define EXTENSION_FACTOR_MAX 16
 
 #define TIMEUP_CALLS_PER_CHECK 10000
 
@@ -65,6 +69,8 @@ void timer_init_secs(unsigned int n) {
 }
 
 void timer_begin(void) {
+  extension_factor = EXTENSION_FACTOR_MIN;
+
   assert(base_cs > 0 || inc_cs > 0);
   start_cs = timer_get_centiseconds();
 
@@ -113,9 +119,12 @@ uint8_t timer_stop_deepening(void) {
 }
 
 void timer_extend(void) {
-  // Give ourselves 25% more time.
   time_t target_usage_cs = target_cs - start_cs;
-  target_cs = start_cs + (target_usage_cs * 5 / 4);
+  time_t target_usage_extended_cs =
+      target_usage_cs * (extension_factor + 1) / extension_factor;
+  target_cs = start_cs + target_usage_extended_cs;
+
+  extension_factor *= 2;
 }
 
 void timer_end(void) {

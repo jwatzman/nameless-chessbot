@@ -92,6 +92,11 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
       fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\taspiration failure\n", depth, val,
               centiseconds_taken, nodes_searched);
 #if ENABLE_TIMER_ASPIRATION_FAILURE
+      // XXX this works okay but tends to extend a lot in endgame positions
+      // where we are just massively winning/losing, and less in that "critical
+      // moment" where we get an aspiration failure at a high depth. Probably
+      // should adjust timer to more aggressively extend, and the aspiration
+      // window logic to use larger windows in the endgame/repeat-failure case.
       if (depth >= ASPIRATION_TIMER_EXTENSION_MIN_DEPTH)
         timer_extend();
 #endif
