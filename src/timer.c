@@ -74,6 +74,12 @@ void timer_begin(void) {
   assert(base_cs > 0 || inc_cs > 0);
   start_cs = timer_get_centiseconds();
 
+  // Exactly zero time left should never happen except via timer_init_secs.
+  if (remaining_cs == 0) {
+    hard_stop_cs = target_cs = start_cs + inc_cs;
+    return;
+  }
+
   // Do not ever use more than 2/3 of our remaining time.
   hard_stop_cs = start_cs + (2 * remaining_cs / 3);
 
@@ -130,6 +136,11 @@ void timer_extend(void) {
 void timer_end(void) {
   if (opening)
     opening--;
+
+  // We *started* the clock with no time left. Only should happen through
+  // timer_init_secs.
+  if (remaining_cs == 0)
+    return;
 
   time_t time_used = timer_get_centiseconds() - start_cs;
   remaining_cs += inc_cs;
