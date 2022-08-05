@@ -100,7 +100,6 @@ uint8_t timer_timeup(void) {
 }
 
 uint8_t timer_stop_deepening(void) {
-#if ENABLE_TIMER_STOP_DEEPENING
   time_t target_usage_cs = target_cs - start_cs;
   time_t used_cs = timer_get_centiseconds() - start_cs;
 
@@ -111,9 +110,6 @@ uint8_t timer_stop_deepening(void) {
     return 1;
   else
     return 0;
-#else
-  return 0;
-#endif
 }
 
 void timer_end(void) {
