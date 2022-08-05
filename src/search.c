@@ -434,7 +434,6 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
 
   while (moveiter_has_next(&iter)) {
 #if ENABLE_SEE_Q_PRUNE_LOSING_CAPTURES
-    static_assert(ENABLE_SEE_SORTING, "Requires SEE enabled");
     MoveScore score;
     Move move = moveiter_next(&iter, &score);
 

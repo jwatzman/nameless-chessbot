@@ -86,7 +86,6 @@ static MoveScore moveiter_score(const Bitboard* board,
     return SCORE_TT;
 
   if (move_is_capture(m)) {
-#if ENABLE_SEE_SORTING
     int16_t see = see_see(board, m);
     MoveScore s;
     if (see >= 0) {
@@ -99,14 +98,6 @@ static MoveScore moveiter_score(const Bitboard* board,
     }
     assert(s < SCORE_TT);
     return s;
-#else
-    (void)board;
-    MoveScore s = SCORE_WINNING_CAPTURE + 6 * move_captured_piecetype(m) +
-                  (5 - move_piecetype(m));
-    assert(s > SCORE_KILLER);
-    assert(s < SCORE_TT);
-    return s;
-#endif
   }
 
   if (killers && (m == killers[0] || m == killers[1])) {

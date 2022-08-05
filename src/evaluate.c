@@ -143,7 +143,6 @@ int evaluate_traditional(const Bitboard* board) {
           if ((front_spans[color][loc] & board->boards[1 - color][PAWN]) == 0)
             color_result += passed_pawn_bonus[flipped_loc];
         } else if (piece == KING) {
-#if ENABLE_KING_SHIELD
           uint8_t row = board_row_of(loc);
           if ((color == WHITE && row == 0) || (color == BLACK && row == 7)) {
             // Take the two rows in front of the king (suitably shifted up for
@@ -154,7 +153,6 @@ int evaluate_traditional(const Bitboard* board) {
             color_result +=
                 pawn_shield_bonus * popcnt(shield & board->boards[color][PAWN]);
           }
-#endif
         }
 
         const int* table =
