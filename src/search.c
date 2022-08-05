@@ -90,6 +90,7 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
       // aspiration window failure
       fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\taspiration failure\n", depth, val,
               centiseconds_taken, nodes_searched);
+      timer_aspiration_failure(depth);
       alpha = -NFINITY;
       beta = NFINITY;
       depth--;
