@@ -10,6 +10,10 @@
 #include "nnue.h"
 #include "types.h"
 
+#define INCBIN_PREFIX
+#define INCBIN_STYLE INCBIN_STYLE_SNAKE
+#include "incbin.h"
+
 #if ENABLE_NNUE_SIMD
 #include <immintrin.h>
 #endif
@@ -24,8 +28,7 @@
 
 #if ENABLE_NNUE
 
-extern unsigned char nn_nnue_bin[];
-extern unsigned int nn_nnue_bin_len;
+INCBIN(nnue_bin, "nn/nnue.bin");
 
 static int initalized = 0;
 
@@ -68,7 +71,7 @@ static inline int8_t read_i8(FILE* f) {
 }
 
 void nnue_init(void) {
-  FILE* f = fmemopen(nn_nnue_bin, nn_nnue_bin_len, "rb");
+  FILE* f = fmemopen((void*)nnue_bin_data, nnue_bin_size, "rb");
   if (!f)
     abort();
 
