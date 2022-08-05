@@ -542,7 +542,7 @@ void board_print(const Bitboard* board) {
           column++;
         }
 
-        this_line[18] = '1' + row;
+        this_line[18] = '1' + (char)row;
       }
     }
 
