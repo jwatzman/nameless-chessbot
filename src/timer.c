@@ -71,7 +71,7 @@ void timer_begin(void) {
   start_cs = timer_get_centiseconds();
 
   // Do not ever use more than 2/3 of our remaining time.
-  hard_stop_cs = start_cs + inc_cs + (2 * remaining_cs / 3);
+  hard_stop_cs = start_cs + (2 * remaining_cs / 3);
 
   time_t target_usage_cs;
   if (moves > 0) {
