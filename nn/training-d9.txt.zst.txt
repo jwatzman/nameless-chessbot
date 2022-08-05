@@ -1,2 +1,0 @@
-Compiled on commit 495f8e9a7193959c59302173a011f8fda8c26f24
-With NNUE disabled and null move enabled
