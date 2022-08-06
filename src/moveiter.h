@@ -19,7 +19,8 @@ void moveiter_init(Moveiter* iter,
                    const Bitboard* board,
                    Movelist* list,
                    Move tt_move,
-                   const Move* killers);
+                   const Move* killers,
+                   Move countermove);
 int moveiter_has_next(Moveiter* iter);
 Move moveiter_next(Moveiter* iter, MoveScore* s_out);
 int16_t moveiter_score_to_see(MoveScore s);

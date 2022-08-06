@@ -259,7 +259,8 @@ static int search_alpha_beta(Bitboard* board,
 
   Moveiter iter;
   const Move* killer_moves = history_get_killers(ply);
-  moveiter_init(&iter, board, &moves, tt_move, killer_moves);
+  moveiter_init(&iter, board, &moves, tt_move, killer_moves,
+                history_get_countermove(board));
 
   /* since we generate only pseudolegal moves, we need to keep track if
      there actually are any legal moves at all */
@@ -351,7 +352,7 @@ static int search_alpha_beta(Bitboard* board,
       if (!timeup) {
         tt_put(board->state->zobrist, recursive_value, move, TRANSPOSITION_BETA,
                board->generation, depth);
-        history_update(move, depth, ply);
+        history_update(board, move, depth, ply);
       }
 
       return recursive_value;
@@ -436,7 +437,8 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
                          in_check ? MOVE_GEN_ALL : MOVE_GEN_QUIET);
 
   Moveiter iter;
-  moveiter_init(&iter, board, &moves, MOVE_NULL, history_get_killers(ply));
+  moveiter_init(&iter, board, &moves, MOVE_NULL, history_get_killers(ply),
+                history_get_countermove(board));
 
   int legal_moves = 0;
 
@@ -473,7 +475,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
 
     if (recursive_value >= beta) {
       if (!timeup)
-        history_update(move, 0, ply);
+        history_update(board, move, 0, ply);
       return recursive_value;
     }
 

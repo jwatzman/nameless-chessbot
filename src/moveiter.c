@@ -12,26 +12,30 @@
 // NB: any move with a negative score may be reduced by LMR and pruned by
 // qsearch.
 #define SCORE_TT INT_MAX
-#define SCORE_WINNING_CAPTURE 1
-#define SCORE_KILLER 0
+#define SCORE_WINNING_CAPTURE 2
+#define SCORE_KILLER 1
+#define SCORE_COUNTERMOVE 0
 #define SCORE_OTHER (2 * SHRT_MIN - 1)
 #define SCORE_LOSING_CAPTURE (SCORE_OTHER - 1)
 
 static MoveScore moveiter_score(const Bitboard* board,
                                 Move m,
                                 Move tt_move,
-                                const Move* killers);
+                                const Move* killers,
+                                Move countermove);
 
 void moveiter_init(Moveiter* iter,
                    const Bitboard* board,
                    Movelist* list,
                    Move tt_move,
-                   const Move* killers) {
+                   const Move* killers,
+                   Move countermove) {
   iter->list = list;
   iter->n = 0;
 
   for (uint8_t i = 0; i < list->n; i++)
-    iter->scores[i] = moveiter_score(board, list->moves[i], tt_move, killers);
+    iter->scores[i] =
+        moveiter_score(board, list->moves[i], tt_move, killers, countermove);
 }
 
 int moveiter_has_next(Moveiter* iter) {
@@ -68,13 +72,16 @@ Move moveiter_next(Moveiter* iter, MoveScore* s_out) {
   iter->n++;
   if (s_out)
     *s_out = best_s;
+
+  assert(best_m != MOVE_NULL);
   return best_m;
 }
 
 static MoveScore moveiter_score(const Bitboard* board,
                                 Move m,
                                 Move tt_move,
-                                const Move* killers) {
+                                const Move* killers,
+                                Move countermove) {
   // Move ordering:
   // - Transposition table move
   // - Winning and equal captures
@@ -91,9 +98,11 @@ static MoveScore moveiter_score(const Bitboard* board,
     if (see >= 0) {
       s = SCORE_WINNING_CAPTURE + see;
       assert(s > SCORE_KILLER);
+      assert(s > SCORE_COUNTERMOVE);
     } else {
       s = SCORE_LOSING_CAPTURE + see;
       assert(s < SCORE_KILLER);
+      assert(s < SCORE_COUNTERMOVE);
       assert(s < SCORE_OTHER);
     }
     assert(s < SCORE_TT);
@@ -105,18 +114,29 @@ static MoveScore moveiter_score(const Bitboard* board,
     return SCORE_KILLER;
   }
 
+#if ENABLE_COUNTERMOVES
+  if (m == countermove) {
+    assert(!move_is_capture(m));
+    return SCORE_COUNTERMOVE;
+  }
+#else
+  (void)countermove;
+#endif
+
   // Having moveiter call directly into history here isn't fantastic
   // factoring...
   // XXX in the past history was consulted during moveiter_next instead of in
   // one pass beforehand here. Is that better? (It's certainly very messy...)
   MoveScore s = SCORE_OTHER + history_get(m);
   assert(s < SCORE_KILLER);
+  assert(s < SCORE_COUNTERMOVE);
   return s;
 }
 
 int16_t moveiter_score_to_see(MoveScore s) {
   assert(s < SCORE_TT);
   assert(s != SCORE_KILLER);
+  assert(s != SCORE_COUNTERMOVE);
   int see;
   if (s > 0)
     see = s - SCORE_WINNING_CAPTURE;
