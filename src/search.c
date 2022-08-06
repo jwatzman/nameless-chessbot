@@ -223,7 +223,7 @@ static int search_alpha_beta(Bitboard* board,
     board_do_move(board, MOVE_NULL, &s);
     int null_value = -search_alpha_beta(board, -beta, -beta + 1, depth - 2,
                                         ply + 1, NULL, DISALLOW_NULL_MOVE);
-    board_undo_move(board, MOVE_NULL);
+    board_undo_move(board);
     if (null_value >= beta) {
       // Verification search to deal with zug. (Literature unclear if this is
       // actually a good solution but empirically it seems to work?)
@@ -340,7 +340,7 @@ static int search_alpha_beta(Bitboard* board,
           pv ? localpv : NULL, ALLOW_NULL_MOVE);
     }
 
-    board_undo_move(board, move);
+    board_undo_move(board);
 
     if (recursive_value >= beta) {
       /* since this move caused a beta cutoff, we don't want
@@ -471,7 +471,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
       recursive_value = -search_qsearch(board, -beta, -alpha, ply + 1);
     }
 
-    board_undo_move(board, move);
+    board_undo_move(board);
 
     if (recursive_value >= beta) {
       if (!timeup)

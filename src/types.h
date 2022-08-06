@@ -60,6 +60,8 @@ typedef uint32_t Move;
  */
 struct State;
 typedef struct State {
+  Move last_move;
+
   // destination square of a pawn moving up two squares
   uint8_t enpassant_index;
 

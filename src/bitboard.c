@@ -180,6 +180,7 @@ void board_init_with_fen(Bitboard* board, State* state, const char* fen) {
 
   // set up the mess of zobrist random numbers and the rest of the state
   board_init_zobrist(board);
+  board->state->last_move = MOVE_NULL;
   board->state->prev = NULL;
   board_update_expensive_state(board);
   board->generation = 0;
@@ -225,6 +226,8 @@ void board_do_move(Bitboard* board, Move move, State* state) {
   memcpy(state, board->state, sizeof(State));
   state->prev = board->state;
   board->state = state;
+
+  board->state->last_move = move;
 
   if (move != MOVE_NULL) {
     // halfmove_count is reset on pawn moves or captures
@@ -299,8 +302,10 @@ void board_do_move(Bitboard* board, Move move, State* state) {
   board_update_expensive_state(board);
 }
 
-void board_undo_move(Bitboard* board, Move move) {
+void board_undo_move(Bitboard* board) {
+  Move move = board->state->last_move;
   board->state = board->state->prev;
+  assert(board->state);
   uint64_t tmp_zobrist = board->state->zobrist;
 
   if (move != MOVE_NULL)

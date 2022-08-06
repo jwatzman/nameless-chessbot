@@ -15,7 +15,7 @@ void board_init_with_fen(Bitboard* board, State* state, const char* fen);
 
 // make and reverse moves on a board
 void board_do_move(Bitboard* board, Move move, State* state);
-void board_undo_move(Bitboard* board, Move move);
+void board_undo_move(Bitboard* board);
 
 // returns 1 if color's king is in check, 0 otherwise
 int board_in_check(const Bitboard* board, Color color);

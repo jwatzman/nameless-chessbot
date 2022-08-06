@@ -146,7 +146,7 @@ int main(int argc, char** argv) {
           uint64_t p = perft(board, perft_depth);
           printf("%" PRIu64 "\n", p);
           perft_tot += p;
-          board_undo_move(board, m);
+          board_undo_move(board);
         }
       }
 

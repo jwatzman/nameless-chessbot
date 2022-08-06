@@ -47,7 +47,7 @@ int main(void) {
       board_do_move(test, move, &s_tmp);
       if (!board_in_check(test, 1 - test->to_move))
         num_legal_moves++;
-      board_undo_move(test, move);
+      board_undo_move(test);
     }
 
     if (num_legal_moves == 0) {
@@ -96,7 +96,7 @@ static Move get_human_move(Bitboard* board, const Movelist* moves) {
       move_srcdest_form(move, srcdest_form);
       printf("%s ", srcdest_form);
     }
-    board_undo_move(board, move);
+    board_undo_move(board);
   }
   printf("\n");
 
@@ -114,7 +114,7 @@ static Move get_human_move(Bitboard* board, const Movelist* moves) {
         else
           result = move;
 
-        board_undo_move(board, move);
+        board_undo_move(board);
         break;
       }
     }

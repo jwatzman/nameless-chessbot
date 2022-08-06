@@ -36,7 +36,7 @@ uint64_t perft(Bitboard* board, int depth) {
       board_do_move(board, m, &s);
       assert(gives_check == board_in_check(board, board->to_move));
       nodes += perft(board, depth - 1);
-      board_undo_move(board, m);
+      board_undo_move(board);
     }
   }
 
