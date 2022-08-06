@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <strings.h>
+#include <string.h>
 
 #include "assert.h"
 #include "config.h"
@@ -14,11 +14,10 @@ static Move killers[MAX_HISTORY_PLY][2];
 static uint16_t history[64][64];
 
 void history_clear(void) {
-  bzero(killers,
-        MAX_HISTORY_PLY * 2 * sizeof(Move));  // Assumes MOVE_NULL is 0!
+  memset(killers, 0, sizeof(killers));  // Assumes MOVE_NULL is 0!
 
   // XXX should we keep this across searches? Halve every value upon new search?
-  bzero(history, 64 * 64 * sizeof(uint16_t));
+  memset(history, 0, sizeof(history));
 }
 
 void history_update(Move m, int8_t depth, int8_t ply) {
