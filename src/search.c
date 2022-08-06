@@ -391,7 +391,6 @@ static int search_alpha_beta(Bitboard* board,
     // safe to store even if time is up right now.
     tt_put(board->state->zobrist, best_score, best_move, type,
            board->generation, depth);
-    history_update(best_move, depth, ply);
     return best_score;
   }
 }
@@ -411,7 +410,6 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
   const int pv_node = beta > alpha + 1;
 #endif
 
-  Move best_move = MOVE_NULL;
   int best_score = -NFINITY;
 
   if (search_is_draw(board, ply))
@@ -485,7 +483,6 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
     if (recursive_value > alpha) {
       alpha = recursive_value;
       do_pv_search = 1;
-      best_move = move;
     }
   }
 
@@ -498,7 +495,6 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
     if (best_score == -NFINITY)
       best_score = alpha;
 
-    history_update(best_move, 0, ply);
     return best_score;
   }
 }
