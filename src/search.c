@@ -77,7 +77,7 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
   for (int8_t depth = 1; depth <= max_depth; depth++) {
     // here we go...
     int val =
-        search_alpha_beta(board, alpha, beta, depth, 1, pv, ALLOW_NULL_MOVE);
+        search_alpha_beta(board, alpha, beta, depth, 0, pv, ALLOW_NULL_MOVE);
 
     time_t centiseconds_taken = timer_get_centiseconds() - start_cs;
 
@@ -182,7 +182,7 @@ static int search_alpha_beta(Bitboard* board,
   if (search_is_draw(board, ply))
     return DRAW;
 
-  if (ply > 1) {
+  if (ply > 0) {
     // check transposition table for a useful value
     int table_val = tt_get_value(board->state->zobrist, alpha, beta, depth);
 
@@ -198,7 +198,7 @@ static int search_alpha_beta(Bitboard* board,
   const int in_check = board_in_check(board, board->to_move);
 #if ENABLE_REVERSE_FUTILITY_DEPTH > 0
   if (!in_check && beta < MATE && depth <= ENABLE_REVERSE_FUTILITY_DEPTH &&
-      ply > 1 && !pv_node && allow_null == ALLOW_NULL_MOVE) {
+      ply > 0 && !pv_node && allow_null == ALLOW_NULL_MOVE) {
     // Need to deal with zug (since this prune is very similar to null move).
     // Quick-and-dirty is to make sure there is non-pawn material for us to
     // still move.
@@ -217,7 +217,7 @@ static int search_alpha_beta(Bitboard* board,
   int threat = 0;
 #if ENABLE_NULL_MOVE_PRUNING
   // Null move pruning.
-  if (!in_check && depth > 2 && ply > 1 && !pv_node &&
+  if (!in_check && depth > 2 && ply > 0 && !pv_node &&
       allow_null == ALLOW_NULL_MOVE) {
     State s;
     board_do_move(board, MOVE_NULL, &s);
@@ -510,7 +510,7 @@ static int search_is_draw(const Bitboard* board, int8_t ply) {
 
   // only check for repetitions down at least 1 ply, since it results in a
   // search termination without the game actually being over.
-  if (ply > 1) {
+  if (ply > 0) {
     // 3 repetition rule
     State* s = board->state;
     for (int back = board->state->halfmove_count - 2; back >= 0; back -= 2) {

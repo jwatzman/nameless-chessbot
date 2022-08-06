@@ -30,7 +30,7 @@ void history_update(Move m, int8_t depth, int8_t ply) {
 #endif
 
 #if ENABLE_KILLERS
-  if (ply - 1 < MAX_HISTORY_PLY) {
+  if (ply < MAX_HISTORY_PLY) {
     Move* slot = (Move*)history_get_killers(ply);
     assert(slot);
 
@@ -48,9 +48,9 @@ void history_update(Move m, int8_t depth, int8_t ply) {
 }
 
 const Move* history_get_killers(int8_t ply) {
-  if (ply - 1 >= MAX_HISTORY_PLY)
+  if (ply >= MAX_HISTORY_PLY)
     return NULL;
-  return killers[ply - 1];  // Ply starts at 1
+  return killers[ply];
 }
 
 uint16_t history_get(Move m) {
