@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -9,10 +10,29 @@
 #include "types.h"
 
 #define MAX_HISTORY_PLY MAX_POSSIBLE_DEPTH
+#define MAX_HISTORY_VALUE SHRT_MAX
 
 static Move killers[MAX_HISTORY_PLY][2];
 static Move countermoves[2][6][64];
-static uint16_t history[64][64];
+static int16_t history[64][64];
+
+#if ENABLE_HISTORY_DECREMENT
+static void history_incr(Move m, int8_t depth, int good) {
+  int16_t* p = &history[move_source_index(m)][move_destination_index(m)];
+
+  int incr = depth * depth;
+  int decay = incr * *p / MAX_HISTORY_VALUE;
+
+  if (!good)
+    incr = -incr;
+
+  int new = *p + incr - decay;
+  assert(new > SHRT_MIN);
+  assert(new < SHRT_MAX);
+
+  *p = (int16_t) new;
+}
+#endif
 
 void history_clear(void) {
   // Assumes MOVE_NULL is 0!
@@ -23,13 +43,27 @@ void history_clear(void) {
   memset(history, 0, sizeof(history));
 }
 
-void history_update(const Bitboard* board, Move m, int8_t depth, int8_t ply) {
-  if (move_is_capture(m))
+void history_update(const Bitboard* board,
+                    Move best,
+                    const Move* bad,
+                    int num_bad,
+                    int8_t depth,
+                    int8_t ply) {
+  if (move_is_capture(best))
     return;
 
 #if ENABLE_HISTORY
-  if (depth > 2)
-    history[move_source_index(m)][move_destination_index(m)] += depth * 2;
+  if (depth > 2) {
+#if ENABLE_HISTORY_DECREMENT
+    history_incr(best, depth, 1);
+    for (int i = 0; i < num_bad; i++)
+      history_incr(bad[i], depth, 0);
+#else
+    (void)bad;
+    (void)num_bad;
+    history[move_source_index(best)][move_destination_index(best)] += depth * 2;
+#endif
+  }
 #endif
 
 #if ENABLE_KILLERS
@@ -37,14 +71,14 @@ void history_update(const Bitboard* board, Move m, int8_t depth, int8_t ply) {
     Move* slot = (Move*)history_get_killers(ply);
     assert(slot);
 
-    if (slot[0] == m || slot[1] == m)
+    if (slot[0] == best || slot[1] == best)
       return;
 
     if (slot[0] == MOVE_NULL) {
-      slot[0] = m;
+      slot[0] = best;
     } else {
       slot[1] = slot[0];
-      slot[0] = m;
+      slot[0] = best;
     }
   }
 #endif
@@ -54,7 +88,7 @@ void history_update(const Bitboard* board, Move m, int8_t depth, int8_t ply) {
   if (last_move != MOVE_NULL) {
     assert((!board->to_move) == move_color(last_move));
     countermoves[!board->to_move][move_piecetype(last_move)]
-                [move_destination_index(last_move)] = m;
+                [move_destination_index(last_move)] = best;
   }
 #else
   (void)board;
@@ -82,6 +116,6 @@ Move history_get_countermove(const Bitboard* board) {
 #endif
 }
 
-uint16_t history_get(Move m) {
+int16_t history_get(Move m) {
   return history[move_source_index(m)][move_destination_index(m)];
 }

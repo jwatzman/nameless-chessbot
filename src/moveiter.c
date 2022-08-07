@@ -16,7 +16,7 @@
 #define SCORE_KILLER 1
 #define SCORE_COUNTERMOVE 0
 #define SCORE_OTHER (2 * SHRT_MIN - 1)
-#define SCORE_LOSING_CAPTURE (SCORE_OTHER - 1)
+#define SCORE_LOSING_CAPTURE (4 * SHRT_MIN - 1)
 
 static MoveScore moveiter_score(const Bitboard* board,
                                 Move m,
@@ -130,6 +130,7 @@ static MoveScore moveiter_score(const Bitboard* board,
   MoveScore s = SCORE_OTHER + history_get(m);
   assert(s < SCORE_KILLER);
   assert(s < SCORE_COUNTERMOVE);
+  assert(s > SCORE_LOSING_CAPTURE);
   return s;
 }
 

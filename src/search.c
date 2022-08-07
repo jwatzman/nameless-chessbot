@@ -24,6 +24,8 @@
 #define DISALLOW_NULL_MOVE 0
 #define ALLOW_NULL_MOVE 1
 
+#define MAX_BAD_QUIETS 16
+
 #if ENABLE_FUTILITY_DEPTH > 0
 #define FUTILITY_MARGIN(d) (90 * d)
 #endif
@@ -251,9 +253,11 @@ static int search_alpha_beta(Bitboard* board,
   }
 #endif
 
-  // generate pseudolegal moves
   Movelist moves;
   move_generate_movelist(board, &moves, MOVE_GEN_ALL);
+
+  Move bad_quiets[MAX_BAD_QUIETS];
+  int num_bad_quiets = 0;
 
   Move tt_move = tt_get_best_move(board->state->zobrist);
 
@@ -352,11 +356,16 @@ static int search_alpha_beta(Bitboard* board,
       if (!timeup) {
         tt_put(board->state->zobrist, recursive_value, move, TRANSPOSITION_BETA,
                board->generation, depth);
-        history_update(board, move, depth, ply);
+        history_update(board, move, bad_quiets, num_bad_quiets, depth, ply);
       }
 
       return recursive_value;
     }
+
+#if ENABLE_HISTORY_DECREMENT
+    if (num_bad_quiets < MAX_BAD_QUIETS && !move_is_capture(move))
+      bad_quiets[num_bad_quiets++] = move;
+#endif
 
     if (recursive_value > best_score)
       best_score = recursive_value;
@@ -475,7 +484,8 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
 
     if (recursive_value >= beta) {
       if (!timeup)
-        history_update(board, move, 0, ply);
+        history_update(board, move, NULL, 0, 0,
+                       ply);  // XXX should we be doing this?
       return recursive_value;
     }
 
