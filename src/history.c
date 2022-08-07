@@ -14,7 +14,7 @@
 
 static Move killers[MAX_HISTORY_PLY][2];
 static Move countermoves[2][6][64];
-static int16_t history[64][64];
+static int16_t history[64][64];  // XXX split by color?
 
 #if ENABLE_HISTORY_DECREMENT
 static void history_incr(Move m, int8_t depth, int good) {
