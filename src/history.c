@@ -14,11 +14,12 @@
 
 static Move killers[MAX_HISTORY_PLY][2];
 static Move countermoves[2][6][64];
-static int16_t history[64][64];  // XXX split by color?
+static int16_t history[2][64][64];
 
 #if ENABLE_HISTORY_DECREMENT
 static void history_incr(Move m, int8_t depth, int good) {
-  int16_t* p = &history[move_source_index(m)][move_destination_index(m)];
+  int16_t* p =
+      &history[move_color(m)][move_source_index(m)][move_destination_index(m)];
 
   int incr = depth * depth;
   int decay = incr * *p / MAX_HISTORY_VALUE;
@@ -61,7 +62,8 @@ void history_update(const Bitboard* board,
 #else
     (void)bad;
     (void)num_bad;
-    history[move_source_index(best)][move_destination_index(best)] += depth * 2;
+    history[move_color(best)][move_source_index(best)]
+           [move_destination_index(best)] += depth * 2;
 #endif
   }
 #endif
@@ -117,5 +119,6 @@ Move history_get_countermove(const Bitboard* board) {
 }
 
 int16_t history_get(Move m) {
-  return history[move_source_index(m)][move_destination_index(m)];
+  return history[move_color(m)][move_source_index(m)]
+                [move_destination_index(m)];
 }
