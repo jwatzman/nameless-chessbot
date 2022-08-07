@@ -322,7 +322,7 @@ static int search_alpha_beta(Bitboard* board,
         search_completed = 0;
       }
 #if ENABLE_LMR
-    } else if (legal_moves > 5 && depth > 2 && extensions == 0 &&
+    } else if (legal_moves > 2 && depth > 2 && extensions == 0 &&
                !move_is_promotion(move) && score < 0 &&
                move_piecetype(move) != PAWN && !threat && !in_check &&
                !gives_check) {
