@@ -24,7 +24,7 @@
 #define DISALLOW_NULL_MOVE 0
 #define ALLOW_NULL_MOVE 1
 
-#define MAX_BAD_QUIETS 16
+#define MAX_BAD_QUIETS 64
 
 #define FUTILITY_MAX_DEPTH 4
 #define FUTILITY_MARGIN(d) (90 * d)
