@@ -14,6 +14,6 @@ void history_update(const Bitboard* board,
                     int8_t ply);
 const Move* history_get_killers(int8_t ply);
 Move history_get_countermove(const Bitboard* board);
-int16_t history_get(Move m);
+int16_t history_get_combined(const Bitboard* board, Move m);
 
 #endif

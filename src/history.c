@@ -14,12 +14,18 @@
 
 static Move killers[MAX_HISTORY_PLY][2];
 static Move countermoves[2][6][64];
+
 static int16_t history[2][64][64];
+static int16_t countermove_history[2][6][64][6][64];
 
-static void history_incr(Move m, int8_t depth, int good) {
-  int16_t* p =
-      &history[move_color(m)][move_source_index(m)][move_destination_index(m)];
+#define HISTORY_ELEM(m) \
+  (history[move_color(m)][move_source_index(m)][move_destination_index(m)])
+#define CM_HISTORY_ELEM(prev, m)                                        \
+  (countermove_history[move_color(m)][move_piecetype(prev)]             \
+                      [move_destination_index(prev)][move_piecetype(m)] \
+                      [move_destination_index(m)])
 
+static void history_incr_impl(int16_t* p, int8_t depth, int good) {
   int incr = depth * depth;
   int decay = incr * *p / MAX_HISTORY_VALUE;
 
@@ -33,6 +39,21 @@ static void history_incr(Move m, int8_t depth, int good) {
   *p = (int16_t) new;
 }
 
+static void history_incr(const Bitboard* board,
+                         Move best,
+                         int8_t depth,
+                         int good) {
+  history_incr_impl(&HISTORY_ELEM(best), depth, good);
+
+#if ENABLE_COUNTERMOVE_HISTORY
+  Move last_move = board->state->last_move;
+  if (last_move != MOVE_NULL)
+    history_incr_impl(&CM_HISTORY_ELEM(last_move, best), depth, good);
+#else
+  (void)board;
+#endif
+}
+
 void history_clear(void) {
   // Assumes MOVE_NULL is 0!
   memset(killers, 0, sizeof(killers));
@@ -40,6 +61,7 @@ void history_clear(void) {
 
   // XXX should we keep this across searches? Halve every value upon new search?
   memset(history, 0, sizeof(history));
+  memset(countermove_history, 0, sizeof(countermove_history));
 }
 
 void history_update(const Bitboard* board,
@@ -52,9 +74,9 @@ void history_update(const Bitboard* board,
     return;
 
   if (depth > 2) {
-    history_incr(best, depth, 1);
+    history_incr(board, best, depth, 1);
     for (int i = 0; i < num_bad; i++)
-      history_incr(bad[i], depth, 0);
+      history_incr(board, bad[i], depth, 0);
   }
 
   if (ply < MAX_HISTORY_PLY) {
@@ -96,7 +118,17 @@ Move history_get_countermove(const Bitboard* board) {
                      [move_destination_index(last_move)];
 }
 
-int16_t history_get(Move m) {
-  return history[move_color(m)][move_source_index(m)]
-                [move_destination_index(m)];
+int16_t history_get_combined(const Bitboard* board, Move m) {
+  int16_t h = HISTORY_ELEM(m);
+
+#if ENABLE_COUNTERMOVE_HISTORY
+  Move last_move = board->state->last_move;
+  if (last_move != MOVE_NULL)
+    return h + CM_HISTORY_ELEM(last_move, m);
+  else
+    return h;
+#else
+  (void)board;
+  return h;
+#endif
 }

@@ -123,7 +123,7 @@ static MoveScore moveiter_score(const Bitboard* board,
   // factoring...
   // XXX in the past history was consulted during moveiter_next instead of in
   // one pass beforehand here. Is that better? (It's certainly very messy...)
-  MoveScore s = SCORE_OTHER + history_get(m);
+  MoveScore s = SCORE_OTHER + history_get_combined(board, m);
   assert(s < SCORE_KILLER);
   assert(s < SCORE_COUNTERMOVE);
   assert(s > SCORE_LOSING_CAPTURE);
