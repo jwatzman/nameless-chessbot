@@ -132,3 +132,7 @@ int16_t history_get_combined(const Bitboard* board, Move m) {
   return h;
 #endif
 }
+
+int16_t history_get_uncombined(Move m) {
+  return HISTORY_ELEM(m);
+}
