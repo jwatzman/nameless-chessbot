@@ -91,7 +91,7 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
       // aspiration window failure
       fprintf(f, "%i\t%i\t%lu\t%" PRIu64 "\taspiration failure\n", depth, val,
               centiseconds_taken, nodes_searched);
-#if ENABLE_TIMER_ASPIRATION_FAILURE
+
       // XXX this works okay but tends to extend a lot in endgame positions
       // where we are just massively winning/losing, and less in that "critical
       // moment" where we get an aspiration failure at a high depth. Probably
@@ -99,7 +99,7 @@ Move search_find_move(Bitboard* board, const SearchDebug* debug) {
       // window logic to use larger windows in the endgame/repeat-failure case.
       if (depth >= ASPIRATION_TIMER_EXTENSION_MIN_DEPTH)
         timer_extend();
-#endif
+
       alpha = -NFINITY;
       beta = NFINITY;
       depth--;
@@ -213,7 +213,6 @@ static int search_alpha_beta(Bitboard* board,
   }
 
   int threat = 0;
-#if ENABLE_NULL_MOVE_PRUNING
   // Null move pruning.
   if (!in_check && depth > 2 && ply > 0 && !pv_node &&
       allow_null == ALLOW_NULL_MOVE) {
@@ -233,9 +232,6 @@ static int search_alpha_beta(Bitboard* board,
       threat = 1;
     }
   }
-#else
-  (void)allow_null;
-#endif
 
   int futile = 0;
   if (depth <= FUTILITY_MAX_DEPTH && !in_check && !threat && !pv_node &&
@@ -313,7 +309,6 @@ static int search_alpha_beta(Bitboard* board,
         // PV search failed
         search_completed = 0;
       }
-#if ENABLE_LMR
     } else if (legal_moves > 2 && depth > 2 && extensions == 0 &&
                !move_is_promotion(move) && score < 0 &&
                move_piecetype(move) != PAWN && !threat && !in_check &&
@@ -327,7 +322,6 @@ static int search_alpha_beta(Bitboard* board,
         // LMR failed
         search_completed = 0;
       }
-#endif
     }
 
     if (!search_completed) {
@@ -442,15 +436,11 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
   int legal_moves = 0;
 
   while (moveiter_has_next(&iter)) {
-#if ENABLE_SEE_Q_PRUNE_LOSING_CAPTURES
     MoveScore score;
     Move move = moveiter_next(&iter, &score);
 
     if (!in_check && move_is_capture(move) && moveiter_score_to_see(score) < 0)
       continue;
-#else
-    Move move = moveiter_next(&iter, NULL);
-#endif
 
     if (!move_is_legal(board, move))
       continue;
