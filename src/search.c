@@ -362,10 +362,8 @@ static int search_alpha_beta(Bitboard* board,
       return recursive_value;
     }
 
-#if ENABLE_HISTORY_DECREMENT
     if (num_bad_quiets < MAX_BAD_QUIETS && !move_is_capture(move))
       bad_quiets[num_bad_quiets++] = move;
-#endif
 
     if (recursive_value > best_score)
       best_score = recursive_value;

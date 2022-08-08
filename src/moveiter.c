@@ -114,14 +114,10 @@ static MoveScore moveiter_score(const Bitboard* board,
     return SCORE_KILLER;
   }
 
-#if ENABLE_COUNTERMOVES
   if (m == countermove) {
     assert(!move_is_capture(m));
     return SCORE_COUNTERMOVE;
   }
-#else
-  (void)countermove;
-#endif
 
   // Having moveiter call directly into history here isn't fantastic
   // factoring...
