@@ -295,6 +295,13 @@ static int search_alpha_beta(Bitboard* board,
     }
 #endif
 
+#if ENABLE_LMP_MIN_MOVES > 0
+    if (!in_check && !threat && !pv_node && alpha > -MATE &&
+        !move_is_capture(move) && !gives_check &&
+        num_bad_quiets > (depth * depth + ENABLE_LMP_MIN_MOVES))
+      continue;
+#endif
+
     State s;
     board_do_move(board, move, &s);
 
