@@ -26,13 +26,11 @@
 
 #define MAX_BAD_QUIETS 16
 
-#if ENABLE_FUTILITY_DEPTH > 0
+#define FUTILITY_MAX_DEPTH 4
 #define FUTILITY_MARGIN(d) (90 * d)
-#endif
 
-#if ENABLE_REVERSE_FUTILITY_DEPTH > 0
+#define REVERSE_FUTILITY_MAX_DEPTH 4
 #define REVERSE_FUTILITY_MARGIN(d) (90 * d)
-#endif
 
 static int timeup;
 static uint64_t nodes_searched;
@@ -198,8 +196,7 @@ static int search_alpha_beta(Bitboard* board,
   }
 
   const int in_check = board_in_check(board, board->to_move);
-#if ENABLE_REVERSE_FUTILITY_DEPTH > 0
-  if (!in_check && beta < MATE && depth <= ENABLE_REVERSE_FUTILITY_DEPTH &&
+  if (!in_check && beta < MATE && depth <= REVERSE_FUTILITY_MAX_DEPTH &&
       ply > 0 && !pv_node && allow_null == ALLOW_NULL_MOVE) {
     // Need to deal with zug (since this prune is very similar to null move).
     // Quick-and-dirty is to make sure there is non-pawn material for us to
@@ -214,7 +211,6 @@ static int search_alpha_beta(Bitboard* board,
         return eval;
     }
   }
-#endif
 
   int threat = 0;
 #if ENABLE_NULL_MOVE_PRUNING
@@ -241,9 +237,8 @@ static int search_alpha_beta(Bitboard* board,
   (void)allow_null;
 #endif
 
-#if ENABLE_FUTILITY_DEPTH > 0
   int futile = 0;
-  if (depth <= ENABLE_FUTILITY_DEPTH && !in_check && !threat && !pv_node &&
+  if (depth <= FUTILITY_MAX_DEPTH && !in_check && !threat && !pv_node &&
       alpha > -MATE) {
     int eval = evaluate_board(board);
     int margin = FUTILITY_MARGIN(depth);
@@ -251,7 +246,6 @@ static int search_alpha_beta(Bitboard* board,
     // see < alpha - eval - margin
     futile = alpha - eval - margin;
   }
-#endif
 
   Movelist moves;
   move_generate_movelist(board, &moves, MOVE_GEN_ALL);
@@ -282,7 +276,6 @@ static int search_alpha_beta(Bitboard* board,
 
     int gives_check = move_gives_check(board, move);
 
-#if ENABLE_FUTILITY_DEPTH > 0
     int move_dest = move_destination_index(move);
     int is_pawn_to_prepromotion =
         move_piecetype(move) == PAWN &&
@@ -296,7 +289,6 @@ static int search_alpha_beta(Bitboard* board,
       else if (move_is_capture(move) && moveiter_score_to_see(score) < futile)
         continue;
     }
-#endif
 
     State s;
     board_do_move(board, move, &s);
