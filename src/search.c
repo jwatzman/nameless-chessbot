@@ -32,6 +32,10 @@
 #define REVERSE_FUTILITY_MAX_DEPTH 4
 #define REVERSE_FUTILITY_MARGIN(d) (90 * d)
 
+#define HISTORY_PRUNE_MAX_DEPTH 4
+
+#define LMP_MIN_MOVES 4
+
 static int timeup;
 static uint64_t nodes_searched;
 
@@ -286,21 +290,17 @@ static int search_alpha_beta(Bitboard* board,
         continue;
     }
 
-#if ENABLE_HISTORY_PRUNE_DEPTH > 0
-    if (depth <= ENABLE_HISTORY_PRUNE_DEPTH && legal_moves > 1 && !in_check &&
+    if (depth <= HISTORY_PRUNE_MAX_DEPTH && legal_moves > 1 && !in_check &&
         !threat && !pv_node && alpha > -MATE) {
       int16_t hist = history_get_uncombined(move);
       if (hist < -10 * depth * depth)
         continue;
     }
-#endif
 
-#if ENABLE_LMP_MIN_MOVES > 0
     if (!in_check && !threat && !pv_node && alpha > -MATE &&
         !move_is_capture(move) && !gives_check &&
-        num_bad_quiets > (depth * depth + ENABLE_LMP_MIN_MOVES))
+        num_bad_quiets > (depth * depth + LMP_MIN_MOVES))
       continue;
-#endif
 
     State s;
     board_do_move(board, move, &s);
