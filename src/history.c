@@ -17,6 +17,7 @@ static Move countermoves[2][6][64];
 
 static int16_t history[2][64][64];
 static int16_t countermove_history[2][6][64][6][64];
+static int16_t followupmove_history[2][6][64][6][64];
 
 #define HISTORY_ELEM(m) \
   (history[move_color(m)][move_source_index(m)][move_destination_index(m)])
@@ -24,6 +25,10 @@ static int16_t countermove_history[2][6][64][6][64];
   (countermove_history[move_color(m)][move_piecetype(prev)]             \
                       [move_destination_index(prev)][move_piecetype(m)] \
                       [move_destination_index(m)])
+#define FM_HISTORY_ELEM(prev, m)                                         \
+  (followupmove_history[move_color(m)][move_piecetype(prev)]             \
+                       [move_destination_index(prev)][move_piecetype(m)] \
+                       [move_destination_index(m)])
 
 static void history_incr_impl(int16_t* p, int8_t depth, int good) {
   int incr = depth * depth;
@@ -49,6 +54,11 @@ static void history_incr(const Bitboard* board,
   Move last_move = board->state->last_move;
   if (last_move != MOVE_NULL)
     history_incr_impl(&CM_HISTORY_ELEM(last_move, best), depth, good);
+
+  Move last_move_2 =
+      board->state->prev ? board->state->prev->last_move : MOVE_NULL;
+  if (last_move_2 != MOVE_NULL)
+    history_incr_impl(&FM_HISTORY_ELEM(last_move_2, best), depth, good);
 #else
   (void)board;
 #endif
@@ -124,13 +134,17 @@ int16_t history_get_combined(const Bitboard* board, Move m) {
 #if ENABLE_COUNTERMOVE_HISTORY
   Move last_move = board->state->last_move;
   if (last_move != MOVE_NULL)
-    return h + CM_HISTORY_ELEM(last_move, m);
-  else
-    return h;
+    h += CM_HISTORY_ELEM(last_move, m);
+
+  Move last_move_2 =
+      board->state->prev ? board->state->prev->last_move : MOVE_NULL;
+  if (last_move_2 != MOVE_NULL)
+    h += FM_HISTORY_ELEM(last_move_2, m);
 #else
   (void)board;
-  return h;
 #endif
+
+  return h;
 }
 
 int16_t history_get_uncombined(Move m) {
