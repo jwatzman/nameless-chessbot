@@ -221,15 +221,16 @@ static int search_alpha_beta(Bitboard* board,
   // -- NULL MOVE PRUNING
   if (!in_check && depth > 2 && ply > 0 && !pv_node &&
       allow_null == ALLOW_NULL_MOVE) {
+    const int R = 4;
     State s;
     board_do_move(board, MOVE_NULL, &s);
-    int null_value = -search_alpha_beta(board, -beta, -beta + 1, depth - 2,
+    int null_value = -search_alpha_beta(board, -beta, -beta + 1, depth - R,
                                         ply + 1, NULL, DISALLOW_NULL_MOVE);
     board_undo_move(board);
     if (null_value >= beta) {
       // Verification search to deal with zug. (Literature unclear if this is
       // actually a good solution but empirically it seems to work?)
-      int verify = search_alpha_beta(board, beta - 1, beta, depth - 2, ply,
+      int verify = search_alpha_beta(board, beta - 1, beta, depth - R, ply,
                                      NULL, DISALLOW_NULL_MOVE);
       if (verify >= beta)
         return verify;
