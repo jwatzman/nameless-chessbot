@@ -199,6 +199,7 @@ static int search_alpha_beta(Bitboard* board,
     }
   }
 
+  // --- REVERSE FUTILITY PRUNING
   const int in_check = board_in_check(board, board->to_move);
   if (!in_check && beta < MATE && depth <= REVERSE_FUTILITY_MAX_DEPTH &&
       ply > 0 && !pv_node && allow_null == ALLOW_NULL_MOVE) {
@@ -217,7 +218,7 @@ static int search_alpha_beta(Bitboard* board,
   }
 
   int threat = 0;
-  // Null move pruning.
+  // -- NULL MOVE PRUNING
   if (!in_check && depth > 2 && ply > 0 && !pv_node &&
       allow_null == ALLOW_NULL_MOVE) {
     State s;
@@ -237,6 +238,7 @@ static int search_alpha_beta(Bitboard* board,
     }
   }
 
+  // --- FUTILITY PRUNING
   int futile = 0;
   if (depth <= FUTILITY_MAX_DEPTH && !in_check && !threat && !pv_node &&
       alpha > -MATE) {
@@ -276,6 +278,7 @@ static int search_alpha_beta(Bitboard* board,
 
     int gives_check = move_gives_check(board, move);
 
+    // --- FUTILTY PRUNING
     int move_dest = move_destination_index(move);
     int is_pawn_to_prepromotion =
         move_piecetype(move) == PAWN &&
@@ -290,6 +293,7 @@ static int search_alpha_beta(Bitboard* board,
         continue;
     }
 
+    // --- HISTORY PRUNING
     if (depth <= HISTORY_PRUNE_MAX_DEPTH && legal_moves > 1 && !in_check &&
         !threat && !pv_node && alpha > -MATE) {
       int16_t hist = history_get_uncombined(move);
@@ -297,6 +301,7 @@ static int search_alpha_beta(Bitboard* board,
         continue;
     }
 
+    // --- LATE MOVE PRUNING
     if (!in_check && !threat && !pv_node && alpha > -MATE &&
         !move_is_capture(move) && !gives_check &&
         num_bad_quiets > (depth * depth + LMP_MIN_MOVES))
@@ -313,9 +318,8 @@ static int search_alpha_beta(Bitboard* board,
 
     int extensions = gives_check;  // XXX try adding threat or 2*threat
 
-    if (type == TRANSPOSITION_EXACT) {
+    if (type == TRANSPOSITION_EXACT) {  // --- PV SEARCH
       assert(pv_node);
-      // PV search
       search_completed = 1;
       recursive_value = -search_alpha_beta(board, -alpha - 1, -alpha,
                                            (int8_t)(depth - 1 + extensions),
@@ -328,8 +332,7 @@ static int search_alpha_beta(Bitboard* board,
     } else if (legal_moves > 2 && depth > 2 && extensions == 0 &&
                !move_is_promotion(move) && score < 0 &&
                move_piecetype(move) != PAWN && !threat && !in_check &&
-               !gives_check) {
-      // LMR
+               !gives_check) {  // -- LATE MOVE REDUCTION
       search_completed = 1;
       recursive_value = -search_alpha_beta(board, -alpha - 1, -alpha, depth - 2,
                                            ply + 1, NULL, ALLOW_NULL_MOVE);
@@ -340,8 +343,8 @@ static int search_alpha_beta(Bitboard* board,
       }
     }
 
+    // --- NORMAL SEARCH
     if (!search_completed) {
-      // normal search
       recursive_value = -search_alpha_beta(
           board, -beta, -alpha, (int8_t)(depth - 1 + extensions), ply + 1,
           pv ? localpv : NULL, ALLOW_NULL_MOVE);
