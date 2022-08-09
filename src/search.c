@@ -217,9 +217,11 @@ static int search_alpha_beta(Bitboard* board,
     }
   }
 
+  const int eval = evaluate_board(board);
+
   int threat = 0;
   // -- NULL MOVE PRUNING
-  if (!in_check && depth > 2 && ply > 0 && !pv_node &&
+  if (!in_check && depth > 2 && ply > 0 && !pv_node && eval >= beta &&
       allow_null == ALLOW_NULL_MOVE) {
     State s;
     board_do_move(board, MOVE_NULL, &s);
@@ -242,7 +244,6 @@ static int search_alpha_beta(Bitboard* board,
   int futile = 0;
   if (depth <= FUTILITY_MAX_DEPTH && !in_check && !threat && !pv_node &&
       alpha > -MATE) {
-    int eval = evaluate_board(board);
     int margin = FUTILITY_MARGIN(depth);
     // eval + margin + see < alpha
     // see < alpha - eval - margin
