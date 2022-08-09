@@ -72,6 +72,7 @@ void history_clear(void) {
   // XXX should we keep this across searches? Halve every value upon new search?
   memset(history, 0, sizeof(history));
   memset(countermove_history, 0, sizeof(countermove_history));
+  memset(followupmove_history, 0, sizeof(followupmove_history));
 }
 
 void history_update(const Bitboard* board,
