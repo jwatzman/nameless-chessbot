@@ -186,6 +186,7 @@ static int search_alpha_beta(Bitboard* board,
   if (search_is_draw(board, ply))
     return DRAW;
 
+  // --- TRANSPOSITION TABLE FETCH
   const TranspositionNode* n = tt_get(board->state->zobrist);
   if (ply > 0 && n) {
     int value_from_tt = tt_value(n);
@@ -309,6 +310,7 @@ static int search_alpha_beta(Bitboard* board,
     // --- HISTORY PRUNING
     if (depth <= HISTORY_PRUNE_MAX_DEPTH && legal_moves > 1 && !in_check &&
         !threat && !pv_node && alpha > -MATE) {
+      assert(move != move_from_tt);
       int16_t hist = history_get_uncombined(move);
       if (hist < -10 * depth * depth)
         continue;
@@ -317,8 +319,10 @@ static int search_alpha_beta(Bitboard* board,
     // --- LATE MOVE PRUNING
     if (!in_check && !threat && !pv_node && alpha > -MATE &&
         !move_is_capture(move) && !gives_check &&
-        num_bad_quiets > (depth * depth + LMP_MIN_MOVES))
+        num_bad_quiets > (depth * depth + LMP_MIN_MOVES)) {
+      assert(move != move_from_tt);
       continue;
+    }
 
     State s;
     board_do_move(board, move, &s);
@@ -346,6 +350,7 @@ static int search_alpha_beta(Bitboard* board,
                !move_is_promotion(move) && score < 0 &&
                move_piecetype(move) != PAWN && !threat && !in_check &&
                !gives_check) {  // -- LATE MOVE REDUCTION
+      assert(move != move_from_tt);
       search_completed = 1;
       recursive_value = -search_alpha_beta(board, -alpha - 1, -alpha, depth - 2,
                                            ply + 1, NULL, ALLOW_NULL_MOVE);
