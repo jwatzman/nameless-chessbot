@@ -38,8 +38,8 @@ static void history_incr_impl(int16_t* p, int8_t depth, int good) {
     incr = -incr;
 
   int new = *p + incr - decay;
-  assert(new > SHRT_MIN);
-  assert(new < SHRT_MAX);
+  assert(new >= SHRT_MIN);
+  assert(new <= SHRT_MAX);
 
   *p = (int16_t) new;
 }
