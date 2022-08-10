@@ -130,7 +130,7 @@ Move history_get_countermove(const Bitboard* board) {
 }
 
 int16_t history_get_combined(const Bitboard* board, Move m) {
-  int16_t h = HISTORY_ELEM(m);
+  int h = HISTORY_ELEM(m);
 
 #if ENABLE_COUNTERMOVE_HISTORY
   Move last_move = board->state->last_move;
@@ -145,7 +145,13 @@ int16_t history_get_combined(const Bitboard* board, Move m) {
   (void)board;
 #endif
 
-  return h;
+  if (h > SHRT_MAX)
+    return SHRT_MAX;
+  else if (h < SHRT_MIN)
+    return SHRT_MIN;
+
+  assert((int16_t)h == h);
+  return (int16_t)h;
 }
 
 int16_t history_get_uncombined(Move m) {
