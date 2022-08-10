@@ -15,7 +15,7 @@ struct TranspositionNode {
 } __attribute__((__packed__));
 
 #define TT_WIDTH 4
-#define TT_ENTRIES_EXPONENT 19
+#define TT_ENTRIES_EXPONENT 20
 #define TT_ENTRIES (1 << TT_ENTRIES_EXPONENT)
 static TranspositionNode transposition_table[TT_ENTRIES][TT_WIDTH];
 
