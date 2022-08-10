@@ -10,13 +10,22 @@
 #define TRANSPOSITION_BETA 2
 typedef uint8_t TranspositionType;
 
-/* asks the transposition table if we already know a good value for this
-   position. If we do, return it. Otherwise, return NFINITY but adjust
-   *alpha and *beta if we know better bounds for them */
+struct TranspositionNode;
+typedef struct TranspositionNode TranspositionNode;
+
+const TranspositionNode* tt_get(uint64_t zobrist);
+int tt_value(const TranspositionNode* n);
+Move tt_move(const TranspositionNode* n);
+TranspositionType tt_type(const TranspositionNode* n);
+int8_t tt_depth(const TranspositionNode* n);
+
+/*
+// If we have an appropriate value for the given parameters, return it;
 int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth);
 
-// if we have a previous best move for this zobrist, return it; 0 otherwise
+// If we have a previous best move, return it; otherwise, return MOVE_NULL.
 Move tt_get_best_move(uint64_t zobrist);
+*/
 
 // add to transposition table
 void tt_put(uint64_t zobrist,

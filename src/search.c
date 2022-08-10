@@ -186,16 +186,27 @@ static int search_alpha_beta(Bitboard* board,
   if (search_is_draw(board, ply))
     return DRAW;
 
-  if (ply > 0) {
-    // check transposition table for a useful value
-    int table_val = tt_get_value(board->state->zobrist, alpha, beta, depth);
+  const TranspositionNode* n = tt_get(board->state->zobrist);
+  if (ply > 0 && n) {
+    int value_from_tt = tt_value(n);
+    TranspositionType type_from_tt = tt_type(n);
+    int hit = NFINITY;
 
-    if (table_val != NFINITY) {
+    if (tt_depth(n) >= depth) {
+      if (type_from_tt == TRANSPOSITION_EXACT)
+        hit = value_from_tt;
+      else if (type_from_tt == TRANSPOSITION_ALPHA && value_from_tt <= alpha)
+        hit = value_from_tt;
+      else if (type_from_tt == TRANSPOSITION_BETA && value_from_tt >= beta)
+        hit = value_from_tt;
+    }
+
+    if (hit != NFINITY) {
       if (pv) {
-        pv[0] = tt_get_best_move(board->state->zobrist);
+        pv[0] = tt_move(n);
         pv[1] = MOVE_NULL;  // We don't store pv in the table.
       }
-      return table_val;
+      return hit;
     }
   }
 
@@ -257,11 +268,11 @@ static int search_alpha_beta(Bitboard* board,
   Move bad_quiets[MAX_BAD_QUIETS];
   int num_bad_quiets = 0;
 
-  Move tt_move = tt_get_best_move(board->state->zobrist);
+  Move move_from_tt = n ? tt_move(n) : MOVE_NULL;
 
   Moveiter iter;
   const Move* killer_moves = history_get_killers(ply);
-  moveiter_init(&iter, board, &moves, tt_move, killer_moves,
+  moveiter_init(&iter, board, &moves, move_from_tt, killer_moves,
                 history_get_countermove(board));
 
   /* since we generate only pseudolegal moves, we need to keep track if
@@ -287,7 +298,7 @@ static int search_alpha_beta(Bitboard* board,
         (board_row_of(move_dest) == 1 || board_row_of(move_dest) == 6);
     int move_is_killer =
         killer_moves && (move == killer_moves[0] || move == killer_moves[1]);
-    if (futile && move != tt_move && !move_is_killer &&
+    if (futile && move != move_from_tt && !move_is_killer &&
         !move_is_promotion(move) && !gives_check && !is_pawn_to_prepromotion) {
       if (!move_is_capture(move) && 0 < futile)
         continue;

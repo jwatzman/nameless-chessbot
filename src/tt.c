@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdint.h>
 
 #include "config.h"
@@ -5,13 +6,13 @@
 #include "tt.h"
 #include "types.h"
 
-typedef struct {
+struct TranspositionNode {
   uint32_t zobrist_check;
   Move best_move;
   int value;
   int8_t depth;
   uint16_t generation;
-} __attribute__((__packed__)) TranspositionNode;
+} __attribute__((__packed__));
 
 #define TT_WIDTH 4
 #define TT_ENTRIES_EXPONENT 19
@@ -31,53 +32,41 @@ static TranspositionNode transposition_table[TT_ENTRIES][TT_WIDTH];
 #define TT_INDEX(zobrist) ((zobrist) & (TT_ENTRIES - 1))
 #define TT_ZOBRIST_CHECK(zobrist) ((zobrist) >> 32)
 
-int tt_get_value(uint64_t zobrist, int alpha, int beta, int8_t depth) {
+const TranspositionNode* tt_get(uint64_t zobrist) {
   int index = zobrist % TT_ENTRIES;
   uint32_t zobrist_check = TT_ZOBRIST_CHECK(zobrist);
-
-  if (depth < 1)
-    return NFINITY;
 
   for (int i = 0; i < TT_WIDTH; i++)
     __builtin_prefetch(&transposition_table[index][i]);
 
   for (int i = 0; i < TT_WIDTH; i++) {
-    /* Since many zobrists may map to a single slot in the table, we
-    want to make sure we got a match; also, we want to make sure that
-    the entry was not made with a shallower depth than what we're
-    currently using. */
     TranspositionNode* node = &transposition_table[index][i];
-    if (node->zobrist_check == zobrist_check && node->depth >= depth) {
-      TranspositionType type = EXTRACT_TYPE(node->best_move);
-      int val = node->value;
-
-      if (type == TRANSPOSITION_EXACT)
-        return val;
-      else if ((type == TRANSPOSITION_ALPHA) && (val <= alpha))
-        return val;
-      else if ((type == TRANSPOSITION_BETA) && (val >= beta))
-        return val;
+    if (node->zobrist_check == zobrist_check) {
+      return node;
     }
   }
 
-  return NFINITY;
+  return NULL;
 }
 
-Move tt_get_best_move(uint64_t zobrist) {
-  int index = zobrist % TT_ENTRIES;
-  uint32_t zobrist_check = TT_ZOBRIST_CHECK(zobrist);
+int tt_value(const TranspositionNode* n) {
+  assert(n);
+  return n->value;
+}
 
-  for (int i = 0; i < TT_WIDTH; i++)
-    __builtin_prefetch(&transposition_table[index][i]);
+Move tt_move(const TranspositionNode* n) {
+  assert(n);
+  return CLEAN_MOVE(n->best_move);
+}
 
-  for (int i = 0; i < TT_WIDTH; i++) {
-    TranspositionNode* node = &transposition_table[index][i];
+TranspositionType tt_type(const TranspositionNode* n) {
+  assert(n);
+  return EXTRACT_TYPE(n->best_move);
+}
 
-    if (node->zobrist_check == zobrist_check)
-      return CLEAN_MOVE(node->best_move);
-  }
-
-  return MOVE_NULL;
+int8_t tt_depth(const TranspositionNode* n) {
+  assert(n);
+  return n->depth;
 }
 
 void tt_put(uint64_t zobrist,
