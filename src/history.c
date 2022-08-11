@@ -10,7 +10,7 @@
 #include "types.h"
 
 #define MAX_HISTORY_PLY MAX_POSSIBLE_DEPTH
-#define MAX_HISTORY_VALUE (SHRT_MAX / 4)
+#define MAX_HISTORY_VALUE SHRT_MAX
 
 static Move killers[MAX_HISTORY_PLY][2];
 static Move countermoves[2][6][64];
@@ -144,6 +144,11 @@ int16_t history_get_combined(const Bitboard* board, Move m) {
 #else
   (void)board;
 #endif
+
+  if (h > SHRT_MAX)
+    return SHRT_MAX;
+  else if (h < SHRT_MIN)
+    return SHRT_MIN;
 
   assert((int16_t)h == h);
   return (int16_t)h;
