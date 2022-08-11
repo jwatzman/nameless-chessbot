@@ -13,7 +13,6 @@
 #include "timer.h"
 #include "types.h"
 
-#define MIN_MOVES 4
 #define NUM_RANDOM_MOVES 6
 #define USAGE "Usage: nnue-training-data -d depth -g games -o output\n"
 
@@ -73,9 +72,20 @@ int main(int argc, char** argv) {
   for (unsigned game = 0; game < num_games; game++) {
     printf("%u: ", game + 1);
 
-    int halfmoves = 0;
     statelist_clear(sl);
     board_init(&board, statelist_new_state(sl));
+
+    for (int i = 0; i < NUM_RANDOM_MOVES; i++) {
+      Movelist ml;
+      move_generate_movelist(&board, &ml, MOVE_GEN_ALL);
+
+      int i;
+      do {
+        i = mt_random() % ml.n;
+      } while (!move_is_legal(&board, ml.moves[i]));
+
+      board_do_move(&board, ml.moves[i], statelist_new_state(sl));
+    }
 
     while (1) {
       int score;
@@ -137,8 +147,8 @@ int main(int argc, char** argv) {
         }
       }
 
-      if (halfmoves > MIN_MOVES && !move_is_capture(best) &&
-          !move_is_enpassant(best) && !board_in_check(&board, board.to_move)) {
+      if (!move_is_capture(best) && !move_is_enpassant(best) &&
+          !board_in_check(&board, board.to_move)) {
         board_fen(&board, f);
         fprintf(f, " | %d | 0\n", board.to_move == WHITE ? score : -score);
         putchar('.');
@@ -146,21 +156,7 @@ int main(int argc, char** argv) {
         putchar('_');
       }
 
-      if (halfmoves < NUM_RANDOM_MOVES) {
-        Movelist ml;
-        move_generate_movelist(&board, &ml, MOVE_GEN_ALL);
-
-        int i;
-        do {
-          i = mt_random() % ml.n;
-        } while (!move_is_legal(&board, ml.moves[i]));
-
-        board_do_move(&board, ml.moves[i], statelist_new_state(sl));
-      } else {
-        board_do_move(&board, best, statelist_new_state(sl));
-      }
-
-      halfmoves++;
+      board_do_move(&board, best, statelist_new_state(sl));
     }
 
     putchar('\n');
