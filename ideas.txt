@@ -4,9 +4,7 @@
 		- this didn't seem to help?
 	- improve replacement algo -- don't replace deep search from 1 generation ago with shallow search now
 		- need to be careful testing this, search-perf invalidates the table
-	- try to make tt node smaller
 - improve timer
-	- allows time to be increased, e.g., if hit aspiration failure
 	- allow knowing the root is *almost* done and could use a little more time
 - pondering
 	- maybe straightforward with pthreads and manually forcing a timeup?
@@ -16,13 +14,11 @@
 	- SEE
 		- do we need to SEE every move or only ones MMV/LVA don't show as clear winners?
 		- can we use SEE to allow more aggro futility/reverse-futility pruning?
-	- can we do any ordering on non-captures?
-		- there's something where you make sure you aren't moving a queen to be attacked by a pawn (generally, lower-value piece)
 	- return the tt move first so we don't have to SEE everything if it cuts off, or otherwise score incrementally
 	- is shell sort better than selection sort?
 	- delay loading history for "other" moves until time to sort, so that other moves at this ply can influence it, this is reported to be a win?
 - alpha-beta
-	- history heuristic: add points per depth; don't clear table every move but halve every value or something
-	- futility pruning to depth 2 at least
-	- reverse futility pruning to depth 2 at least
-	- improve expanding aspiration window
+	- improve expanding aspiration window, fewer aspiration failures
+	- figure out why countermove history doesn't work
+	- more aggro futility pruning, rev futility pruning, null move, lmr?
+- UCI?
