@@ -129,8 +129,8 @@ Move history_get_countermove(const Bitboard* board) {
                      [move_destination_index(last_move)];
 }
 
-int16_t history_get_combined(const Bitboard* board, Move m) {
-  int h = HISTORY_ELEM(m);
+int32_t history_get_combined(const Bitboard* board, Move m) {
+  int32_t h = HISTORY_ELEM(m);
 
 #if ENABLE_COUNTERMOVE_HISTORY
   Move last_move = board->state->last_move;
@@ -145,13 +145,10 @@ int16_t history_get_combined(const Bitboard* board, Move m) {
   (void)board;
 #endif
 
-  if (h > SHRT_MAX)
-    return SHRT_MAX;
-  else if (h < SHRT_MIN)
-    return SHRT_MIN;
-
-  assert((int16_t)h == h);
-  return (int16_t)h;
+  // It's important that this actually can't take the whole range of an int32_t,
+  // but only like 3x the range of an int16_t -- the strata in moveiter.c rely
+  // on this to keep separated. Make sure to keep in sync with those.
+  return h;
 }
 
 int16_t history_get_uncombined(Move m) {

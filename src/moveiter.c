@@ -15,8 +15,8 @@
 #define SCORE_WINNING_CAPTURE 2
 #define SCORE_KILLER 1
 #define SCORE_COUNTERMOVE 0
-#define SCORE_OTHER (2 * SHRT_MIN - 1)
-#define SCORE_LOSING_CAPTURE (4 * SHRT_MIN - 1)
+#define SCORE_OTHER (4 * SHRT_MIN - 1)
+#define SCORE_LOSING_CAPTURE (8 * SHRT_MIN - 1)
 
 static MoveScore moveiter_score(const Bitboard* board,
                                 Move m,
