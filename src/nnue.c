@@ -10,13 +10,26 @@
 #include "nnue.h"
 #include "types.h"
 
+#if ENABLE_NNUE
+
+#if ENABLE_NNUE_SIMD
+#if __AVX__
+#include <immintrin.h>
+#define SIMD_AVX 1
+#define SIMD_ANY 1
+#elif __ARM_NEON
+#include <arm_neon.h>
+#define SIMD_NEON 1
+#define SIMD_ANY 1
+#else
+#warning Unable to use simd.
+#endif
+#endif
+
 #define INCBIN_PREFIX
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
 #include "incbin.h"
-
-#if ENABLE_NNUE_SIMD
-#include <immintrin.h>
-#endif
+INCBIN(nnue_bin, "nn/nnue.bin");
 
 #define NNUE_INPUT_LAYER 64 * 2 * 5 * 64
 
@@ -25,10 +38,6 @@
 
 // Argument passed to training script.
 #define SCALE 400
-
-#if ENABLE_NNUE
-
-INCBIN(nnue_bin, "nn/nnue.bin");
 
 static int initalized = 0;
 
@@ -169,7 +178,7 @@ void nnue_reset(Bitboard* board) {
   nnue_reset_into(board, board->nnue_hidden);
 }
 
-#if !ENABLE_NNUE_SIMD
+#if !SIMD_ANY
 static void nnue_relu(uint8_t* out, const int16_t* in, size_t sz) {
   for (size_t i = 0; i < sz; i++) {
     int16_t in_v = in[i];
@@ -182,7 +191,7 @@ static void nnue_relu(uint8_t* out, const int16_t* in, size_t sz) {
 
 static int16_t nnue_compute_output(const Bitboard* board,
                                    const int16_t hidden[2][NNUE_HIDDEN_LAYER]) {
-#if ENABLE_NNUE_SIMD
+#if SIMD_AVX
   static_assert(NNUE_HIDDEN_LAYER % 32 == 0, "Not correct multiple");
   __m256i accum = _mm256_set1_epi64x(0);
   for (size_t i = 0; i < NNUE_HIDDEN_LAYER * 2; i += 32) {
@@ -213,14 +222,50 @@ static int16_t nnue_compute_output(const Bitboard* board,
   int32_t output = _mm_extract_epi32(sum, 0) + _mm_extract_epi32(sum, 1) +
                    _mm_extract_epi32(sum, 2) + _mm_extract_epi32(sum, 3) +
                    output_bias;
+#elif SIMD_NEON
+#define RELU_S16(x) vreinterpretq_s16_u16(vmovl_u8(vqmovun_s16(x)))
+  static_assert(NNUE_HIDDEN_LAYER % 32 == 0, "Not correct multiple");
+  int32x4_t accum = vdupq_n_s32(0);
+  for (size_t i = 0; i < NNUE_HIDDEN_LAYER * 2; i += 32) {
+    int idx1 = board->to_move;
+    int idx2 = i;
+    if (i >= NNUE_HIDDEN_LAYER) {
+      idx1 = !idx1;
+      idx2 -= NNUE_HIDDEN_LAYER;
+    }
+
+    int16x8_t hidden_relu0 = RELU_S16(vld1q_s16(&hidden[idx1][idx2]));
+    int16x8_t weight0 = vmovl_s8(vld1_s8(hidden2output_weight + i));
+
+    int16x8_t partial0 = vmulq_s16(hidden_relu0, weight0);
+
+    int16x8_t hidden_relu1 = RELU_S16(vld1q_s16(&hidden[idx1][idx2 + 8]));
+    int16x8_t weight1 = vmovl_s8(vld1_s8(hidden2output_weight + i + 8));
+
+    int16x8_t partial1 = vmulq_s16(hidden_relu1, weight1);
+
+    int16x8_t hidden_relu2 = RELU_S16(vld1q_s16(&hidden[idx1][idx2 + 16]));
+    int16x8_t weight2 = vmovl_s8(vld1_s8(hidden2output_weight + i + 16));
+
+    partial0 = vmlaq_s16(partial0, hidden_relu2, weight2);
+    accum = vpadalq_s16(accum, partial0);
+
+    int16x8_t hidden_relu3 = RELU_S16(vld1q_s16(&hidden[idx1][idx2 + 24]));
+    int16x8_t weight3 = vmovl_s8(vld1_s8(hidden2output_weight + i + 24));
+
+    partial1 = vmlaq_s16(partial1, hidden_relu3, weight3);
+    accum = vpadalq_s16(accum, partial1);
+  }
+
+  int32_t output = vaddvq_s32(accum) + output_bias;
+#undef RELU_S16
 #else
   uint8_t hidden_clipped[2][NNUE_HIDDEN_LAYER];
   nnue_relu(hidden_clipped[0], hidden[board->to_move], NNUE_HIDDEN_LAYER);
   nnue_relu(hidden_clipped[1], hidden[!board->to_move], NNUE_HIDDEN_LAYER);
   uint8_t* hidden_clipped_p = &hidden_clipped[0][0];
 
-  int32_t output;
-  output = output_bias;
+  int32_t output = output_bias;
   for (size_t i = 0; i < NNUE_HIDDEN_LAYER * 2; i++) {
     output += hidden2output_weight[i] * hidden_clipped_p[i];
   }
