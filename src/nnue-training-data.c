@@ -14,6 +14,7 @@
 #include "types.h"
 
 #define NUM_RANDOM_MOVES 6
+#define MAX_RANDOM_ATTEMPTS 100
 #define USAGE "Usage: nnue-training-data -d depth -g games -o output\n"
 
 extern char* optarg;
@@ -75,16 +76,25 @@ int main(int argc, char** argv) {
     statelist_clear(sl);
     board_init(&board, statelist_new_state(sl));
 
+    int attempts = 0;
     for (int i = 0; i < NUM_RANDOM_MOVES; i++) {
       Movelist ml;
       move_generate_movelist(&board, &ml, MOVE_GEN_ALL);
 
-      int i;
+      int n;
       do {
-        i = mt_random() % ml.n;
-      } while (!move_is_legal(&board, ml.moves[i]));
+        n = mt_random() % ml.n;
+        attempts++;
+      } while (!move_is_legal(&board, ml.moves[n]) &&
+               attempts < MAX_RANDOM_ATTEMPTS);
 
-      board_do_move(&board, ml.moves[i], statelist_new_state(sl));
+      board_do_move(&board, ml.moves[n], statelist_new_state(sl));
+    }
+
+    if (attempts >= MAX_RANDOM_ATTEMPTS) {
+      putchar('!');
+      putchar('\n');
+      continue;
     }
 
     while (1) {
