@@ -4,6 +4,7 @@ project(
 	default_options: [
 		'buildtype=release',
 		'b_lto=true',
+		'b_ndebug=if-release',
 		'debug=true',
 		'warning_level=3',
 	]
