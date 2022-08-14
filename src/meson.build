@@ -63,9 +63,10 @@ executable(
 )
 
 executable(
-	'xboard',
+	'nameless-xboard',
 	'xboard.c',
 	link_with: [libcore, libsearch, libperft],
+	install: true,
 )
 
 executable(
