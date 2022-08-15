@@ -41,7 +41,7 @@ typedef unsigned char Piecetype;
 // which leaves the eight MSB unused
 typedef uint32_t Move;
 
-#define NNUE_HIDDEN_LAYER 128
+#define NNUE_HIDDEN_LAYER 256
 
 /**
  * State represents the portion of the board state which is either impossible or
