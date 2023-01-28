@@ -33,7 +33,7 @@ static TranspositionNode transposition_table[TT_ENTRIES][TT_WIDTH];
 #define TT_ZOBRIST_CHECK(zobrist) ((zobrist) >> 32)
 
 const TranspositionNode* tt_get(uint64_t zobrist) {
-  int index = zobrist % TT_ENTRIES;
+  int index = TT_INDEX(zobrist);
   uint32_t zobrist_check = TT_ZOBRIST_CHECK(zobrist);
 
   for (int i = 0; i < TT_WIDTH; i++)
