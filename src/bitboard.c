@@ -190,7 +190,7 @@ void board_init_with_fen(Bitboard* board, State* state, const char* fen) {
 #endif
 }
 
-static inline uint64_t board_rand64() {
+static inline uint64_t board_rand64(void) {
   // OR two 32-bit randoms together
   return (((uint64_t)mt_random()) << 32) | ((uint64_t)mt_random());
 }
