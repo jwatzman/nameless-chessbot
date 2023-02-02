@@ -20,6 +20,7 @@ static Move get_computer_move(Bitboard* board);
 int main(void) {
   mt_srandom((unsigned)time(NULL));
   move_init();
+  search_init();
 #if ENABLE_NNUE
   nnue_init();
 #endif

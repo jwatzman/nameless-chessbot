@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
 
   mt_srandom((unsigned)time(NULL));
   move_init();
+  search_init();
 #if ENABLE_NNUE
   nnue_init();
 #endif

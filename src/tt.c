@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdint.h>
+#include <sys/mman.h>
 
 #include "config.h"
 #include "move.h"
@@ -17,7 +18,11 @@ struct TranspositionNode {
 #define TT_WIDTH 4
 #define TT_ENTRIES_EXPONENT 19
 #define TT_ENTRIES (1 << TT_ENTRIES_EXPONENT)
-static TranspositionNode transposition_table[TT_ENTRIES][TT_WIDTH];
+static TranspositionNode
+#if ENABLE_HUGEPAGES_MADVISE || ENABLE_HUGEPAGES_MMAP
+    alignas(4194304)
+#endif
+        transposition_table[TT_ENTRIES][TT_WIDTH];
 
 #define INJECT_TYPE(move, type) ((move) | (Move)((type) << move_unused_offset))
 #define EXTRACT_TYPE(move) (((move) >> move_unused_offset) & 0xff)
@@ -31,6 +36,35 @@ static TranspositionNode transposition_table[TT_ENTRIES][TT_WIDTH];
 // bits in the middle unused, saving the 4 bytes per tt entry is a win.
 #define TT_INDEX(zobrist) ((zobrist) & (TT_ENTRIES - 1))
 #define TT_ZOBRIST_CHECK(zobrist) ((zobrist) >> 32)
+
+void tt_init(void) {
+#if ENABLE_HUGEPAGES_MMAP
+  if (munmap(transposition_table, sizeof(transposition_table)) != 0) {
+    perror("Failed to unmap transposition table");
+    return;
+  }
+
+  if (mmap(transposition_table, sizeof(transposition_table),
+           PROT_READ | PROT_WRITE,
+           MAP_PRIVATE | MAP_ANON | MAP_FIXED | MAP_HUGETLB, -1,
+           0) == MAP_FAILED) {
+    perror("Failed to remap transposition table with huge pages");
+
+    if (mmap(transposition_table, sizeof(transposition_table),
+             PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED, 0,
+             0) == MAP_FAILED) {
+      perror("Failed to remap transposition table without huge pages");
+      abort();
+    }
+  }
+#endif
+#if ENABLE_HUGEPAGES_MADVISE
+  if (madvise(transposition_table, sizeof(transposition_table),
+              MADV_HUGEPAGE) != 0) {
+    perror("madvise failed");
+  }
+#endif
+}
 
 const TranspositionNode* tt_get(uint64_t zobrist) {
   int index = TT_INDEX(zobrist);

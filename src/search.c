@@ -53,6 +53,10 @@ static int search_is_draw(const Bitboard* board, int8_t ply);
 
 static void search_print_pv(Move* pv, int8_t depth, FILE* f);
 
+void search_init(void) {
+  tt_init();
+}
+
 Move search_find_move(Bitboard* board, const SearchDebug* debug) {
   FILE* f;
   if (debug && debug->out)

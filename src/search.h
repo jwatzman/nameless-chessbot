@@ -15,6 +15,8 @@ typedef struct {
   FILE* out;
 } SearchDebug;
 
+void search_init(void);
+
 Move search_find_move(Bitboard* board, const SearchDebug* debug);
 
 uint64_t search_benchmark(void);

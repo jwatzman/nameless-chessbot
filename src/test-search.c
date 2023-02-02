@@ -47,6 +47,7 @@ int main(void) {
   int ret = 0;
 
   move_init();
+  search_init();
 #if ENABLE_NNUE
   nnue_init();
 #endif

@@ -13,6 +13,8 @@ typedef uint8_t TranspositionType;
 struct TranspositionNode;
 typedef struct TranspositionNode TranspositionNode;
 
+void tt_init(void);
+
 const TranspositionNode* tt_get(uint64_t zobrist);
 int tt_value(const TranspositionNode* n);
 Move tt_move(const TranspositionNode* n);

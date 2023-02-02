@@ -28,6 +28,7 @@ int main(int argc, char** argv) {
   mt_srandom((unsigned)time(NULL));
   timer_init_secs(9999);
   move_init();
+  search_init();
 
   char* filename = NULL;
   unsigned num_games = 0;
