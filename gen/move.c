@@ -1,7 +1,7 @@
 void gen_move_king(void);
 void gen_move_knight(void);
 void gen_move_pawn(void);
-void gen_move_raycast();
+void gen_move_raycast(void);
 
 int main(void) {
   gen_move_king();
