@@ -12,6 +12,7 @@
 #include "nnue.h"
 #include "search.h"
 #include "statelist.h"
+#include "timer.h"
 #include "types.h"
 
 static Move get_human_move(Bitboard* board, const Movelist* moves);
@@ -19,6 +20,7 @@ static Move get_computer_move(Bitboard* board);
 
 int main(void) {
   mt_srandom((unsigned)time(NULL));
+  timer_init_secs(5);
   move_init();
   search_init();
 #if ENABLE_NNUE
