@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
       (Color)-1;  // not WHITE or BLACK if we don't play either (e.g. -1)
   int game_on = 0;
   Statelist* sl = statelist_alloc();
-  Bitboard* board = malloc(sizeof(Bitboard));
+  Bitboard board;
   char* input = malloc(sizeof(char) * max_input_length);
   Move last_move = 0;
   int got_move = 0;
@@ -73,15 +73,15 @@ int main(int argc, char** argv) {
 
   while (1) {
     if (game_on && got_move) {
-      board_do_move(board, last_move, statelist_new_state(sl));
+      board_do_move(&board, last_move, statelist_new_state(sl));
       got_move = 0;
     }
 
-    if (game_on && computer_player == board->to_move) {
-      last_move = search_find_move(board, NULL);
+    if (game_on && computer_player == board.to_move) {
+      last_move = search_find_move(&board, NULL);
       move_srcdest_form(last_move, input);
       printf("move %s\n", input);
-      board_do_move(board, last_move, statelist_new_state(sl));
+      board_do_move(&board, last_move, statelist_new_state(sl));
     }
 
     if (fgets(input, max_input_length, stdin) == NULL)
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
           "variants=\"normal\" myname=\"nameless\" done=1\n");
     } else if (!strcmp("new\n", input)) {
       statelist_clear(sl);
-      board_init(board, statelist_new_state(sl));
+      board_init(&board, statelist_new_state(sl));
       computer_player = BLACK;
       game_on = 1;
     } else if (!strcmp("quit\n", input)) {
@@ -103,10 +103,10 @@ int main(int argc, char** argv) {
     } else if (!strcmp("force\n", input)) {
       computer_player = (Color)-1;
     } else if (!strcmp("go\n", input)) {
-      computer_player = board->to_move;
+      computer_player = board.to_move;
     } else if (!strncmp("setboard ", input, 9)) {
       statelist_clear(sl);
-      board_init_with_fen(board, statelist_new_state(sl), input + 9);
+      board_init_with_fen(&board, statelist_new_state(sl), input + 9);
     } else if (!strncmp("result", input, 6)) {
       computer_player = (Color)-1;
       game_on = 0;
@@ -116,19 +116,19 @@ int main(int argc, char** argv) {
       int perft_depth = input[2] == 'e' ? strtol(input + 7, NULL, 10) - 1 : -1;
       uint64_t perft_tot = 0;
 
-      board_print(board);
+      board_print(&board);
 #if ENABLE_NNUE
-      int nnue = nnue_evaluate(board);
+      int nnue = nnue_evaluate(&board);
       printf("Traditional eval: %i\nNNUE eval: %i\n",
-             evaluate_traditional(board), nnue);
-      assert(nnue == nnue_debug_evaluate(board));
+             evaluate_traditional(&board), nnue);
+      assert(nnue == nnue_debug_evaluate(&board));
 #else
       printf("Evaluation: %i\n", evaluate_board(board));
 #endif
       puts("Pseudolegal moves: ");
 
       Movelist all_moves;
-      move_generate_movelist(board, &all_moves, MOVE_GEN_ALL);
+      move_generate_movelist(&board, &all_moves, MOVE_GEN_ALL);
 
       char srcdest_form[6];
       for (int i = 0; i < all_moves.n; i++) {
@@ -138,16 +138,16 @@ int main(int argc, char** argv) {
 
         if (perft_depth >= 0) {
           State s;
-          if (!move_is_legal(board, m)) {
+          if (!move_is_legal(&board, m)) {
             printf("(illegal)\n");
             continue;
           }
 
-          board_do_move(board, m, &s);
-          uint64_t p = perft(board, perft_depth);
+          board_do_move(&board, m, &s);
+          uint64_t p = perft(&board, perft_depth);
           printf("%" PRIu64 "\n", p);
           perft_tot += p;
-          board_undo_move(board);
+          board_undo_move(&board);
         }
       }
 
@@ -156,11 +156,11 @@ int main(int argc, char** argv) {
       else
         printf("\n");
     } else if (!strcmp("_searchonly\n", input)) {
-      search_find_move(board, NULL);
+      search_find_move(&board, NULL);
     } else if (input[0] >= 'a' && input[0] <= 'h' && input[1] >= '1' &&
                input[1] <= '8' && input[2] >= 'a' && input[2] <= 'h' &&
                input[3] >= '1' && input[3] <= '8') {
-      last_move = parse_move(board, input);
+      last_move = parse_move(&board, input);
       if (!last_move)
         printf("Illegal move: %s", input);
       else
@@ -171,7 +171,6 @@ int main(int argc, char** argv) {
   }
 
   statelist_free(sl);
-  free(board);
   free(input);
   return 0;
 }

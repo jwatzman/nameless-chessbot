@@ -35,20 +35,20 @@ int main(int argc, char** argv) {
   nnue_init();
 #endif
   mt_srandom((unsigned)time(NULL));
-  Bitboard* board = malloc(sizeof(Bitboard));
+  Bitboard board;
 
   State s;
   if (fen)
-    board_init_with_fen(board, &s, fen);
+    board_init_with_fen(&board, &s, fen);
   else
-    board_init(board, &s);
+    board_init(&board, &s);
 
-  printf("initial zobrist %.16" PRIx64 "\n", board->state->zobrist);
+  printf("initial zobrist %.16" PRIx64 "\n", board.state->zobrist);
 
-  uint64_t nodes = perft(board, max_depth);
+  uint64_t nodes = perft(&board, max_depth);
 
   printf("final zobrist %.16" PRIx64 "\n%" PRIu64 " nodes\n",
-         board->state->zobrist, nodes);
+         board.state->zobrist, nodes);
 
   struct rusage usage;
   getrusage(RUSAGE_SELF, &usage);
@@ -57,6 +57,5 @@ int main(int argc, char** argv) {
       (1.0e-6) * (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec);
   printf("Completed in %0.2f seconds\n", elapsed_time);
 
-  free(board);
   return 0;
 }

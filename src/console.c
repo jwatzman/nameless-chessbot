@@ -26,33 +26,33 @@ int main(void) {
 #endif
 
   Statelist* sl = statelist_alloc();
-  Bitboard* test = malloc(sizeof(Bitboard));
-  board_init(test, statelist_new_state(sl));
+  Bitboard test;
+  board_init(&test, statelist_new_state(sl));
 
   while (1) {
-    board_print(test);
+    board_print(&test);
 #if ENABLE_NNUE
-    printf("Traditional eval: %i\nNNUE eval: %i\n", evaluate_traditional(test),
-           nnue_evaluate(test));
+    printf("Traditional eval: %i\nNNUE eval: %i\n", evaluate_traditional(&test),
+           nnue_evaluate(&test));
 #else
     printf("Evaluation: %i\n", evaluate_board(test));
 #endif
 
     Movelist moves;
-    move_generate_movelist(test, &moves, MOVE_GEN_ALL);
+    move_generate_movelist(&test, &moves, MOVE_GEN_ALL);
 
     int num_legal_moves = 0;
     for (int i = 0; i < moves.n; i++) {
       Move move = moves.moves[i];
       State s_tmp;
-      board_do_move(test, move, &s_tmp);
-      if (!board_in_check(test, 1 - test->to_move))
+      board_do_move(&test, move, &s_tmp);
+      if (!board_in_check(&test, 1 - test.to_move))
         num_legal_moves++;
-      board_undo_move(test);
+      board_undo_move(&test);
     }
 
     if (num_legal_moves == 0) {
-      if (board_in_check(test, test->to_move))
+      if (board_in_check(&test, test.to_move))
         printf("CHECKMATE!\n");
       else
         printf("STALEMATE!\n");
@@ -60,25 +60,24 @@ int main(void) {
       break;
     }
 
-    if (test->state->halfmove_count == 50) {
+    if (test.state->halfmove_count == 50) {
       printf("DRAW BY 50 MOVE RULE\n");
       break;
     }
 
     Move next_move;
-    if (test->to_move == WHITE) {
-      next_move = get_human_move(test, &moves);
+    if (test.to_move == WHITE) {
+      next_move = get_human_move(&test, &moves);
       if (next_move == MOVE_NULL)
         break;
     } else {
-      next_move = get_computer_move(test);
+      next_move = get_computer_move(&test);
     }
 
-    board_do_move(test, next_move, statelist_new_state(sl));
+    board_do_move(&test, next_move, statelist_new_state(sl));
   }
 
   statelist_free(sl);
-  free(test);
   return 0;
 }
 
