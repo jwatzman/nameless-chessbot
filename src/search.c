@@ -470,8 +470,7 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
                          in_check ? MOVE_GEN_ALL : MOVE_GEN_QUIET);
 
   Moveiter iter;
-  moveiter_init(&iter, board, &moves, MOVE_NULL, history_get_killers(ply),
-                history_get_countermove(board));
+  moveiter_init(&iter, board, &moves, MOVE_NULL, NULL, MOVE_NULL);
 
   int legal_moves = 0;
 
@@ -503,9 +502,6 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
     board_undo_move(board);
 
     if (recursive_value >= beta) {
-      if (!timeup)
-        history_update(board, move, NULL, 0, 0,
-                       ply);  // XXX should we be doing this?
       return recursive_value;
     }
 
