@@ -413,9 +413,8 @@ static int search_alpha_beta(Bitboard* board,
     // No legal moves. Either we are in stalemate or checkmate.
     // Prefer checkmates which are closer to the current game state.
     // Use ply not depth for that because depth is affected by
-    // extensions/reductions. Offset by max_depth so a toplevel result >= MATE
-    // check still works.
-    return in_check ? -(MATE + MAX_POSSIBLE_DEPTH - ply) : 0;
+    // extensions/reductions.
+    return in_check ? -(MATE + MATE - ply) : 0;
   } else {
     // All moves pruned.
     if (best_score == -NFINITY)
@@ -523,7 +522,9 @@ static int search_qsearch(Bitboard* board, int alpha, int beta, int8_t ply) {
     return 0;
 
   if (legal_moves == 0) {
-    return evaluate_board(board);
+    // No legal moves? In check, we generate all moves even for qsearch, so it's
+    // checkmate.
+    return in_check ? -(MATE + MATE - ply) : evaluate_board(board);
   } else {
     if (best_score == -NFINITY)
       best_score = alpha;
