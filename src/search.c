@@ -313,7 +313,7 @@ static int search_alpha_beta(Bitboard* board,
 
     // --- HISTORY PRUNING
     if (depth <= HISTORY_PRUNE_MAX_DEPTH && legal_moves > 1 && !in_check &&
-        !threat && !pv_node && alpha > -MATE) {
+        !move_is_capture(move) && !threat && !pv_node && alpha > -MATE) {
       assert(move != move_from_tt);
       int16_t hist = history_get_uncombined(move);
       if (hist < -10 * depth * depth)
