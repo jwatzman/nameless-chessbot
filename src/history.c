@@ -94,14 +94,13 @@ void history_update(const Bitboard* board,
     Move* slot = (Move*)history_get_killers(ply);
     assert(slot);
 
-    if (slot[0] == best || slot[1] == best)
-      return;
-
-    if (slot[0] == MOVE_NULL) {
-      slot[0] = best;
-    } else {
-      slot[1] = slot[0];
-      slot[0] = best;
+    if (slot[0] != best && slot[1] != best) {
+      if (slot[0] == MOVE_NULL) {
+        slot[0] = best;
+      } else {
+        slot[1] = slot[0];
+        slot[0] = best;
+      }
     }
   }
 
