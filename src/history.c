@@ -94,8 +94,13 @@ void history_update(const Bitboard* board,
     Move* slot = (Move*)history_get_killers(ply);
     assert(slot);
 
-    if (slot[0] == best || slot[1] == best)
+    if (slot[0] == best || slot[1] == best) {
+      // This early return also prevents the below code from writing
+      // countermoves in this case. It was originally a bug, but testing
+      // indicates that fixing it is neutral-to-negative. Possible guess: less
+      // duplication between killers and countermoves is advantageous?
       return;
+    }
 
     if (slot[0] == MOVE_NULL) {
       slot[0] = best;
