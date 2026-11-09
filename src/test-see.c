@@ -5,6 +5,7 @@
 #include "evaluate.h"
 #include "move.h"
 #include "mt19937.h"
+#include "nnue.h"
 #include "see.h"
 #include "testlib.h"
 #include "types.h"
@@ -39,6 +40,9 @@ int main(void) {
   int ret = 0;
 
   move_init();
+#if ENABLE_NNUE
+  nnue_init();
+#endif
   mt_srandom(0);
 
   int num_tests = 0;
