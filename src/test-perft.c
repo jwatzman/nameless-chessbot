@@ -64,6 +64,8 @@ static const TestCase cases[] = {
     // My own cases:
     // Two snipers blocking each other
     {"k7/8/8/r1b2P1K/8/8/8/8 w - - 0 1", 1, 6},
+    // Castling check detection
+    {"8/8/8/8/8/8/8/k3K2R w K - 0 1", 2, 39},
 
     {NULL, 0, 0},
 };

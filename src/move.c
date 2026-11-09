@@ -230,12 +230,18 @@ int move_gives_check(const Bitboard* board, Move m) {
   uint8_t dest = move_destination_index(m);
 
   if (move_is_castle(m)) {
-    // Kings can't give check, so only need to see if the rook ends up in a
-    // position to give check.
     int8_t dir = src < dest ? 1 : -1;
-
     uint8_t rook_dest = (uint8_t)(dest - dir);
-    if (movemagic_rook(rook_dest, board->full_composite) &
+
+    // We can cheat here a good bit: the king can't give check, so we only need
+    // to determine if the rook ends up in a position where it checks the
+    // opposing king. There's some complexity with the masks if the opposing
+    // king is on the same rank as we are. We need to clear our own king out of
+    // the mask so we don't think it's in the way when checking attacks. We
+    // don't need to do anything with our rook -- there are no positions where
+    // we could give check through our king.
+    if (movemagic_rook(rook_dest, board->full_composite &
+                                      ~(board->boards[to_move][KING])) &
         board->boards[!to_move][KING])
       return 1;
   } else {
