@@ -8,3 +8,4 @@ name = "nameless-tmp"
 path = "rs/main.rs"
 
 [dependencies]
+bitflags = "2.13.2"

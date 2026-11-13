@@ -1,3 +1,5 @@
+use bitflags::bitflags;
+
 #[derive(Clone, Copy)]
 enum Color {
     White = 0,
@@ -55,6 +57,53 @@ impl<T> std::ops::IndexMut<Piece> for ByPiece<T> {
     }
 }
 
+#[derive(Clone, Copy)]
+struct Square(u8);
+
+impl Square {
+    pub fn new_from_row_col(row: u8, col: u8) -> Self {
+        assert!(row < 8);
+        assert!(col < 8);
+        Square(col | (row << 3))
+    }
+
+    pub fn new_from_str(s: &str) -> Option<Self> {
+        let mut chars = s.chars();
+
+        let row = u8::try_from(chars.next()?.to_digit(36)?)
+            .ok()?
+            .checked_sub(10)?;
+        let col = u8::try_from(chars.next()?.to_digit(10)?).ok()?;
+
+        if row >= 8 || col >= 8 || chars.next().is_some() {
+            None
+        } else {
+            Some(Self::new_from_row_col(row, col))
+        }
+    }
+
+    pub fn row(&self) -> u8 {
+        self.0 >> 3
+    }
+
+    pub fn col(&self) -> u8 {
+        self.0 & 0b111
+    }
+
+    pub fn mask(&self) -> u64 {
+        1u64 << self.0
+    }
+}
+
+bitflags! {
+  struct CastleRights: u8 {
+    const W_KS = 0b0001;
+    const B_KS = 0b0010;
+    const W_QS = 0b0100;
+    const B_QS = 0b1000;
+  }
+}
+
 // TODO: implement iterator?
 #[derive(Default)]
 struct Bitboard(pub u64);
@@ -65,12 +114,10 @@ struct Board {
     full_composite: Bitboard,
 
     to_move: Color,
-}
 
-fn board_index_of(row: u8, col: u8) -> u8 {
-    assert!(row < 8);
-    assert!(col < 8);
-    col | (row << 3)
+    enpassant_index: Option<Square>,
+    castle_rights: CastleRights,
+    halfmove_count: u8,
 }
 
 impl Board {
@@ -122,7 +169,7 @@ impl Board {
                         _ => return Err("Invalid piece"),
                     };
 
-                    let mask: u64 = 1u64 << board_index_of(row, col);
+                    let mask: u64 = Square::new_from_row_col(row, col).mask();
                     assert!(boards[color][piece].0 & mask == 0);
                     assert!(composite_boards[color].0 & mask == 0);
                     assert!(full_composite.0 & mask == 0);
@@ -151,16 +198,46 @@ impl Board {
             _ => return Err("Invalid active color"),
         };
 
-        // TODO: castling
-        // TODO: en passant
-        // TODO: halfmove clock
-        // TODO: fullmove number
+        let mut castle_rights = CastleRights::empty();
+        for castle_char in fen_fields.next().ok_or("Missing castle rights")?.chars() {
+            let new_right = match castle_char {
+                'K' => CastleRights::W_KS,
+                'k' => CastleRights::B_KS,
+                'Q' => CastleRights::W_QS,
+                'q' => CastleRights::B_QS,
+                _ => return Err("Unknown castle right"),
+            };
+
+            castle_rights |= new_right;
+        }
+
+        let enpassant_index_str = fen_fields.next().ok_or("Missing enpassant target")?;
+        let enpassant_index = if enpassant_index_str.eq("-") {
+            None
+        } else {
+            let passed_over = Square::new_from_str(enpassant_index_str)
+                .ok_or("Invalid enpassant target string")?;
+            match passed_over.row() {
+                2 => Some(Square::new_from_row_col(3, passed_over.col())),
+                5 => Some(Square::new_from_row_col(4, passed_over.col())),
+                _ => return Err("Invalid enpassant target square"),
+            }
+        };
+
+        let halfmove_count: u8 = fen_fields
+            .next()
+            .ok_or("Missing halfmove count")?
+            .parse()
+            .map_err(|_| "Invalid halfmove count")?;
 
         Ok(Board {
             boards,
             composite_boards,
             full_composite,
             to_move,
+            enpassant_index,
+            castle_rights,
+            halfmove_count,
         })
     }
 }
