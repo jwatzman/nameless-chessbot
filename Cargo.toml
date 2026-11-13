@@ -1,0 +1,10 @@
+[package]
+name = "nameless-chessbot"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "nameless-tmp"
+path = "rs/main.rs"
+
+[dependencies]
