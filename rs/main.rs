@@ -44,6 +44,20 @@ const MAX_PIECE: usize = 6;
 #[derive(Default)]
 struct ByPiece<T>([T; MAX_PIECE]);
 
+impl<T> ByPiece<T> {
+    const ALL: [Piece; MAX_PIECE] = [
+        Piece::Pawn,
+        Piece::Bishop,
+        Piece::Knight,
+        Piece::Rook,
+        Piece::Queen,
+        Piece::King,
+    ];
+    fn iter(&self) -> impl Iterator<Item = (Piece, &T)> {
+        Self::ALL.into_iter().zip(self.0.iter())
+    }
+}
+
 impl<T> std::ops::Index<Piece> for ByPiece<T> {
     type Output = T;
     fn index(&self, p: Piece) -> &Self::Output {
@@ -242,9 +256,62 @@ impl Board {
             halfmove_count,
         })
     }
+
+    fn at(&self, sq: Square) -> Option<(Color, Piece)> {
+        let mask = sq.mask();
+        if self.full_composite.0 & mask == 0 {
+            return None;
+        }
+
+        for (color, color_pieces) in self.composite_boards.iter() {
+            if color_pieces.0 & mask == 0 {
+                continue;
+            }
+            for (piece, pieces) in self.boards[color].iter() {
+                if pieces.0 & mask != 0 {
+                    return Some((color, piece));
+                }
+            }
+            panic!("Composite color board marks piece but not found individual board")
+        }
+
+        panic!("Full composite board marks piece but not found in color composites")
+    }
+}
+
+impl std::fmt::Display for Board {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        const SEPARATOR: &str = "+---+---+---+---+---+---+---+---+";
+        write!(f, "{}\n", SEPARATOR)?;
+
+        for row in (0u8..8u8).rev() {
+            write!(f, "|")?;
+            for col in 0u8..8u8 {
+                let sigil = match self.at(Square::new_from_row_col(row, col)) {
+                    None => ' ',
+                    Some((Color::White, Piece::Pawn)) => 'P',
+                    Some((Color::Black, Piece::Pawn)) => 'p',
+                    Some((Color::White, Piece::Bishop)) => 'B',
+                    Some((Color::Black, Piece::Bishop)) => 'b',
+                    Some((Color::White, Piece::Knight)) => 'N',
+                    Some((Color::Black, Piece::Knight)) => 'n',
+                    Some((Color::White, Piece::Rook)) => 'R',
+                    Some((Color::Black, Piece::Rook)) => 'r',
+                    Some((Color::White, Piece::Queen)) => 'Q',
+                    Some((Color::Black, Piece::Queen)) => 'q',
+                    Some((Color::White, Piece::King)) => 'K',
+                    Some((Color::Black, Piece::King)) => 'k',
+                };
+                write!(f, " {} |", sigil)?;
+            }
+            write!(f, "\n{}\n", SEPARATOR)?;
+        }
+
+        Ok(())
+    }
 }
 
 fn main() {
-    Board::new();
-    println!("Hello, world!");
+    let b = Board::new();
+    println!("{}", b);
 }
