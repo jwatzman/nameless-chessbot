@@ -193,8 +193,8 @@ impl Board {
             .chars()
             .next()
         {
-            Some('w') => Color::White,
-            Some('b') => Color::Black,
+            Some('w') | Some('W') => Color::White,
+            Some('b') | Some('B') => Color::Black,
             _ => return Err("Invalid active color"),
         };
 
@@ -215,6 +215,8 @@ impl Board {
         let enpassant_index = if enpassant_index_str.eq("-") {
             None
         } else {
+            // Adjust: FEN records the square in the middle that the pawn passed
+            // over. We record the destination square of the pawn move.
             let passed_over = Square::new_from_str(enpassant_index_str)
                 .ok_or("Invalid enpassant target string")?;
             match passed_over.row() {
