@@ -4,6 +4,7 @@ use crate::color::ByColor;
 use crate::color::Color;
 use crate::piece::ByPiece;
 use crate::piece::Piece;
+use crate::sigil;
 use crate::square::Square;
 
 pub struct Board {
@@ -51,21 +52,7 @@ impl Board {
                         Ok(n) => col += n,
                     }
                 } else {
-                    let (color, piece) = match c {
-                        'P' => (Color::White, Piece::Pawn),
-                        'p' => (Color::Black, Piece::Pawn),
-                        'B' => (Color::White, Piece::Bishop),
-                        'b' => (Color::Black, Piece::Bishop),
-                        'N' => (Color::White, Piece::Knight),
-                        'n' => (Color::Black, Piece::Knight),
-                        'R' => (Color::White, Piece::Rook),
-                        'r' => (Color::Black, Piece::Rook),
-                        'Q' => (Color::White, Piece::Queen),
-                        'q' => (Color::Black, Piece::Queen),
-                        'K' => (Color::White, Piece::King),
-                        'k' => (Color::Black, Piece::King),
-                        _ => return Err("Invalid piece"),
-                    };
+                    let (color, piece) = sigil::parse(c).ok_or("Invalid piece")?;
 
                     let mask: u64 = Square::new_from_row_col(row, col).mask();
                     assert!(boards[color][piece].0 & mask == 0);
@@ -173,18 +160,7 @@ impl std::fmt::Display for Board {
             for col in 0u8..8u8 {
                 let sigil = match self.at(Square::new_from_row_col(row, col)) {
                     None => ' ',
-                    Some((Color::White, Piece::Pawn)) => 'P',
-                    Some((Color::Black, Piece::Pawn)) => 'p',
-                    Some((Color::White, Piece::Bishop)) => 'B',
-                    Some((Color::Black, Piece::Bishop)) => 'b',
-                    Some((Color::White, Piece::Knight)) => 'N',
-                    Some((Color::Black, Piece::Knight)) => 'n',
-                    Some((Color::White, Piece::Rook)) => 'R',
-                    Some((Color::Black, Piece::Rook)) => 'r',
-                    Some((Color::White, Piece::Queen)) => 'Q',
-                    Some((Color::Black, Piece::Queen)) => 'q',
-                    Some((Color::White, Piece::King)) => 'K',
-                    Some((Color::Black, Piece::King)) => 'k',
+                    Some((c, p)) => sigil::unparse(c, p),
                 };
                 write!(f, " {} |", sigil)?;
             }

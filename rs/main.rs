@@ -3,6 +3,7 @@ mod board;
 mod castle;
 mod color;
 mod piece;
+mod sigil;
 mod square;
 
 use board::Board;
