@@ -1,3 +1,6 @@
+/// Represents a square on the board. Everything is zero-indexed. "Row 0" is
+/// rank 1, up through "row 7" is rank 8. "Col 0" is file A, up through "col 7"
+/// is file H. "Pos 0" is then A1, "pos 1" is B1, etc up through "pos 63" is H8.
 #[derive(Clone, Copy)]
 pub struct Square(u8);
 

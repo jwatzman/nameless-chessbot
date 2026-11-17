@@ -11,7 +11,9 @@ impl Movelist {
     pub fn new() -> Self {
         Movelist {
             // TODO: this preemptively zeroes the array -- do we want
-            // MaybeUninit or even arrayvec here instead?
+            // MaybeUninit or even arrayvec or tinyvec here instead? (Probably
+            // don't want to pay the cost of zeroing and/or heap allocation on
+            // every move? Should think and benchmark.)
             moves: [Move::NULL; MAX_MOVES],
             n: 0,
         }
