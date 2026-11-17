@@ -5,10 +5,15 @@
 pub struct Square(u8);
 
 impl Square {
+    pub fn new_from_idx(idx: u8) -> Self {
+        debug_assert!(idx < 64);
+        Square(idx)
+    }
+
     pub fn new_from_row_col(row: u8, col: u8) -> Self {
-        assert!(row < 8);
-        assert!(col < 8);
-        Square(col | (row << 3))
+        debug_assert!(row < 8);
+        debug_assert!(col < 8);
+        Self::new_from_idx(col | (row << 3))
     }
 
     pub fn new_from_str(s: &str) -> Option<Self> {
@@ -24,6 +29,10 @@ impl Square {
         } else {
             Some(Self::new_from_row_col(row, col))
         }
+    }
+
+    pub fn idx(&self) -> u8 {
+        return self.0;
     }
 
     pub fn row(&self) -> u8 {

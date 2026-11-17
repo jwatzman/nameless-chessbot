@@ -5,13 +5,15 @@ pub enum Color {
 }
 const MAX_COLOR: usize = 2;
 
+// Must be in same order as the Color values!
+const ALL_COLORS: [Color; MAX_COLOR] = [Color::White, Color::Black];
+
 #[derive(Default)]
 pub struct ByColor<T>([T; MAX_COLOR]);
 
 impl<T> ByColor<T> {
-    const ALL: [Color; MAX_COLOR] = [Color::White, Color::Black];
     pub fn iter(&self) -> impl Iterator<Item = (Color, &T)> {
-        Self::ALL.into_iter().zip(self.0.iter())
+        ALL_COLORS.into_iter().zip(self.0.iter())
     }
 }
 
