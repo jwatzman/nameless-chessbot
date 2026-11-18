@@ -24,6 +24,7 @@ impl Move {
         capture: Option<Piece>,
         promo: Option<Piece>,
     ) -> Self {
+        debug_assert!(promo.is_none() || piece == Piece::Pawn);
         let mut m = Move(0);
 
         m.0 |= u32::from(src.idx()) << Self::SRC_OFFSET;
@@ -83,5 +84,26 @@ impl Move {
         } else {
             Some(Piece::try_from(p8 - 1).unwrap())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn simple_roundtrip() {
+        let src = Square::new_from_row_col(0, 0);
+        let dest = Square::new_from_row_col(7, 0);
+        let piece = Piece::Rook;
+        let capture = Some(Piece::Queen);
+        let promo = None;
+
+        let m = Move::new(src, dest, piece, capture, promo);
+        assert_eq!(m.src(), src);
+        assert_eq!(m.dest(), dest);
+        assert_eq!(m.piece(), piece);
+        assert_eq!(m.capture(), capture);
+        assert_eq!(m.promo(), promo);
     }
 }
