@@ -4,6 +4,7 @@ mod castle;
 mod color;
 mod r#move;
 mod movelist;
+mod movemagic;
 mod piece;
 mod sigil;
 mod square;
