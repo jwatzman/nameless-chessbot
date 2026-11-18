@@ -11,6 +11,24 @@ impl Bitboard {
     }
 }
 
+impl std::fmt::Display for Bitboard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for row in (0u8..8u8).rev() {
+            for col in 0u8..8u8 {
+                let sq = square::Square::new_from_row_col(row, col);
+                if self.0 & sq.mask() == 0 {
+                    write!(f, ".")?;
+                } else {
+                    write!(f, "*")?;
+                }
+            }
+            write!(f, "\n")?;
+        }
+
+        Ok(())
+    }
+}
+
 pub struct BitboardSquareIterator(u64);
 
 impl Iterator for BitboardSquareIterator {

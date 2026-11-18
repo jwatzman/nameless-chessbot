@@ -11,7 +11,41 @@ mod square;
 
 use board::Board;
 
+fn bbviz(mut args: impl Iterator<Item = String>) -> () {
+    let bb_str = match args.next() {
+        Some(s) => s,
+        None => {
+            println!("bbviz: missing board");
+            return;
+        }
+    };
+
+    let maybe_bb = match bb_str.strip_prefix("0x") {
+        Some(s) => u64::from_str_radix(s, 16),
+        None => u64::from_str_radix(bb_str.as_str(), 10),
+    };
+
+    let bb = match maybe_bb {
+        Err(_) => {
+            println!("bbviz: unable to parse {}", bb_str);
+            return;
+        }
+        Ok(n) => n,
+    };
+
+    print!("{}", bitboard::Bitboard(bb));
+}
+
 fn main() {
-    let b = Board::new();
-    println!("{}", b);
+    let mut args = std::env::args().skip(1);
+    match args.next().as_deref() {
+        Some("bbviz") => bbviz(args),
+        Some(unk) => {
+            println!("Unknown command: {}", unk);
+        }
+        None => {
+            let b = Board::new();
+            println!("{}", b);
+        }
+    }
 }
