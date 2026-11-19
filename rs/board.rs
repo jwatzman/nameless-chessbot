@@ -54,13 +54,13 @@ impl Board {
                 } else {
                     let (color, piece) = sigil::parse(c).ok_or("Invalid piece")?;
 
-                    let mask: u64 = Square::new_from_row_col(row, col).mask();
-                    assert!(boards[color][piece].0 & mask == 0);
-                    assert!(composite_boards[color].0 & mask == 0);
-                    assert!(full_composite.0 & mask == 0);
-                    boards[color][piece].0 |= mask;
-                    composite_boards[color].0 |= mask;
-                    full_composite.0 |= mask;
+                    let mask = Square::new_from_row_col(row, col).mask();
+                    assert!(boards[color][piece] & mask == 0);
+                    assert!(composite_boards[color] & mask == 0);
+                    assert!(full_composite & mask == 0);
+                    boards[color][piece] |= mask;
+                    composite_boards[color] |= mask;
+                    full_composite |= mask;
                     col += 1;
                 }
             }
@@ -130,16 +130,16 @@ impl Board {
 
     fn at(&self, sq: Square) -> Option<(Color, Piece)> {
         let mask = sq.mask();
-        if self.full_composite.0 & mask == 0 {
+        if self.full_composite & mask == 0 {
             return None;
         }
 
         for (color, color_pieces) in self.composite_boards.iter() {
-            if color_pieces.0 & mask == 0 {
+            if *color_pieces & mask == 0 {
                 continue;
             }
             for (piece, pieces) in self.boards[color].iter() {
-                if pieces.0 & mask != 0 {
+                if *pieces & mask != 0 {
                     return Some((color, piece));
                 }
             }

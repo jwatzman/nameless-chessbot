@@ -29,10 +29,10 @@ fn offset(e: &Entry, occ: bitboard::Bitboard) -> usize {
 
 pub fn rook_attacks(sq: square::Square, occ: bitboard::Bitboard) -> bitboard::Bitboard {
     let e = &ROOK_ENTRIES[usize::from(sq.idx())];
-    ROOK_ATTACKS[offset(e, bitboard::Bitboard(occ.0 & e.mask))]
+    ROOK_ATTACKS[offset(e, occ & e.mask)]
 }
 
 pub fn bishop_attacks(sq: square::Square, occ: bitboard::Bitboard) -> bitboard::Bitboard {
     let e = &BISHOP_ENTRIES[usize::from(sq.idx())];
-    BISHOP_ATTACKS[offset(e, bitboard::Bitboard(occ.0 & e.mask))]
+    BISHOP_ATTACKS[offset(e, occ & e.mask)]
 }

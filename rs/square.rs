@@ -1,3 +1,5 @@
+use crate::bitboard;
+
 /// Represents a square on the board. Everything is zero-indexed. "Row 0" is
 /// rank 1, up through "row 7" is rank 8. "Col 0" is file A, up through "col 7"
 /// is file H. "Pos 0" is then A1, "pos 1" is B1, etc up through "pos 63" is H8.
@@ -43,7 +45,7 @@ impl Square {
         self.0 & 0b111
     }
 
-    pub fn mask(&self) -> u64 {
-        1u64 << self.0
+    pub fn mask(&self) -> bitboard::Bitboard {
+        bitboard::Bitboard(1u64 << self.0)
     }
 }

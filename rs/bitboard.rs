@@ -11,12 +11,46 @@ impl Bitboard {
     }
 }
 
+impl PartialEq<u64> for Bitboard {
+    fn eq(&self, other: &u64) -> bool {
+        self.0 == *other
+    }
+}
+
+impl std::ops::BitAnd<u64> for Bitboard {
+    type Output = Bitboard;
+
+    fn bitand(self, rhs: u64) -> Self::Output {
+        Bitboard(self.0 & rhs)
+    }
+}
+
+impl std::ops::BitAnd<Bitboard> for Bitboard {
+    type Output = Bitboard;
+
+    fn bitand(self, rhs: Bitboard) -> Self::Output {
+        Bitboard(self.0 & rhs.0)
+    }
+}
+
+impl std::ops::BitOrAssign<u64> for Bitboard {
+    fn bitor_assign(&mut self, rhs: u64) {
+        self.0 |= rhs
+    }
+}
+
+impl std::ops::BitOrAssign<Bitboard> for Bitboard {
+    fn bitor_assign(&mut self, rhs: Bitboard) {
+        self.0 |= rhs.0
+    }
+}
+
 impl std::fmt::Display for Bitboard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for row in (0u8..8u8).rev() {
             for col in 0u8..8u8 {
                 let sq = square::Square::new_from_row_col(row, col);
-                if self.0 & sq.mask() == 0 {
+                if *self & sq.mask() == 0 {
                     write!(f, ".")?;
                 } else {
                     write!(f, "*")?;

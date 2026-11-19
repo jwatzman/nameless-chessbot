@@ -126,7 +126,7 @@ fn nth_subset(squares: &Vec<Square>, n: u64) -> Bitboard {
     let mut ret = Bitboard(0);
     for (i, sq) in squares.iter().enumerate() {
         if (n & (1 << i)) != 0 {
-            ret.0 |= sq.mask();
+            ret |= sq.mask();
         }
     }
 
