@@ -46,6 +46,13 @@ fn main() {
         None => {
             let b = Board::new();
             println!("{}", b);
+
+            let sq = square::Square::new_from_idx(36);
+            let occ = bitboard::Bitboard(0x08001000);
+            println!("{}", sq.mask());
+            println!("{}", occ);
+            println!("{}", movemagic::rook_attacks(sq, occ));
+            println!("{}", movemagic::bishop_attacks(sq, occ));
         }
     }
 }

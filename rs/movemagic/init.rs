@@ -134,9 +134,35 @@ fn nth_subset(squares: &Vec<Square>, n: u64) -> Bitboard {
 }
 
 fn rook_attacks_board(sq: Square, occ: Bitboard) -> Bitboard {
-    todo!()
+    attacks_board(sq, occ, 1, 0)
+        | attacks_board(sq, occ, -1, 0)
+        | attacks_board(sq, occ, 0, 1)
+        | attacks_board(sq, occ, 0, -1)
 }
 
 fn bishop_attacks_board(sq: Square, occ: Bitboard) -> Bitboard {
-    todo!()
+    attacks_board(sq, occ, 1, 1)
+        | attacks_board(sq, occ, 1, -1)
+        | attacks_board(sq, occ, -1, 1)
+        | attacks_board(sq, occ, -1, -1)
+}
+
+fn attacks_board(start: Square, occ: Bitboard, row_incr: i16, col_incr: i16) -> Bitboard {
+    let mut attacks = Bitboard(0);
+
+    let mut row = i16::from(start.row()) + row_incr;
+    let mut col = i16::from(start.col()) + col_incr;
+    while row < 8 && row >= 0 && col < 8 && col >= 0 {
+        let sq = Square::new_from_row_col(row as u8, col as u8);
+        let mask = sq.mask();
+        attacks |= mask;
+        if (occ & mask) != 0 {
+            break;
+        }
+
+        row += row_incr;
+        col += col_incr;
+    }
+
+    attacks
 }

@@ -36,3 +36,16 @@ pub fn bishop_attacks(sq: square::Square, occ: bitboard::Bitboard) -> bitboard::
     let e = &BISHOP_ENTRIES[usize::from(sq.idx())];
     BISHOP_ATTACKS[offset(e, occ & e.mask)]
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn smoke() {
+        let sq = square::Square::new_from_idx(36);
+        let occ = bitboard::Bitboard(0x08001000);
+        assert_eq!(rook_attacks(sq, occ), 0x101010ef10101000);
+        assert_eq!(bishop_attacks(sq, occ), 0x8244280028408000);
+    }
+}

@@ -9,3 +9,6 @@ path = "rs/main.rs"
 
 [dependencies]
 bitflags = "2.13.2"
+
+[profile.dev]
+opt-level = 1

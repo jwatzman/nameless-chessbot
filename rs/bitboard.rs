@@ -2,7 +2,7 @@ use crate::square;
 
 /// Newtype wrapper for a bitboard. LSB is A1, up through MSB is H8. (See
 /// [`Square`].)
-#[derive(Clone, Copy, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Bitboard(pub u64);
 
 impl Bitboard {
@@ -30,6 +30,22 @@ impl std::ops::BitAnd<Bitboard> for Bitboard {
 
     fn bitand(self, rhs: Bitboard) -> Self::Output {
         Bitboard(self.0 & rhs.0)
+    }
+}
+
+impl std::ops::BitOr<u64> for Bitboard {
+    type Output = Bitboard;
+
+    fn bitor(self, rhs: u64) -> Self::Output {
+        Bitboard(self.0 | rhs)
+    }
+}
+
+impl std::ops::BitOr<Bitboard> for Bitboard {
+    type Output = Bitboard;
+
+    fn bitor(self, rhs: Bitboard) -> Self::Output {
+        Bitboard(self.0 | rhs.0)
     }
 }
 
