@@ -12,8 +12,8 @@ struct Entry {
     shift: u8,
 }
 
-static ROOK_ENTRIES: [Entry; 64] = init::rook_entries();
-static BISHOP_ENTRIES: [Entry; 64] = init::bishop_entries();
+static ROOK_ENTRIES: square::BySquare<Entry> = init::rook_entries();
+static BISHOP_ENTRIES: square::BySquare<Entry> = init::bishop_entries();
 
 const ROOK_ATTACKS_SIZE: usize = init::rook_attacks_size();
 const BISHOP_ATTACKS_SIZE: usize = init::bishop_attacks_size();
@@ -28,12 +28,12 @@ fn offset(e: &Entry, occ: bitboard::Bitboard) -> usize {
 }
 
 pub fn rook_attacks(sq: square::Square, occ: bitboard::Bitboard) -> bitboard::Bitboard {
-    let e = &ROOK_ENTRIES[usize::from(sq.idx())];
+    let e = &ROOK_ENTRIES[sq];
     ROOK_ATTACKS[offset(e, occ & e.mask)]
 }
 
 pub fn bishop_attacks(sq: square::Square, occ: bitboard::Bitboard) -> bitboard::Bitboard {
-    let e = &BISHOP_ENTRIES[usize::from(sq.idx())];
+    let e = &BISHOP_ENTRIES[sq];
     BISHOP_ATTACKS[offset(e, occ & e.mask)]
 }
 

@@ -33,6 +33,10 @@ impl Square {
         }
     }
 
+    pub fn all() -> impl Iterator<Item = Square> {
+        (0u8..64).map(Self::new_from_idx)
+    }
+
     pub fn idx(&self) -> u8 {
         return self.0;
     }
@@ -47,5 +51,27 @@ impl Square {
 
     pub fn mask(&self) -> bitboard::Bitboard {
         bitboard::Bitboard(1u64 << self.0)
+    }
+}
+
+pub struct BySquare<T>([T; 64]);
+
+impl<T> BySquare<T> {
+    pub const fn new(arr: [T; 64]) -> Self {
+        BySquare(arr)
+    }
+}
+
+impl<T> std::ops::Index<Square> for BySquare<T> {
+    type Output = T;
+
+    fn index(&self, sq: Square) -> &Self::Output {
+        &self.0[usize::from(sq.idx())]
+    }
+}
+
+impl<T> std::ops::IndexMut<Square> for BySquare<T> {
+    fn index_mut(&mut self, sq: Square) -> &mut Self::Output {
+        &mut self.0[usize::from(sq.idx())]
     }
 }

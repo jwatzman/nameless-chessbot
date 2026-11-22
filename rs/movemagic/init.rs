@@ -1,14 +1,14 @@
 use crate::{
     bitboard::Bitboard,
     movemagic::{self, consts},
-    square::Square,
+    square,
 };
 
-pub const fn rook_entries() -> [movemagic::Entry; 64] {
+pub const fn rook_entries() -> square::BySquare<movemagic::Entry> {
     entries(&consts::R_SHIFT, &consts::R_MAGIC, &consts::R_MASK)
 }
 
-pub const fn bishop_entries() -> [movemagic::Entry; 64] {
+pub const fn bishop_entries() -> square::BySquare<movemagic::Entry> {
     entries(&consts::B_SHIFT, &consts::B_MAGIC, &consts::B_MASK)
 }
 
@@ -16,7 +16,7 @@ const fn entries(
     shifts: &[u8; 64],
     magics: &[u64; 64],
     masks: &[u64; 64],
-) -> [movemagic::Entry; 64] {
+) -> square::BySquare<movemagic::Entry> {
     let mut entries: [movemagic::Entry; 64] = [const {
         movemagic::Entry {
             mask: 0,
@@ -39,7 +39,7 @@ const fn entries(
         idx += 1;
     }
 
-    entries
+    square::BySquare::new(entries)
 }
 
 pub const fn rook_attacks_size() -> usize {
@@ -97,11 +97,10 @@ pub fn bishop_attacks() -> [Bitboard; movemagic::BISHOP_ATTACKS_SIZE] {
 fn attacks(
     attacks_arr: &mut [Bitboard],
     masks: &[u64; 64],
-    entries: &[movemagic::Entry; 64],
-    attacks_board: fn(Square, Bitboard) -> Bitboard,
+    entries: &square::BySquare<movemagic::Entry>,
+    attacks_board: fn(square::Square, Bitboard) -> Bitboard,
 ) {
-    for idx in 0u8..64 {
-        let sq = Square::new_from_idx(idx);
+    for sq in square::Square::all() {
         let mask_squares: Vec<_> = Bitboard(masks[usize::from(sq.idx())])
             .square_iterator()
             .collect();
@@ -109,7 +108,7 @@ fn attacks(
             let occ = nth_subset(&mask_squares, n);
             let attacks = attacks_board(sq, occ);
 
-            let e = &entries[usize::from(sq.idx())];
+            let e = &entries[sq];
             let off = movemagic::offset(e, occ);
             debug_assert!(attacks_arr[off].0 == 0 || attacks_arr[off] == attacks);
             attacks_arr[off] = attacks;
@@ -119,7 +118,7 @@ fn attacks(
 
 /// If `squares` has length `k`, then there are `2^k` possible subsets. This
 /// computes the `n`th subset and combines the masks of those squares.
-fn nth_subset(squares: &Vec<Square>, n: u64) -> Bitboard {
+fn nth_subset(squares: &Vec<square::Square>, n: u64) -> Bitboard {
     debug_assert!(squares.len() < 64);
     debug_assert!(n < (1 << squares.len()));
 
@@ -133,27 +132,27 @@ fn nth_subset(squares: &Vec<Square>, n: u64) -> Bitboard {
     ret
 }
 
-fn rook_attacks_board(sq: Square, occ: Bitboard) -> Bitboard {
+fn rook_attacks_board(sq: square::Square, occ: Bitboard) -> Bitboard {
     attacks_board(sq, occ, 1, 0)
         | attacks_board(sq, occ, -1, 0)
         | attacks_board(sq, occ, 0, 1)
         | attacks_board(sq, occ, 0, -1)
 }
 
-fn bishop_attacks_board(sq: Square, occ: Bitboard) -> Bitboard {
+fn bishop_attacks_board(sq: square::Square, occ: Bitboard) -> Bitboard {
     attacks_board(sq, occ, 1, 1)
         | attacks_board(sq, occ, 1, -1)
         | attacks_board(sq, occ, -1, 1)
         | attacks_board(sq, occ, -1, -1)
 }
 
-fn attacks_board(start: Square, occ: Bitboard, row_incr: i16, col_incr: i16) -> Bitboard {
+fn attacks_board(start: square::Square, occ: Bitboard, row_incr: i16, col_incr: i16) -> Bitboard {
     let mut attacks = Bitboard(0);
 
     let mut row = i16::from(start.row()) + row_incr;
     let mut col = i16::from(start.col()) + col_incr;
     while row < 8 && row >= 0 && col < 8 && col >= 0 {
-        let sq = Square::new_from_row_col(row as u8, col as u8);
+        let sq = square::Square::new_from_row_col(row as u8, col as u8);
         let mask = sq.mask();
         attacks |= mask;
         if (occ & mask) != 0 {
