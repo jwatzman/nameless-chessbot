@@ -33,10 +33,6 @@ impl Square {
         }
     }
 
-    pub fn all() -> impl Iterator<Item = Square> {
-        (0u8..64).map(Self::new_from_idx)
-    }
-
     pub fn idx(&self) -> u8 {
         return self.0;
     }
@@ -59,6 +55,10 @@ pub struct BySquare<T>([T; 64]);
 impl<T> BySquare<T> {
     pub const fn new(arr: [T; 64]) -> Self {
         BySquare(arr)
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (Square, &T)> {
+        (0u8..64).map(Square::new_from_idx).zip(self.0.iter())
     }
 }
 

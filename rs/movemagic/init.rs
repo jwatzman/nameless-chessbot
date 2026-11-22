@@ -1,5 +1,5 @@
 use crate::{
-    bitboard::Bitboard,
+    bitboard::{self, Bitboard},
     movemagic::{self, consts},
     square,
 };
@@ -19,18 +19,18 @@ const fn entries(
 ) -> square::BySquare<movemagic::Entry> {
     let mut entries: [movemagic::Entry; 64] = [const {
         movemagic::Entry {
-            mask: 0,
+            mask: bitboard::Bitboard(0),
             magic: 0,
             base: 0,
             shift: 0,
         }
     }; 64];
-    let mut base: usize = 0;
 
+    let mut base: usize = 0;
     let mut idx: usize = 0;
     while idx < 64 {
         entries[idx] = movemagic::Entry {
-            mask: masks[idx],
+            mask: bitboard::Bitboard(masks[idx]),
             magic: magics[idx],
             base,
             shift: shifts[idx],
@@ -67,12 +67,10 @@ const fn shift_num_entries(shifts: &[u8; 64], idx: usize) -> usize {
 }
 
 pub fn rook_attacks() -> [Bitboard; movemagic::ROOK_ATTACKS_SIZE] {
-    let mut rook_attacks: [Bitboard; movemagic::ROOK_ATTACKS_SIZE] =
-        [const { Bitboard(0) }; movemagic::ROOK_ATTACKS_SIZE];
+    let mut rook_attacks = [const { Bitboard(0) }; movemagic::ROOK_ATTACKS_SIZE];
 
     attacks(
         &mut rook_attacks,
-        &consts::R_MASK,
         &movemagic::ROOK_ENTRIES,
         rook_attacks_board,
     );
@@ -81,12 +79,10 @@ pub fn rook_attacks() -> [Bitboard; movemagic::ROOK_ATTACKS_SIZE] {
 }
 
 pub fn bishop_attacks() -> [Bitboard; movemagic::BISHOP_ATTACKS_SIZE] {
-    let mut bishop_attacks: [Bitboard; movemagic::BISHOP_ATTACKS_SIZE] =
-        [const { Bitboard(0) }; movemagic::BISHOP_ATTACKS_SIZE];
+    let mut bishop_attacks = [const { Bitboard(0) }; movemagic::BISHOP_ATTACKS_SIZE];
 
     attacks(
         &mut bishop_attacks,
-        &consts::B_MASK,
         &movemagic::BISHOP_ENTRIES,
         bishop_attacks_board,
     );
@@ -96,20 +92,16 @@ pub fn bishop_attacks() -> [Bitboard; movemagic::BISHOP_ATTACKS_SIZE] {
 
 fn attacks(
     attacks_arr: &mut [Bitboard],
-    masks: &[u64; 64],
     entries: &square::BySquare<movemagic::Entry>,
     attacks_board: fn(square::Square, Bitboard) -> Bitboard,
 ) {
-    for sq in square::Square::all() {
-        let mask_squares: Vec<_> = Bitboard(masks[usize::from(sq.idx())])
-            .square_iterator()
-            .collect();
+    for (sq, entry) in entries.iter() {
+        let mask_squares: Vec<_> = entry.mask.square_iterator().collect();
         for n in 0u64..(1 << mask_squares.len()) {
             let occ = nth_subset(&mask_squares, n);
             let attacks = attacks_board(sq, occ);
 
-            let e = &entries[sq];
-            let off = movemagic::offset(e, occ);
+            let off = movemagic::offset(entry, occ);
             debug_assert!(attacks_arr[off].0 == 0 || attacks_arr[off] == attacks);
             attacks_arr[off] = attacks;
         }

@@ -6,7 +6,7 @@ mod init;
 
 #[derive(Clone)]
 struct Entry {
-    mask: u64,
+    mask: bitboard::Bitboard,
     magic: u64,
     base: usize,
     shift: u8,
