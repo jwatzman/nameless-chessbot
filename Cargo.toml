@@ -9,6 +9,8 @@ path = "rs/main.rs"
 
 [dependencies]
 bitflags = "2.13.2"
+rand_core = "0.10.1"
+rand_xoshiro = "0.8.2"
 
 [profile.dev]
 opt-level = 1

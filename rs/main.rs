@@ -10,6 +10,7 @@ mod sigil;
 mod square;
 
 use board::Board;
+use rand_core::SeedableRng;
 
 fn bbviz(mut args: impl Iterator<Item = String>) -> () {
     let bb_str = match args.next() {
@@ -44,7 +45,7 @@ fn main() {
             println!("Unknown command: {}", unk);
         }
         None => {
-            let b = Board::new();
+            let b = Board::new(&mut rand_xoshiro::Xoshiro256PlusPlus::seed_from_u64(1));
             println!("{}", b);
 
             let sq = square::Square::new_from_idx(36);

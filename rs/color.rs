@@ -12,6 +12,10 @@ const ALL_COLORS: [Color; MAX_COLOR] = [Color::White, Color::Black];
 pub struct ByColor<T>([T; MAX_COLOR]);
 
 impl<T> ByColor<T> {
+    pub fn new(arr: [T; MAX_COLOR]) -> Self {
+        ByColor(arr)
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = (Color, &T)> {
         ALL_COLORS.into_iter().zip(self.0.iter())
     }

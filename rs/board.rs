@@ -5,6 +5,7 @@ use crate::color::Color;
 use crate::piece::ByPiece;
 use crate::piece::Piece;
 use crate::sigil;
+use crate::square::BySquare;
 use crate::square::Square;
 
 pub struct Board {
@@ -17,14 +18,24 @@ pub struct Board {
     enpassant_index: Option<Square>,
     castle_rights: CastleRights,
     halfmove_count: u8,
+
+    zobrist: u64,
+    zobrist_sq: ByColor<ByPiece<BySquare<u64>>>,
+    zobrist_castle: [u64; 16],
+    zobrist_enpassant: [u64; 8],
+    zobrist_black: u64,
 }
 
 impl Board {
-    pub fn new() -> Self {
-        Self::new_with_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap()
+    pub fn new(rand: &mut dyn rand_core::Rng) -> Self {
+        Self::new_with_fen(
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+            rand,
+        )
+        .unwrap()
     }
 
-    pub fn new_with_fen(fen: &str) -> Result<Self, &'static str> {
+    pub fn new_with_fen(fen: &str, rand: &mut dyn rand_core::Rng) -> Result<Self, &'static str> {
         let mut boards: ByColor<ByPiece<Bitboard>> = ByColor::default();
         let mut composite_boards: ByColor<Bitboard> = ByColor::default();
         let mut full_composite = Bitboard::default();
@@ -117,6 +128,16 @@ impl Board {
             .parse()
             .map_err(|_| "Invalid halfmove count")?;
 
+        let zobrist = rand.next_u64();
+        let zobrist_sq = ByColor::new(std::array::from_fn(|_| {
+            ByPiece::new(std::array::from_fn(|_| {
+                BySquare::new(std::array::from_fn(|_| rand.next_u64()))
+            }))
+        }));
+        let zobrist_castle = std::array::from_fn(|_| rand.next_u64());
+        let zobrist_enpassant = std::array::from_fn(|_| rand.next_u64());
+        let zobrist_black = rand.next_u64();
+
         Ok(Board {
             boards,
             composite_boards,
@@ -125,6 +146,11 @@ impl Board {
             enpassant_index,
             castle_rights,
             halfmove_count,
+            zobrist,
+            zobrist_sq,
+            zobrist_castle,
+            zobrist_enpassant,
+            zobrist_black,
         })
     }
 

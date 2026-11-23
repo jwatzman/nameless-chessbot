@@ -31,6 +31,10 @@ impl TryFrom<u8> for Piece {
 pub struct ByPiece<T>([T; MAX_PIECE]);
 
 impl<T> ByPiece<T> {
+    pub fn new(arr: [T; MAX_PIECE]) -> Self {
+        ByPiece(arr)
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = (Piece, &T)> {
         ALL_PIECES.into_iter().zip(self.0.iter())
     }
