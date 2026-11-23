@@ -61,6 +61,12 @@ impl std::ops::BitOrAssign<Bitboard> for Bitboard {
     }
 }
 
+impl std::ops::BitXorAssign<Bitboard> for Bitboard {
+    fn bitxor_assign(&mut self, rhs: Bitboard) {
+        self.0 ^= rhs.0
+    }
+}
+
 impl std::fmt::Display for Bitboard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for row in (0u8..8u8).rev() {

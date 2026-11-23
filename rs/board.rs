@@ -2,6 +2,7 @@ use crate::bitboard::Bitboard;
 use crate::castle::CastleRights;
 use crate::color::ByColor;
 use crate::color::Color;
+use crate::r#move;
 use crate::piece::ByPiece;
 use crate::piece::Piece;
 use crate::sigil;
@@ -24,6 +25,13 @@ pub struct Board {
     zobrist_castle: [u64; 16],
     zobrist_enpassant: [u64; 8],
     zobrist_black: u64,
+}
+
+pub struct UnmakeMove {
+    m: r#move::Move,
+    enpassant_index: Option<Square>,
+    castle_rights: CastleRights,
+    halfmove_count: u8,
 }
 
 impl Board {
@@ -173,6 +181,39 @@ impl Board {
         }
 
         panic!("Full composite board marks piece but not found in color composites")
+    }
+
+    pub fn make_move(&mut self, m: r#move::Move) -> UnmakeMove {
+        let u = UnmakeMove {
+            m,
+            enpassant_index: self.enpassant_index,
+            castle_rights: self.castle_rights,
+            halfmove_count: self.halfmove_count,
+        };
+
+        match m.capture() {
+            None => debug_assert_eq!(self.full_composite & m.dest().mask(), 0),
+            Some(p) => debug_assert_ne!(p, Piece::King),
+        }
+
+        u
+    }
+
+    pub fn unmake_move(&mut self, u: UnmakeMove) -> () {
+        todo!()
+    }
+
+    fn make_unmake_common(&mut self, m: r#move::Move) -> () {
+        todo!()
+    }
+
+    fn toggle(&mut self, color: Color, piece: Piece, sq: Square) {
+        let mask = sq.mask();
+        self.boards[color][piece] ^= mask;
+        self.composite_boards[color] ^= mask;
+        self.full_composite ^= mask;
+
+        self.zobrist ^= self.zobrist_sq[color][piece][sq];
     }
 }
 

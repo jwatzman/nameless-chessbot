@@ -1,6 +1,7 @@
 use bitflags::bitflags;
 
 bitflags! {
+  #[derive(Clone, Copy)]
   pub struct CastleRights: u8 {
     const W_KS = 0b0001;
     const B_KS = 0b0010;
