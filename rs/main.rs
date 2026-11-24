@@ -53,11 +53,16 @@ fn main() {
             println!("{}", moves::magic::rook_attacks(sq, occ));
             println!("{}", moves::magic::bishop_attacks(sq, occ));
 
+            let z = b.zobrist();
             let src = square::Square::new_from_row_col(1, 0);
             let dest = square::Square::new_from_row_col(3, 0);
             let m = moves::Move::new(src, dest, piece::Piece::Pawn, None, None);
-            b.make_move(m);
+            let u = b.make_move(m);
             println!("{}", b);
+
+            b.unmake_move(u);
+            println!("{}", b);
+            assert_eq!(b.zobrist(), z);
         }
     }
 }

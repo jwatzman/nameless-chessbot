@@ -1,6 +1,5 @@
 use crate::bitboard::Bitboard;
 use crate::castle::CastleRights;
-use crate::color;
 use crate::color::ByColor;
 use crate::color::Color;
 use crate::moves::Move;
@@ -113,7 +112,7 @@ impl Board {
                 _ => return Err("Unknown castle right"),
             };
 
-            castle_rights |= new_right;
+            castle_rights.insert(new_right);
         }
 
         let enpassant_index_str = fen_fields.next().ok_or("Missing enpassant target")?;
@@ -192,21 +191,64 @@ impl Board {
             halfmove_count: self.halfmove_count,
         };
 
-        debug_assert_eq!(self.at(m.src()), Some((self.to_move, m.piece())));
-        match m.capture() {
-            None => debug_assert_eq!(self.at(m.dest()), None),
-            Some(p) => debug_assert_eq!(self.at(m.dest()), Some((!self.to_move, p))),
+        let src = m.src();
+        let dest = m.dest();
+        let p = m.piece();
+        let capture = m.capture();
+        let promo = m.promo();
+        let c = self.to_move;
+
+        debug_assert_eq!(self.at(src), Some((c, p)));
+        match capture {
+            None => debug_assert_eq!(self.at(dest), None),
+            Some(cp) => debug_assert_eq!(self.at(dest), Some((!c, cp))),
         }
 
-        // TODO
+        if p == Piece::Pawn || capture.is_some() {
+            self.halfmove_count = 0;
+        } else {
+            self.halfmove_count += 1;
+        }
+
+        if !self.castle_rights.is_empty() {
+            self.zobrist ^= self.zobrist_castle[usize::from(self.castle_rights.bits())];
+
+            // TODO -- castle rights
+            if src.idx() == 0 || dest.idx() == 0 {
+                self.castle_rights.remove(CastleRights::W_QS);
+            }
+            if src.idx() == 7 || dest.idx() == 7 {
+                self.castle_rights.remove(CastleRights::W_KS);
+            }
+            if src.idx() == 56 || dest.idx() == 56 {
+                self.castle_rights.remove(CastleRights::B_QS);
+            }
+            if src.idx() == 63 || dest.idx() == 63 {
+                self.castle_rights.remove(CastleRights::B_KS);
+            }
+
+            if p == Piece::King {
+                self.castle_rights.remove(CastleRights::both_color(c));
+            }
+
+            self.zobrist ^= self.zobrist_castle[usize::from(self.castle_rights.bits())];
+        }
+
+        // TODO -- enpassant
+
+        self.make_unmake_common(m);
+        self.to_move = !self.to_move;
+
+        debug_assert_eq!(self.boards[Color::White][Piece::King].0.count_ones(), 1);
+        debug_assert_eq!(self.boards[Color::Black][Piece::King].0.count_ones(), 1);
 
         debug_assert_eq!(
             self.full_composite,
-            self.composite_boards[color::Color::White] | self.composite_boards[color::Color::Black]
+            self.composite_boards[Color::White] | self.composite_boards[Color::Black]
         );
 
         debug_assert_eq!(
-            self.composite_boards[color::Color::White] & self.composite_boards[color::Color::Black],
+            self.composite_boards[Color::White] & self.composite_boards[Color::Black],
             0
         );
 
@@ -214,11 +256,16 @@ impl Board {
     }
 
     pub fn unmake_move(&mut self, u: UnmakeMove) -> () {
-        todo!()
+        self.to_move = !self.to_move;
+        self.make_unmake_common(u.m);
+
+        // TODO -- copy out from UnmakeMove
     }
 
     fn make_unmake_common(&mut self, m: Move) -> () {
-        todo!()
+        // TODO
+
+        self.zobrist ^= self.zobrist_black;
     }
 
     fn toggle(&mut self, color: Color, piece: Piece, sq: Square) {
@@ -228,6 +275,10 @@ impl Board {
         self.full_composite ^= mask;
 
         self.zobrist ^= self.zobrist_sq[color][piece][sq];
+    }
+
+    pub fn zobrist(&self) -> u64 {
+        self.zobrist
     }
 }
 
