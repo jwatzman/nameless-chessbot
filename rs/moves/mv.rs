@@ -1,5 +1,6 @@
 use crate::{piece::Piece, square::Square};
 
+// TODO: is this better bitpacked or as an struct/enum?
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Move(u32);
 

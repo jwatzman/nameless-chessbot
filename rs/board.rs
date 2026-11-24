@@ -262,6 +262,9 @@ impl Board {
         // TODO -- copy out from UnmakeMove
     }
 
+    // TODO: should this take a const template parameter to skip computing
+    // zobrist, which we can put into the UnmakeMove? And we can use to compute
+    // the NNUE value when we have that?
     fn make_unmake_common(&mut self, m: Move) -> () {
         // TODO
 
