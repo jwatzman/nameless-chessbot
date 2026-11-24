@@ -2,9 +2,7 @@ mod bitboard;
 mod board;
 mod castle;
 mod color;
-mod r#move;
-mod movelist;
-mod movemagic;
+mod moves;
 mod piece;
 mod sigil;
 mod square;
@@ -52,12 +50,12 @@ fn main() {
             let occ = bitboard::Bitboard(0x08001000);
             println!("{}", sq.mask());
             println!("{}", occ);
-            println!("{}", movemagic::rook_attacks(sq, occ));
-            println!("{}", movemagic::bishop_attacks(sq, occ));
+            println!("{}", moves::magic::rook_attacks(sq, occ));
+            println!("{}", moves::magic::bishop_attacks(sq, occ));
 
             let src = square::Square::new_from_row_col(1, 0);
             let dest = square::Square::new_from_row_col(3, 0);
-            let m = r#move::Move::new(src, dest, piece::Piece::Pawn, None, None);
+            let m = moves::Move::new(src, dest, piece::Piece::Pawn, None, None);
             b.make_move(m);
             println!("{}", b);
         }

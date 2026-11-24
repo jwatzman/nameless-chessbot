@@ -1,4 +1,4 @@
-use crate::r#move::Move;
+use crate::moves::Move;
 
 const MAX_MOVES: usize = 256usize;
 

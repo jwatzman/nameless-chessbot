@@ -3,8 +3,7 @@ use crate::castle::CastleRights;
 use crate::color;
 use crate::color::ByColor;
 use crate::color::Color;
-use crate::color::Color::White;
-use crate::r#move;
+use crate::moves::Move;
 use crate::piece::ByPiece;
 use crate::piece::Piece;
 use crate::sigil;
@@ -30,7 +29,7 @@ pub struct Board {
 }
 
 pub struct UnmakeMove {
-    m: r#move::Move,
+    m: Move,
     enpassant_index: Option<Square>,
     castle_rights: CastleRights,
     halfmove_count: u8,
@@ -185,7 +184,7 @@ impl Board {
         panic!("Full composite board marks piece but not found in color composites")
     }
 
-    pub fn make_move(&mut self, m: r#move::Move) -> UnmakeMove {
+    pub fn make_move(&mut self, m: Move) -> UnmakeMove {
         let u = UnmakeMove {
             m,
             enpassant_index: self.enpassant_index,
@@ -218,7 +217,7 @@ impl Board {
         todo!()
     }
 
-    fn make_unmake_common(&mut self, m: r#move::Move) -> () {
+    fn make_unmake_common(&mut self, m: Move) -> () {
         todo!()
     }
 

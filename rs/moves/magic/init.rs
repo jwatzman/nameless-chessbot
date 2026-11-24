@@ -1,14 +1,10 @@
-use crate::{
-    bitboard::{self, Bitboard},
-    movemagic::{self, consts},
-    square,
-};
+use crate::{bitboard::Bitboard, moves::magic, moves::magic::consts, square};
 
-pub const fn rook_entries() -> square::BySquare<movemagic::Entry> {
+pub const fn rook_entries() -> square::BySquare<magic::Entry> {
     entries(&consts::R_SHIFT, &consts::R_MAGIC, &consts::R_MASK)
 }
 
-pub const fn bishop_entries() -> square::BySquare<movemagic::Entry> {
+pub const fn bishop_entries() -> square::BySquare<magic::Entry> {
     entries(&consts::B_SHIFT, &consts::B_MAGIC, &consts::B_MASK)
 }
 
@@ -16,10 +12,10 @@ const fn entries(
     shifts: &[u8; 64],
     magics: &[u64; 64],
     masks: &[u64; 64],
-) -> square::BySquare<movemagic::Entry> {
-    let mut entries: [movemagic::Entry; 64] = [const {
-        movemagic::Entry {
-            mask: bitboard::Bitboard(0),
+) -> square::BySquare<magic::Entry> {
+    let mut entries: [magic::Entry; 64] = [const {
+        magic::Entry {
+            mask: Bitboard(0),
             magic: 0,
             base: 0,
             shift: 0,
@@ -29,8 +25,8 @@ const fn entries(
     let mut base: usize = 0;
     let mut idx: usize = 0;
     while idx < 64 {
-        entries[idx] = movemagic::Entry {
-            mask: bitboard::Bitboard(masks[idx]),
+        entries[idx] = magic::Entry {
+            mask: Bitboard(masks[idx]),
             magic: magics[idx],
             base,
             shift: shifts[idx],
@@ -66,24 +62,20 @@ const fn shift_num_entries(shifts: &[u8; 64], idx: usize) -> usize {
     1 << (64 - shifts[idx])
 }
 
-pub fn rook_attacks() -> [Bitboard; movemagic::ROOK_ATTACKS_SIZE] {
-    let mut rook_attacks = [const { Bitboard(0) }; movemagic::ROOK_ATTACKS_SIZE];
+pub fn rook_attacks() -> [Bitboard; magic::ROOK_ATTACKS_SIZE] {
+    let mut rook_attacks = [const { Bitboard(0) }; magic::ROOK_ATTACKS_SIZE];
 
-    attacks(
-        &mut rook_attacks,
-        &movemagic::ROOK_ENTRIES,
-        rook_attacks_board,
-    );
+    attacks(&mut rook_attacks, &magic::ROOK_ENTRIES, rook_attacks_board);
 
     rook_attacks
 }
 
-pub fn bishop_attacks() -> [Bitboard; movemagic::BISHOP_ATTACKS_SIZE] {
-    let mut bishop_attacks = [const { Bitboard(0) }; movemagic::BISHOP_ATTACKS_SIZE];
+pub fn bishop_attacks() -> [Bitboard; magic::BISHOP_ATTACKS_SIZE] {
+    let mut bishop_attacks = [const { Bitboard(0) }; magic::BISHOP_ATTACKS_SIZE];
 
     attacks(
         &mut bishop_attacks,
-        &movemagic::BISHOP_ENTRIES,
+        &magic::BISHOP_ENTRIES,
         bishop_attacks_board,
     );
 
@@ -92,7 +84,7 @@ pub fn bishop_attacks() -> [Bitboard; movemagic::BISHOP_ATTACKS_SIZE] {
 
 fn attacks(
     attacks_arr: &mut [Bitboard],
-    entries: &square::BySquare<movemagic::Entry>,
+    entries: &square::BySquare<magic::Entry>,
     attacks_board: fn(square::Square, Bitboard) -> Bitboard,
 ) {
     for (sq, entry) in entries.iter() {
@@ -101,7 +93,7 @@ fn attacks(
             let occ = nth_subset(&mask_squares, n);
             let attacks = attacks_board(sq, occ);
 
-            let off = movemagic::offset(entry, occ);
+            let off = magic::offset(entry, occ);
             debug_assert!(attacks_arr[off].0 == 0 || attacks_arr[off] == attacks);
             attacks_arr[off] = attacks;
         }
