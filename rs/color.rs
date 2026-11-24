@@ -5,6 +5,17 @@ pub enum Color {
 }
 const MAX_COLOR: usize = 2;
 
+impl std::ops::Not for Color {
+    type Output = Color;
+
+    fn not(self) -> Self::Output {
+        match self {
+            Color::White => Color::Black,
+            Color::Black => Color::White,
+        }
+    }
+}
+
 // Must be in same order as the Color values!
 const ALL_COLORS: [Color; MAX_COLOR] = [Color::White, Color::Black];
 

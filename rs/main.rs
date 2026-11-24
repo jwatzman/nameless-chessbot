@@ -45,7 +45,7 @@ fn main() {
             println!("Unknown command: {}", unk);
         }
         None => {
-            let b = Board::new(&mut rand_xoshiro::Xoshiro256PlusPlus::seed_from_u64(1));
+            let mut b = Board::new(&mut rand_xoshiro::Xoshiro256PlusPlus::seed_from_u64(1));
             println!("{}", b);
 
             let sq = square::Square::new_from_idx(36);
@@ -54,6 +54,12 @@ fn main() {
             println!("{}", occ);
             println!("{}", movemagic::rook_attacks(sq, occ));
             println!("{}", movemagic::bishop_attacks(sq, occ));
+
+            let src = square::Square::new_from_row_col(1, 0);
+            let dest = square::Square::new_from_row_col(3, 0);
+            let m = r#move::Move::new(src, dest, piece::Piece::Pawn, None, None);
+            b.make_move(m);
+            println!("{}", b);
         }
     }
 }

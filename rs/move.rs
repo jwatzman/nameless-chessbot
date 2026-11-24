@@ -24,7 +24,10 @@ impl Move {
         capture: Option<Piece>,
         promo: Option<Piece>,
     ) -> Self {
+        debug_assert_ne!(capture, Some(Piece::King));
+        debug_assert_ne!(promo, Some(Piece::Pawn));
         debug_assert!(promo.is_none() || piece == Piece::Pawn);
+
         let mut m = Move(0);
 
         m.0 |= u32::from(src.idx()) << Self::SRC_OFFSET;

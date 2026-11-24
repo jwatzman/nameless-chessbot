@@ -1,7 +1,9 @@
 use crate::bitboard::Bitboard;
 use crate::castle::CastleRights;
+use crate::color;
 use crate::color::ByColor;
 use crate::color::Color;
+use crate::color::Color::White;
 use crate::r#move;
 use crate::piece::ByPiece;
 use crate::piece::Piece;
@@ -191,10 +193,23 @@ impl Board {
             halfmove_count: self.halfmove_count,
         };
 
+        debug_assert_eq!(self.at(m.src()), Some((self.to_move, m.piece())));
         match m.capture() {
-            None => debug_assert_eq!(self.full_composite & m.dest().mask(), 0),
-            Some(p) => debug_assert_ne!(p, Piece::King),
+            None => debug_assert_eq!(self.at(m.dest()), None),
+            Some(p) => debug_assert_eq!(self.at(m.dest()), Some((!self.to_move, p))),
         }
+
+        // TODO
+
+        debug_assert_eq!(
+            self.full_composite,
+            self.composite_boards[color::Color::White] | self.composite_boards[color::Color::Black]
+        );
+
+        debug_assert_eq!(
+            self.composite_boards[color::Color::White] & self.composite_boards[color::Color::Black],
+            0
+        );
 
         u
     }
