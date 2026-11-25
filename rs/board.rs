@@ -3,6 +3,7 @@ use crate::castle::CastleRights;
 use crate::color::ByColor;
 use crate::color::Color;
 use crate::moves::Move;
+use crate::moves::MoveSpecial;
 use crate::piece::ByPiece;
 use crate::piece::Piece;
 use crate::sigil;
@@ -195,8 +196,7 @@ impl Board {
         let dest = m.dest();
         let p = m.piece();
         let capture = m.capture();
-        let promo = m.promo();
-        let c = self.to_move;
+        let c: Color = self.to_move;
 
         debug_assert_eq!(self.at(src), Some((c, p)));
         match capture {
@@ -213,7 +213,6 @@ impl Board {
         if !self.castle_rights.is_empty() {
             self.zobrist ^= self.zobrist_castle[usize::from(self.castle_rights.bits())];
 
-            // TODO -- castle rights
             if src.idx() == 0 || dest.idx() == 0 {
                 self.castle_rights.remove(CastleRights::W_QS);
             }
@@ -234,7 +233,15 @@ impl Board {
             self.zobrist ^= self.zobrist_castle[usize::from(self.castle_rights.bits())];
         }
 
-        // TODO -- enpassant
+        if let Some(ep_sq) = self.enpassant_index {
+            self.zobrist ^= self.zobrist_enpassant[usize::from(ep_sq.col())];
+        }
+        if p == Piece::Pawn && (i16::from(src.idx()) - i16::from(dest.idx())).abs() == 16 {
+            self.enpassant_index = Some(dest);
+            self.zobrist ^= self.zobrist_enpassant[usize::from(dest.col())];
+        } else {
+            self.enpassant_index = None;
+        }
 
         self.make_unmake_common(m);
         self.to_move = !self.to_move;
@@ -259,14 +266,64 @@ impl Board {
         self.to_move = !self.to_move;
         self.make_unmake_common(u.m);
 
-        // TODO -- copy out from UnmakeMove
+        if let Some(ep_sq) = self.enpassant_index {
+            self.zobrist ^= self.zobrist_enpassant[usize::from(ep_sq.col())];
+        }
+        self.enpassant_index = u.enpassant_index;
+        if let Some(ep_sq) = self.enpassant_index {
+            self.zobrist ^= self.zobrist_enpassant[usize::from(ep_sq.col())];
+        }
+
+        self.zobrist ^= self.zobrist_castle[usize::from(self.castle_rights.bits())];
+        self.castle_rights = u.castle_rights;
+        self.zobrist ^= self.zobrist_castle[usize::from(self.castle_rights.bits())];
+
+        self.halfmove_count = u.halfmove_count;
     }
 
     // TODO: should this take a const template parameter to skip computing
     // zobrist, which we can put into the UnmakeMove? And we can use to compute
     // the NNUE value when we have that?
     fn make_unmake_common(&mut self, m: Move) -> () {
-        // TODO
+        let src = m.src();
+        let dest = m.dest();
+        let p = m.piece();
+        let capture = m.capture();
+        let promo = m.promo();
+        let c = self.to_move;
+
+        self.toggle(c, p, src);
+        self.toggle(c, promo.unwrap_or(p), dest);
+
+        if let Some(cap_p) = capture {
+            self.toggle(!c, cap_p, dest);
+        }
+
+        match m.special() {
+            None => (),
+            Some(MoveSpecial::Castle) => {
+                let (rook_src, rook_dest) = match dest.col() {
+                    2 => (
+                        Square::new_from_idx(dest.idx() - 2),
+                        Square::new_from_idx(dest.idx() + 1),
+                    ),
+                    6 => (
+                        Square::new_from_idx(dest.idx() + 1),
+                        Square::new_from_idx(dest.idx() - 1),
+                    ),
+                    _ => panic!("Invalid castle"),
+                };
+                self.toggle(c, Piece::Rook, rook_src);
+                self.toggle(c, Piece::Rook, rook_dest);
+            }
+            Some(MoveSpecial::EnPassant) => {
+                let captured_pawn_sq = match c {
+                    Color::White => Square::new_from_idx(dest.idx() - 8),
+                    Color::Black => Square::new_from_idx(dest.idx() + 8),
+                };
+                self.toggle(!c, Piece::Pawn, captured_pawn_sq);
+            }
+        }
 
         self.zobrist ^= self.zobrist_black;
     }
