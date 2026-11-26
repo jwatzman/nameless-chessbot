@@ -52,6 +52,8 @@ fn main() {
             println!("{}", occ);
             println!("{}", moves::magic::rook_attacks(sq, occ));
             println!("{}", moves::magic::bishop_attacks(sq, occ));
+            println!("{}", moves::tables::KING_ATTACKS[sq]);
+            println!("{}", moves::tables::KNIGHT_ATTACKS[sq]);
 
             let z = b.zobrist();
             let src = square::Square::new_from_row_col(1, 0);

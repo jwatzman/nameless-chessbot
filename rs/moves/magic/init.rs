@@ -63,7 +63,7 @@ const fn shift_num_entries(shifts: &[u8; 64], idx: usize) -> usize {
 }
 
 pub fn rook_attacks() -> [Bitboard; magic::ROOK_ATTACKS_SIZE] {
-    let mut rook_attacks = [const { Bitboard(0) }; magic::ROOK_ATTACKS_SIZE];
+    let mut rook_attacks = [Bitboard(0); magic::ROOK_ATTACKS_SIZE];
 
     attacks(&mut rook_attacks, &magic::ROOK_ENTRIES, rook_attacks_board);
 
@@ -71,7 +71,7 @@ pub fn rook_attacks() -> [Bitboard; magic::ROOK_ATTACKS_SIZE] {
 }
 
 pub fn bishop_attacks() -> [Bitboard; magic::BISHOP_ATTACKS_SIZE] {
-    let mut bishop_attacks = [const { Bitboard(0) }; magic::BISHOP_ATTACKS_SIZE];
+    let mut bishop_attacks = [Bitboard(0); magic::BISHOP_ATTACKS_SIZE];
 
     attacks(
         &mut bishop_attacks,
@@ -130,21 +130,18 @@ fn bishop_attacks_board(sq: square::Square, occ: Bitboard) -> Bitboard {
         | attacks_board(sq, occ, -1, -1)
 }
 
-fn attacks_board(start: square::Square, occ: Bitboard, row_incr: i16, col_incr: i16) -> Bitboard {
+fn attacks_board(start: square::Square, occ: Bitboard, row_off: i8, col_off: i8) -> Bitboard {
     let mut attacks = Bitboard(0);
 
-    let mut row = i16::from(start.row()) + row_incr;
-    let mut col = i16::from(start.col()) + col_incr;
-    while row < 8 && row >= 0 && col < 8 && col >= 0 {
-        let sq = square::Square::new_from_row_col(row as u8, col as u8);
+    let mut sq = start;
+    while let Some(next) = sq.with_row_col_offset(row_off, col_off) {
+        sq = next;
+
         let mask = sq.mask();
         attacks |= mask;
-        if (occ & mask) != 0 {
+        if occ & mask != 0 {
             break;
         }
-
-        row += row_incr;
-        col += col_incr;
     }
 
     attacks

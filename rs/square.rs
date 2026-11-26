@@ -7,12 +7,12 @@ use crate::bitboard;
 pub struct Square(u8);
 
 impl Square {
-    pub fn new_from_idx(idx: u8) -> Self {
+    pub const fn new_from_idx(idx: u8) -> Self {
         debug_assert!(idx < 64);
         Square(idx)
     }
 
-    pub fn new_from_row_col(row: u8, col: u8) -> Self {
+    pub const fn new_from_row_col(row: u8, col: u8) -> Self {
         debug_assert!(row < 8);
         debug_assert!(col < 8);
         Self::new_from_idx(col | (row << 3))
@@ -33,19 +33,30 @@ impl Square {
         }
     }
 
-    pub fn idx(&self) -> u8 {
+    pub const fn with_row_col_offset(&self, row_off: i8, col_off: i8) -> Option<Self> {
+        let new_row = (self.row() as i16) + (row_off as i16);
+        let new_col = (self.col() as i16) + (col_off as i16);
+
+        if new_row < 0 || new_row >= 8 || new_col < 0 || new_col >= 8 {
+            None
+        } else {
+            Some(Self::new_from_row_col(new_row as u8, new_col as u8))
+        }
+    }
+
+    pub const fn idx(&self) -> u8 {
         return self.0;
     }
 
-    pub fn row(&self) -> u8 {
+    pub const fn row(&self) -> u8 {
         self.0 >> 3
     }
 
-    pub fn col(&self) -> u8 {
+    pub const fn col(&self) -> u8 {
         self.0 & 0b111
     }
 
-    pub fn mask(&self) -> bitboard::Bitboard {
+    pub const fn mask(&self) -> bitboard::Bitboard {
         bitboard::Bitboard(1u64 << self.0)
     }
 }
