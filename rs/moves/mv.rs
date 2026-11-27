@@ -7,6 +7,7 @@ pub enum MoveSpecial {
 }
 
 // TODO: is this better bitpacked or as an struct/enum?
+#[repr(transparent)]
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Move(u32);
 

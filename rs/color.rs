@@ -1,3 +1,4 @@
+#[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Color {
     White = 0,
@@ -19,6 +20,7 @@ impl std::ops::Not for Color {
 // Must be in same order as the Color values!
 const ALL_COLORS: [Color; MAX_COLOR] = [Color::White, Color::Black];
 
+#[repr(transparent)]
 #[derive(Default)]
 pub struct ByColor<T>([T; MAX_COLOR]);
 

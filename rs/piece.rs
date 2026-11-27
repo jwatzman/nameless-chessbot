@@ -1,3 +1,4 @@
+#[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Piece {
     Pawn = 0,
@@ -23,10 +24,12 @@ impl TryFrom<u8> for Piece {
     type Error = ();
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
+        // TODO: should this transmute instead?
         ALL_PIECES.get(usize::from(value)).copied().ok_or(())
     }
 }
 
+#[repr(transparent)]
 #[derive(Default)]
 pub struct ByPiece<T>([T; MAX_PIECE]);
 

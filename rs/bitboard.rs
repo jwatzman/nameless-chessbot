@@ -2,6 +2,7 @@ use crate::square;
 
 /// Newtype wrapper for a bitboard. LSB is A1, up through MSB is H8. (See
 /// [`Square`].)
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Bitboard(pub u64);
 
@@ -85,6 +86,7 @@ impl std::fmt::Display for Bitboard {
     }
 }
 
+#[repr(transparent)]
 pub struct BitboardSquareIterator(u64);
 
 impl Iterator for BitboardSquareIterator {
