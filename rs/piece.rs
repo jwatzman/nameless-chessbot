@@ -31,7 +31,7 @@ impl TryFrom<u8> for Piece {
 pub struct ByPiece<T>([T; MAX_PIECE]);
 
 impl<T> ByPiece<T> {
-    pub fn new(arr: [T; MAX_PIECE]) -> Self {
+    pub const fn new(arr: [T; MAX_PIECE]) -> Self {
         ByPiece(arr)
     }
 

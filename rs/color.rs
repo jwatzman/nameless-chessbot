@@ -23,7 +23,7 @@ const ALL_COLORS: [Color; MAX_COLOR] = [Color::White, Color::Black];
 pub struct ByColor<T>([T; MAX_COLOR]);
 
 impl<T> ByColor<T> {
-    pub fn new(arr: [T; MAX_COLOR]) -> Self {
+    pub const fn new(arr: [T; MAX_COLOR]) -> Self {
         ByColor(arr)
     }
 

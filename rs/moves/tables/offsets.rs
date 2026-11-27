@@ -1,5 +1,6 @@
 use crate::{
     bitboard::Bitboard,
+    color::ByColor,
     square::{BySquare, Square},
 };
 
@@ -29,7 +30,14 @@ pub const fn knight_attacks() -> BySquare<Bitboard> {
     ])
 }
 
-const fn attacks_from_offsets(offsets: &[(i8, i8); 8]) -> BySquare<Bitboard> {
+pub const fn pawn_attacks() -> ByColor<BySquare<Bitboard>> {
+    ByColor::new([
+        attacks_from_offsets(&[(1, -1), (1, 1)]),
+        attacks_from_offsets(&[(-1, -1), (-1, 1)]),
+    ])
+}
+
+const fn attacks_from_offsets(offsets: &[(i8, i8)]) -> BySquare<Bitboard> {
     let mut arr = [Bitboard(0); 64];
 
     let mut sq_idx = 0u8;

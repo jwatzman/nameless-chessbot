@@ -54,6 +54,8 @@ fn main() {
             println!("{}", moves::magic::bishop_attacks(sq, occ));
             println!("{}", moves::tables::KING_ATTACKS[sq]);
             println!("{}", moves::tables::KNIGHT_ATTACKS[sq]);
+            println!("{}", moves::tables::PAWN_ATTACKS[color::Color::White][sq]);
+            println!("{}", moves::tables::PAWN_ATTACKS[color::Color::Black][sq]);
 
             let z = b.zobrist();
             let src = square::Square::new_from_row_col(1, 0);
